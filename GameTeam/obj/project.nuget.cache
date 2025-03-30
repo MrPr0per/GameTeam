@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "GFNFOlo6vudq/4m6Wl0/Gw+N06rWsxLc+/66vruzuNJ2eR9+7QjiA13djS0konU0y90ERPffcul3AFlbulhPBA==",
+  "success": true,
+  "projectFilePath": "D:\\Project\\GameTeam\\GameTeam\\GameTeam.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\plesk\\.nuget\\packages\\microsoft.visualstudio.azure.containers.tools.targets\\1.19.4\\microsoft.visualstudio.azure.containers.tools.targets.1.19.4.nupkg.sha512"
+  ],
+  "logs": []
+}
