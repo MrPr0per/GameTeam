@@ -1,55 +1,96 @@
-﻿namespace GameTeam.Scripts.Controllers
+﻿using Npgsql;
+using System;
+using System.Collections.Generic;
+
+namespace GameTeam.Scripts.Controllers
 {
     public static class DatabaseController
     {
-        private static Dictionary<int, string[]> dataBase;
-        private static int lasId;
-        static DatabaseController() 
-        { 
-            dataBase = new Dictionary<int, string[]>();
-            lasId = 0;
-        }
+        private static readonly string ConnectionString = 
+            "Host=ep-spring-lake-a22loh0r-pooler.eu-central-1.aws.neon.tech;" +
+            "Port=5432;" +
+            "Database=neondb;" +
+            "Username=neondb_owner;" +
+            "Password=npg_d1vs2zExTMJO;" +
+            "SslMode=Require;";
 
         public static void Register(string username, string email, string password)
         {
-            try
+            using (var conn = new NpgsqlConnection(ConnectionString))
             {
-                //Сейчас уникальность username и email не проверяется, но в бд по идее можно настроить уникальность
-                dataBase[lasId] = new string[3] { username, email, password };
-                lasId++;
-            }
-            catch (Exception e)
-            { 
-                Console.WriteLine($"Не получилось зарегистрировать пользователя {e}");
+                try
+                {
+                    conn.Open();
+                    using (var cmd = new NpgsqlCommand())
+                    {
+                        cmd.Connection = conn;
+                        cmd.CommandText = @"
+                            INSERT INTO users_data (username, email, password) 
+                            VALUES (@username, @email, @password)";
+                        
+                        cmd.Parameters.AddWithValue("username", username);
+                        cmd.Parameters.AddWithValue("email", email);
+                        cmd.Parameters.AddWithValue("password", password);
+                        
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                catch (PostgresException ex) when (ex.SqlState == "23505")
+                {
+                    string errorField = ex.ConstraintName.Contains("username") 
+                        ? "Имя пользователя" 
+                        : "Email";
+                    throw new Exception($"{errorField} уже занято");
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Ошибка регистрации: {ex.Message}");
+                }
             }
         }
 
         public static bool Login(string? username, string? email, string password, out string? outUsername)
         {
-            if (username != null)
-            {
-                foreach (var key in dataBase.Keys)
-                {
-                    if (dataBase[key][0] == username && dataBase[key][2] == password)
-                    {
-                        outUsername = username;
-                        return true;
-                    }
-                }
-            }
-            else if (email != null)
-            {
-                foreach (var key in dataBase.Keys)
-                {
-                    if (dataBase[key][1] == email && dataBase[key][2] == password)
-                    {
-                        outUsername = dataBase[key][0];
-                        return true;
-                    }
-                }
-            }
-
             outUsername = null;
+            
+            using (var conn = new NpgsqlConnection(ConnectionString))
+            {
+                conn.Open();
+                using (var cmd = new NpgsqlCommand())
+                {
+                    cmd.Connection = conn;
+                    
+                    if (username != null)
+                    {
+                        cmd.CommandText = @"
+                            SELECT username FROM users_data 
+                            WHERE username = @username AND password = @password";
+                        cmd.Parameters.AddWithValue("username", username);
+                    }
+                    else if (email != null)
+                    {
+                        cmd.CommandText = @"
+                            SELECT username FROM users_data 
+                            WHERE email = @email AND password = @password";
+                        cmd.Parameters.AddWithValue("email", email);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                    
+                    cmd.Parameters.AddWithValue("password", password);
+                    
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            outUsername = reader.GetString(0);
+                            return true;
+                        }
+                    }
+                }
+            }
             return false;
         }
     }
