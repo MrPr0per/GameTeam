@@ -1,0 +1,41 @@
+# Игнорирование для Node.js/JavaScript
+node_modules/
+npm-debug.log
+yarn-error.log
+*.log
+/dist
+/build
+
+# Игнорирование для C#
+*.csproj.user
+*.suo
+*.user
+*.sln.docstates
+bin/
+obj/
+*.pdb
+*.exe
+*.dll
+packages/
+*.nupkg
+
+# Игнорирование для общих временных файлов
+*.tmp
+*.bak
+*.cache
+*.swp
+
+# Игнорирование для IDE/редакторов
+.vscode/
+.idea/
+*.sublime-workspace
+
+# Игнорирование для macOS
+.DS_Store
+
+# Игнорирование для Windows
+Thumbs.db
+
+# Исключения (если нужно что-то добавить обратно)
+!.gitignore
+!README.md
