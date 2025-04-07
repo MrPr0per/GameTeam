@@ -875,26 +875,25 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\plesk\\.nuget\\packages\\": {}
+    "/Users/user/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Project\\GameTeam\\GameTeam\\GameTeam.csproj",
+      "projectUniqueName": "/Users/user/Documents/GameTeam/GameTeam/GameTeam.csproj",
       "projectName": "GameTeam",
-      "projectPath": "D:\\Project\\GameTeam\\GameTeam\\GameTeam.csproj",
-      "packagesPath": "C:\\Users\\plesk\\.nuget\\packages\\",
-      "outputPath": "D:\\Project\\GameTeam\\GameTeam\\obj\\",
+      "projectPath": "/Users/user/Documents/GameTeam/GameTeam/GameTeam.csproj",
+      "packagesPath": "/Users/user/.nuget/packages/",
+      "outputPath": "/Users/user/Documents/GameTeam/GameTeam/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\plesk\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "/Users/user/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net7.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "/usr/local/share/dotnet/sdk/7.0.307/Sdks/Microsoft.NET.Sdk.Web/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -941,7 +940,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.401\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.307/RuntimeIdentifierGraph.json"
       }
     }
   }
