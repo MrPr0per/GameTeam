@@ -36,7 +36,19 @@ app.UseMiddleware<SessionAuthMiddleware>();
 app.UseAuthorization();
 
 app.MapRazorPages();
-app.MapGet("/", () => Results.Redirect("/Register"));
+app.UseEndpoints(endpoints =>
+{
+
+    // или напрямую отдавать содержимое файла
+    endpoints.MapGet("/Register", async context =>
+    {
+        var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        var filePath = Path.Combine(env.WebRootPath, "pages/Register.html");
+
+        context.Response.ContentType = "text/html";
+        await context.Response.SendFileAsync(filePath);
+    });
+});
 app.MapControllers();
 
 app.Run();
