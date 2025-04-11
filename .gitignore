@@ -6,29 +6,41 @@ yarn-error.log
 /dist
 /build
 
-# Игнорирование для C#
+# Игнорирование для C# / .NET
 *.csproj.user
 *.suo
 *.user
 *.sln.docstates
-bin/
-obj/
+*.dll
 *.pdb
 *.exe
-*.dll
-packages/
+*.nuget.props
+*.vsidx
 *.nupkg
+*.userprefs
+[Bb]in/
+[Oo]bj/
+packages/
+**/[Oo]bj/
+**/[Bb]in/
+*.csproj.nuget.*
+*.nuget.*
+*.userprefs
 
 # Игнорирование для общих временных файлов
 *.tmp
 *.bak
 *.cache
 *.swp
+.cache/
 
 # Игнорирование для IDE/редакторов
 .vscode/
 .idea/
 *.sublime-workspace
+rider.project.model.*
+*.sln.cache
+*.csproj.nuget.*
 
 # Игнорирование для macOS
 .DS_Store
@@ -36,6 +48,6 @@ packages/
 # Игнорирование для Windows
 Thumbs.db
 
-# Исключения (если нужно что-то добавить обратно)
+# Исключения
 !.gitignore
 !README.md
