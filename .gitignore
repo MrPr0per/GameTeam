@@ -1,12 +1,12 @@
-# Игнорирование для Node.js/JavaScript
+# Node.js/JavaScript
 node_modules/
-npm-debug.log
-yarn-error.log
+npm-debug.log*
+yarn-error.log*
 *.log
 /dist
 /build
 
-# Игнорирование для C# / .NET
+# C# / .NET
 *.csproj.user
 *.suo
 *.user
@@ -14,40 +14,49 @@ yarn-error.log
 *.dll
 *.pdb
 *.exe
-*.nuget.props
-*.vsidx
 *.nupkg
+*.vsidx
+*.cache
+*.nuget.props
+*.nuget.targets
 *.userprefs
+
+# Build & obj
 [Bb]in/
 [Oo]bj/
-packages/
-**/[Oo]bj/
 **/[Bb]in/
+**/[Oo]bj/
+packages/
 *.csproj.nuget.*
-*.nuget.*
-*.userprefs
 
-# Игнорирование для общих временных файлов
-*.tmp
-*.bak
-*.cache
-*.swp
-.cache/
-
-# Игнорирование для IDE/редакторов
+# IDEs
 .vscode/
 .idea/
-*.sublime-workspace
-rider.project.model.*
 *.sln.cache
-*.csproj.nuget.*
+*.sublime-*
+*.orig
+*.rej
+*.swp
+*.bak
+*.tmp
+*.db
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
 
-# Игнорирование для macOS
+# VS & Rider
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.rider*
+
+# OS generated
 .DS_Store
-
-# Игнорирование для Windows
 Thumbs.db
 
-# Исключения
+# Exclude only these from ignore
 !.gitignore
 !README.md
