@@ -1,97 +1,63 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using GameTeam.Classes.Data;
+﻿using GameTeam.Classes.Data;
+using GameTeam.Scripts.Controllers;
+using GameTeam.Scripts;
+using Microsoft.AspNetCore.Mvc;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
-namespace GameTeam.Scripts.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class AuthController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AuthController : ControllerBase
+    private readonly IConfiguration config;
+
+    public AuthController(IConfiguration config)
     {
-        private readonly IConfiguration config;
+        this.config = config;
+    }
 
-        public AuthController(IConfiguration config)
+    [HttpPost("login")] // Изменил на HttpPost, так как логин обычно через POST
+    public IActionResult Login([FromBody] LoginDto data)
+    {
+        var username = "";
+        var logged = DatabaseController.Login(data.Username, data.Email, data.Password, out username);
+        if (logged)
         {
-            this.config = config;
+            var token = CookieGenerator.GenerateJwtToken(username, config);
+
+
+            // Сохраняем информацию о пользователе в сессии
+            HttpContext.Session.SetString("Username", username);
+            HttpContext.Session.SetString("IsAuthenticated", "true");
+
+            return Ok(new { Message = "Login successful" });
         }
+        return Unauthorized(new { Message = "Неправильный логин/почта или пароль" });
+    }
 
-        // GET: api/<AuthController>
-        [HttpGet("login")]
-        public IActionResult Get([FromBody] LoginDto data)
-        {
-            var username = "";
-            var logged = DatabaseController.Login(data.Username, data.Email, data.Password, out username);
-            if (logged)
-            {
-                //Надо куда-то записывать этот токен, чтобы сессию сохранять, а то пока что мы это не делаем
-                var token = CookieGenerator.GenerateJwtToken(username, config);
+    [HttpPost("register")]
+    public IActionResult Register([FromBody] RegisterDto data)
+    {
+        if (data.Password != data.ConfirmPassword)
+            return BadRequest(new { Message = "Пароли не совпадают" });
 
-                Response.Cookies.Append(
-                    "AuthToken",                     // Имя cookie
-                    token,         // Значение cookie
-                    new CookieOptions
-                    {
-                        Expires = DateTime.UtcNow.AddDays(1), // Срок действия (1 день)
-                        HttpOnly = true,                      // Доступ только через HTTP (защита от XSS)
-                        Secure = true,                        // Только HTTPS (в production)
-                        SameSite = SameSiteMode.Strict        // Защита от CSRF
-                    });
+        DatabaseController.Register(data.Username, data.Email, data.Password);
 
-                return Ok(new { Message = "Registration successful" });
-            }
-            return Unauthorized(new { Message = "Неправильный логин/почта или пароль" });
-        }
+        var token = CookieGenerator.GenerateJwtToken(data.Username, config);
 
-        // POST api/<AuthController>
-        [HttpPost("register")]
-        public IActionResult Post([FromBody] RegisterDto data)
-        {
-            if (data.Password != data.ConfirmPassword)
-                return BadRequest(new { Message = "Пароли не совпадают" });
 
-            DatabaseController.Register(data.Username, data.Email, data.Password);
+        // Сохраняем информацию о пользователе в сессии
+        HttpContext.Session.SetString("Username", data.Username);
+        HttpContext.Session.SetString("IsAuthenticated", "true");
 
-            //Надо куда-то записывать этот токен, чтобы сессию сохранять, а то пока что мы это не делаем
-            var token = CookieGenerator.GenerateJwtToken(data.Username, config);
+        return Ok(new { Message = "Registration successful" });
+    }
 
-            Response.Cookies.Append(
-                "AuthToken",                     // Имя cookie
-                token,         // Значение cookie
-                new CookieOptions
-                {
-                    Expires = DateTime.UtcNow.AddDays(1), // Срок действия (1 день)
-                    HttpOnly = true,                      // Доступ только через HTTP (защита от XSS)
-                    Secure = true,                        // Только HTTPS (в production)
-                    SameSite = SameSiteMode.Strict        // Защита от CSRF
-                });
+    [HttpPost("logout")]
+    public IActionResult Logout()
+    {
 
-            return Ok(new { Message = "Registration successful" });
-        }
+        // Очищаем сессию
+        HttpContext.Session.Clear();
+
+        return Ok(new { Message = "Logout successful" });
     }
 }
-
-
-//Это код чтобы проверять cookie токен
-
-/*
-[HttpGet("secure-data")]
-public IActionResult GetSecureData()
-{
-    if (!Request.Cookies.TryGetValue("AuthToken", out var token))
-        return Unauthorized();
-
-    try
-    {
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(token);
-        var username = jwt.Claims.First(c => c.Type == ClaimTypes.Name).Value;
-        
-        return Ok(new { Data = $"Hello, {username}!" });
-    }
-    catch
-    {
-        return Unauthorized();
-    }
-}
-*/
