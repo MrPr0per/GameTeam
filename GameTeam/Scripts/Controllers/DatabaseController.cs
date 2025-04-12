@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using GameTeam.Classes.Data;
 using NodaTime;
+using NpgsqlTypes;
 
 namespace GameTeam.Scripts.Controllers
 {
@@ -16,13 +17,13 @@ namespace GameTeam.Scripts.Controllers
 			"Username=neondb_owner;" +
 			"Password=npg_d1vs2zExTMJO;" +
 			"SslMode=Require;";
-		
+
 		[Obsolete("Obsolete")]
 		static DatabaseController()
 		{
 			// Регистрация ENUM
 			NpgsqlConnection.GlobalTypeMapper.MapEnum<Availability.DayOfWeekEnum>("day_of_week");
-    
+
 			// Регистрация NodaTime
 			NpgsqlConnection.GlobalTypeMapper.UseNodaTime();
 
@@ -204,7 +205,7 @@ namespace GameTeam.Scripts.Controllers
                     join availabilities as a on aa.availability_id = a.id
                     join applications as ap on aa.application_id = ap.id
                     where aa.application_id = @id";
-				
+
 
 				cmd.Parameters.AddWithValue("id", id);
 				using var reader = cmd.ExecuteReader();
@@ -249,7 +250,7 @@ namespace GameTeam.Scripts.Controllers
 
 				if (!reader.Read())
 					return null;
-				
+
 				return new UserProfile(reader.GetInt32(0),
 					reader.GetString(1), reader.GetString(2));
 			}
@@ -265,7 +266,7 @@ namespace GameTeam.Scripts.Controllers
 			try
 			{
 				var applications = new List<Application>();
-				
+
 				conn.Open();
 				using var cmd = new NpgsqlCommand();
 				cmd.Connection = conn;
@@ -284,6 +285,122 @@ namespace GameTeam.Scripts.Controllers
 			catch (Exception e)
 			{
 				throw new Exception($"Ошибка GetAllApplications: {e}");
+			}
+		}
+
+		// Добавление данных профиля пользователя в бд
+		public static void UpsertUserProfile(int userId, string? aboutDescription = null, string? skills = null,
+			List<Game>? games = null, List<Availability>? availabilities = null)
+		{
+			using var conn = new NpgsqlConnection(ConnectionString);
+			conn.Open();
+			
+			using var transaction = conn.BeginTransaction();
+			try
+			{
+				// 1. Upsert в user_profiles
+				using (var cmd = new NpgsqlCommand(@"
+                    INSERT INTO user_profiles (user_id, about_description, skills)
+                    VALUES (@user_id, @aboutDescription, @skills)
+                    ON CONFLICT (user_id) DO UPDATE
+                        SET about_description = EXCLUDED.about_description,
+                            skills = EXCLUDED.skills;
+                ", conn, transaction))
+				{
+					cmd.Parameters.AddWithValue("user_id", userId);
+					cmd.Parameters.AddWithValue("aboutDescription", aboutDescription ?? (object)DBNull.Value);
+					cmd.Parameters.AddWithValue("skills", skills ?? (object)DBNull.Value);
+					cmd.ExecuteNonQuery();
+				}
+
+				if (games != null)
+				{
+					// 2. Обработка списка игр
+					foreach (var game in games)
+					{
+						// 2.1. Upsert в таблицу games
+						using (var cmd = new NpgsqlCommand(@"
+                        INSERT INTO games (game_id, game_name)
+                        VALUES (@game_id, @game_name)
+                        ON CONFLICT (game_id) DO UPDATE
+                            SET game_name = EXCLUDED.game_name;
+                    ", conn, transaction))
+						{
+							cmd.Parameters.AddWithValue("game_id", game.Id);
+							cmd.Parameters.AddWithValue("game_name", game.Name);
+							cmd.ExecuteNonQuery();
+						}
+
+						// 2.2. Добавление записи в таблицу user_to_games
+						using (var cmd = new NpgsqlCommand(@"
+                        INSERT INTO user_to_games (user_id, game_id)
+                        VALUES (@user_id, @game_id)
+                        ON CONFLICT DO NOTHING;
+                    ", conn, transaction))
+						{
+							cmd.Parameters.AddWithValue("user_id", userId);
+							cmd.Parameters.AddWithValue("game_id", game.Id);
+							cmd.ExecuteNonQuery();
+						}
+					}
+				}
+
+				if (availabilities != null)
+				{
+					// 3. Обработка списка доступностей
+					foreach (var availability in availabilities)
+					{
+						// 3.1. Upsert в таблицу availabilities  
+						using (var cmd = new NpgsqlCommand(@"
+                        INSERT INTO availabilities (id, day_of_week, start_time, end_time)
+                        VALUES (@id, @day_of_week, @start_time, @end_time)
+                        ON CONFLICT (id) DO UPDATE
+                            SET day_of_week = EXCLUDED.day_of_week,
+                                start_time = EXCLUDED.start_time,
+                                end_time = EXCLUDED.end_time;
+                    ", conn, transaction))
+						{
+							cmd.Parameters.AddWithValue("id", availability.Id);
+							
+							cmd.Parameters.Add(new NpgsqlParameter("start_time", NpgsqlDbType.TimeTz)
+							{
+								Value = availability.StartTime
+							});
+            
+							cmd.Parameters.Add(new NpgsqlParameter("end_time", NpgsqlDbType.TimeTz)
+							{
+								Value = availability.EndTime
+							});
+            
+							cmd.Parameters.Add(new NpgsqlParameter
+							{
+								ParameterName = "day_of_week",
+								Value = availability.DayOfWeek, // Значение типа Availability.DayOfWeekEnum
+								DataTypeName = "day_of_week" // Имя PostgreSQL ENUM
+							});
+							
+							cmd.ExecuteNonQuery();
+						}
+
+						// 3.2. Добавление записи в таблицу users_to_availability
+						using (var cmd = new NpgsqlCommand(@"
+                        INSERT INTO users_to_availability (user_id, availability_id)
+                        VALUES (@user_id, @availability_id)
+                        ON CONFLICT DO NOTHING;
+                    ", conn, transaction))
+						{
+							cmd.Parameters.AddWithValue("user_id", userId);
+							cmd.Parameters.AddWithValue("availability_id", availability.Id);
+							cmd.ExecuteNonQuery();
+						}
+					}
+				}
+
+				transaction.Commit();
+			}
+			catch (Exception e)
+			{
+				throw new Exception($"Ошибка UpsertUserProfile: {e.Message}", e);
 			}
 		}
 	}
