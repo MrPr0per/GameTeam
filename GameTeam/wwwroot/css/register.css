@@ -5,45 +5,6 @@
   font-family: Arial, sans-serif;
 }
 
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 40px;
-  border-bottom: 1px solid #eee;
-  background-color: white;
-  max-width: 1640px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.logo {
-  font-weight: bold;
-  color: #2563EB;
-  font-size: 20px;
-  margin-right: auto;
-}
-
-.auth-status {
-  color: #666;
-  margin-left: auto;
-}
-
-nav {
-  display: flex;
-  align-items: center;
-  margin-left: -500px;
-}
-
-nav a {
-  margin-right: 40px;
-  text-decoration: none;
-  color: #333;
-  white-space: nowrap;
-}
-
-
-
 body {
   background: #fff;
   display: flex;
@@ -53,11 +14,93 @@ body {
   font-family: 'HelveticaNeue', sans-serif;
 }
 
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 270px;
+  background-color: #EFF4FF;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px 0px;
+  position: relative;
+  z-index: 2;
+}
+
+.sidebar .logo {
+  font-size: 30px;
+  font-family: "Poppins", sans-serif;
+  font-weight: bold;
+  color: #2563EB;
+  margin: 0 auto;
+
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  padding: 60px 0;
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  padding: 0 30px;
+  text-decoration: none;
+  color: #656565;
+  font-size: 18px;
+  align-items: center;
+}
+
+.sidebar-nav a:hover {
+  color: #2563EB;
+}
+
+
+.sidebar-nav .nav-icon {
+  
+  width: 30px;
+  height: 30px;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 30px 40px;
+  border-bottom: 1px solid #eee;
+  background-color: white;
+  width: 100%;
+}
+
+.auth-status {
+  
+  color: #666;
+  margin-left: auto;
+
+}
+
 main {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 20px;
 }
 
 .form-container {
@@ -128,7 +171,7 @@ main {
   position: absolute;
   top: 5px;
   left: 16px;
-  font-family: 'Lora', serif;
+
   font-weight: 400;
   font-size: 10px;
   line-height: 100%;
@@ -211,5 +254,5 @@ main {
 }
 
 .btn-register:hover {
-  background-color: #1e4fcc;
+  background-color: #2563EB;
 }
