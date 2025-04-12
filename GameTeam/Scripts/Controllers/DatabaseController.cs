@@ -403,5 +403,123 @@ namespace GameTeam.Scripts.Controllers
 				throw new Exception($"Ошибка UpsertUserProfile: {e.Message}", e);
 			}
 		}
+		
+		// Добавление данных анкеты в бд
+		public static void UpsertApplicationProfile(int applicationId, string? title = null, string? description = null,
+			string? contacts = null, List<Game>? games = null, List<Availability>? availabilities = null)
+		{
+			using var conn = new NpgsqlConnection(ConnectionString);
+			conn.Open();
+			
+			using var transaction = conn.BeginTransaction();
+			try
+			{
+				// 1. Upsert в user_profiles
+				using (var cmd = new NpgsqlCommand(@"
+                    INSERT INTO applications (id, title, description, contacts)
+                    VALUES (@application_id, @title, @description, @contacts)
+                    ON CONFLICT (id) DO UPDATE
+                        SET title = EXCLUDED.title,
+                            description = EXCLUDED.description,
+                            contacts = EXCLUDED.contacts;
+                ", conn, transaction))
+				{
+					cmd.Parameters.AddWithValue("application_id", applicationId);
+					cmd.Parameters.AddWithValue("title", title ?? (object)DBNull.Value);
+					cmd.Parameters.AddWithValue("description", description ?? (object)DBNull.Value);
+					cmd.Parameters.AddWithValue("contacts", contacts ?? (object)DBNull.Value);
+					cmd.ExecuteNonQuery();
+				}
+
+				if (games != null)
+				{
+					// 2. Обработка списка игр
+					foreach (var game in games)
+					{
+						// 2.1. Upsert в таблицу games
+						using (var cmd = new NpgsqlCommand(@"
+                        INSERT INTO games (game_id, game_name)
+                        VALUES (@game_id, @game_name)
+                        ON CONFLICT (game_id) DO UPDATE
+                            SET game_name = EXCLUDED.game_name;
+                    ", conn, transaction))
+						{
+							cmd.Parameters.AddWithValue("game_id", game.Id);
+							cmd.Parameters.AddWithValue("game_name", game.Name);
+							cmd.ExecuteNonQuery();
+						}
+
+						// 2.2. Добавление записи в таблицу user_to_games
+						using (var cmd = new NpgsqlCommand(@"
+                        INSERT INTO applications_to_games (app_id, game_id)
+                        VALUES (@app_id, @game_id)
+                        ON CONFLICT DO NOTHING;
+                    ", conn, transaction))
+						{
+							cmd.Parameters.AddWithValue("app_id", applicationId);
+							cmd.Parameters.AddWithValue("game_id", game.Id);
+							cmd.ExecuteNonQuery();
+						}
+					}
+				}
+
+				if (availabilities != null)
+				{
+					// 3. Обработка списка доступностей
+					foreach (var availability in availabilities)
+					{
+						// 3.1. Upsert в таблицу availabilities  
+						using (var cmd = new NpgsqlCommand(@"
+                        INSERT INTO availabilities (id, day_of_week, start_time, end_time)
+                        VALUES (@id, @day_of_week, @start_time, @end_time)
+                        ON CONFLICT (id) DO UPDATE
+                            SET day_of_week = EXCLUDED.day_of_week,
+                                start_time = EXCLUDED.start_time,
+                                end_time = EXCLUDED.end_time;
+                    ", conn, transaction))
+						{
+							cmd.Parameters.AddWithValue("id", availability.Id);
+							
+							cmd.Parameters.Add(new NpgsqlParameter("start_time", NpgsqlDbType.TimeTz)
+							{
+								Value = availability.StartTime
+							});
+            
+							cmd.Parameters.Add(new NpgsqlParameter("end_time", NpgsqlDbType.TimeTz)
+							{
+								Value = availability.EndTime
+							});
+            
+							cmd.Parameters.Add(new NpgsqlParameter
+							{
+								ParameterName = "day_of_week",
+								Value = availability.DayOfWeek, // Значение типа Availability.DayOfWeekEnum
+								DataTypeName = "day_of_week" // Имя PostgreSQL ENUM
+							});
+							
+							cmd.ExecuteNonQuery();
+						}
+
+						// 3.2. Добавление записи в таблицу users_to_availability
+						using (var cmd = new NpgsqlCommand(@"
+                        INSERT INTO applications_to_availability (application_id, availability_id)
+                        VALUES (@application_id, @availability_id)
+                        ON CONFLICT DO NOTHING;
+                    ", conn, transaction))
+						{
+							cmd.Parameters.AddWithValue("application_id", applicationId);
+							cmd.Parameters.AddWithValue("availability_id", availability.Id);
+							cmd.ExecuteNonQuery();
+						}
+					}
+				}
+
+				transaction.Commit();
+			}
+			catch (Exception e)
+			{
+				throw new Exception($"Ошибка UpsertUserProfile: {e.Message}", e);
+			}
+		}
 	}
 }
