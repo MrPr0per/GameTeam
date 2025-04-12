@@ -18,19 +18,37 @@ namespace GameTeam.Scripts.Controllers
 			"Password=npg_d1vs2zExTMJO;" +
 			"SslMode=Require;";
 
+		/// <summary>
+		/// Статический конструктор для настройки маппинга типов
+		/// </summary>
+		/// <remarks>
+		/// Выполняет:
+		/// 1. Регистрацию enum DayOfWeekEnum
+		/// 2. Настройку NodaTime для работы с временными типами
+		/// 3. Установку флага совместимости для .NET 6+
+		/// </remarks>
 		[Obsolete("Obsolete")]
 		static DatabaseController()
 		{
-			// Регистрация ENUM
 			NpgsqlConnection.GlobalTypeMapper.MapEnum<Availability.DayOfWeekEnum>("day_of_week");
-
-			// Регистрация NodaTime
+			
 			NpgsqlConnection.GlobalTypeMapper.UseNodaTime();
-
-			// Для .NET 6+
+			
 			AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 		}
 
+		/// <summary>
+		/// Регистрация нового пользователя
+		/// </summary>
+		/// <param name="username">Имя пользователя</param>
+		/// <param name="email">Электронная почта</param>
+		/// <param name="password">Пароль</param>
+		/// <exception cref="Exception">
+		/// Возможные ошибки:
+		/// - "Имя пользователя уже занято"
+		/// - "Email уже занято"
+		/// - Общие ошибки подключения
+		/// </exception>
 		public static void Register(string username, string email, string password)
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);
@@ -51,7 +69,7 @@ namespace GameTeam.Scripts.Controllers
 			}
 			catch (PostgresException ex) when (ex.SqlState == "23505")
 			{
-				string errorField = ex.ConstraintName.Contains("username")
+				var errorField = ex.ConstraintName.Contains("username")
 					? "Имя пользователя"
 					: "Email";
 				throw new Exception($"{errorField} уже занято");
@@ -62,6 +80,14 @@ namespace GameTeam.Scripts.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Аутентификация пользователя
+		/// </summary>
+		/// <param name="username">Имя пользователя (null если используется email)</param>
+		/// <param name="email">Электронная почта (null если используется имя)</param>
+		/// <param name="password">Пароль</param>
+		/// <param name="outUsername">Возвращаемое имя пользователя</param>
+		/// <returns>true если аутентификация успешна</returns>
 		public static bool Login(string? username, string? email, string password, out string? outUsername)
 		{
 			outUsername = null;
@@ -101,6 +127,12 @@ namespace GameTeam.Scripts.Controllers
 			return true;
 		}
 
+		/// <summary>
+		/// Получение ID пользователя по имени
+		/// </summary>
+		/// <param name="username">Имя пользователя</param>
+		/// <returns>ID пользователя или null если не найден</returns>
+		/// <exception cref="Exception">Ошибки выполнения запроса</exception>
 		public static int? GetIdByUsername(string username)
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);
@@ -130,6 +162,13 @@ namespace GameTeam.Scripts.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Получение списка игр для пользователя или анкеты
+		/// </summary>
+		/// <param name="id">ID сущности</param>
+		/// <param name="isUser">True для пользователя, False для анкеты</param>
+		/// <returns>Список объектов Game</returns>
+		/// <exception cref="Exception">Ошибки выполнения запроса</exception>
 		public static List<Game> GetGames(int id, bool isUser)
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);
@@ -173,6 +212,13 @@ namespace GameTeam.Scripts.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Получение списка доступностей для пользователя или анкеты
+		/// </summary>
+		/// <param name="id">ID сущности</param>
+		/// <param name="isUser">True для пользователя, False для анкеты</param>
+		/// <returns>Список объектов Availability</returns>
+		/// <exception cref="Exception">Ошибки выполнения запроса</exception>
 		public static List<Availability> GetAvailabilities(int id, bool isUser)
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);
@@ -227,6 +273,15 @@ namespace GameTeam.Scripts.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Получение профиля пользователя
+		/// </summary>
+		/// <param name="username">Имя пользователя</param>
+		/// <returns>Объект UserProfile или null если не найден</returns>
+		/// <exception cref="Exception">
+		/// - Пользователь не найден
+		/// - Ошибки выполнения запроса
+		/// </exception>
 		public static UserProfile GetUserProfile(string username)
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);
@@ -260,6 +315,11 @@ namespace GameTeam.Scripts.Controllers
 			}
 		}
 
+		/// <summary>
+		/// Получение всех анкет из базы данных
+		/// </summary>
+		/// <returns>Список объектов Application</returns>
+		/// <exception cref="Exception">Ошибки выполнения запроса</exception>
 		public static List<Application> GetAllApplications()
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);
@@ -288,7 +348,21 @@ namespace GameTeam.Scripts.Controllers
 			}
 		}
 
-		// Добавление данных профиля пользователя в бд
+		/// <summary>
+		/// Создание или обновление профиля пользователя
+		/// </summary>
+		/// <param name="userId">ID пользователя</param>
+		/// <param name="aboutDescription">Описание профиля</param>
+		/// <param name="skills">Навыки</param>
+		/// <param name="games">Список игр</param>
+		/// <param name="availabilities">Список доступностей</param>
+		/// <remarks>
+		/// Выполняет в транзакции:
+		/// 1. Обновление основной информации
+		/// 2. Обработку связанных игр
+		/// 3. Обработку доступностей
+		/// </remarks>
+		/// <exception cref="Exception">Ошибки выполнения транзакции</exception>
 		public static void UpsertUserProfile(int userId, string? aboutDescription = null, string? skills = null,
 			List<Game>? games = null, List<Availability>? availabilities = null)
 		{
@@ -404,7 +478,22 @@ namespace GameTeam.Scripts.Controllers
 			}
 		}
 		
-		// Добавление данных анкеты в бд
+		/// <summary>
+		/// Создание или обновление анкеты
+		/// </summary>
+		/// <param name="applicationId">ID анкеты</param>
+		/// <param name="title">Заголовок</param>
+		/// <param name="description">Описание</param>
+		/// <param name="contacts">Контакты</param>
+		/// <param name="games">Список игр</param>
+		/// <param name="availabilities">Список доступностей</param>
+		/// <remarks>
+		/// Выполняет в транзакции:
+		/// 1. Обновление основной информации
+		/// 2. Обработку связанных игр
+		/// 3. Обработку доступностей
+		/// </remarks>
+		/// <exception cref="Exception">Ошибки выполнения транзакции</exception>
 		public static void UpsertApplicationProfile(int applicationId, string? title = null, string? description = null,
 			string? contacts = null, List<Game>? games = null, List<Availability>? availabilities = null)
 		{
