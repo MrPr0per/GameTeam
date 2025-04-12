@@ -129,7 +129,7 @@ namespace GameTeam.Scripts.Controllers
 			}
 		}
 
-		public static List<Game> GetUserGames(int id)
+		public static List<Game> GetGames(int id, bool isUser)
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);
 			try
@@ -139,13 +139,22 @@ namespace GameTeam.Scripts.Controllers
 				var games = new List<Game>();
 				cmd.Connection = conn;
 
-				cmd.CommandText = @"
-                    select g.game_id, 
-                           g.game_name
-                    from user_to_games as ug 
-                    join user_profiles as up on ug.user_id = up.user_id
-                    join games as g on ug.game_id = g.game_id
-                    where up.user_id = @id";
+				if (isUser)
+					cmd.CommandText = @"
+	                    select g.game_id, 
+	                           g.game_name
+	                    from user_to_games as ug 
+	                    join user_profiles as up on ug.user_id = up.user_id
+	                    join games as g on ug.game_id = g.game_id
+	                    where up.user_id = @id";
+				else
+					cmd.CommandText = @"
+						select g.game_id, 
+	                           g.game_name
+	                    from applications_to_games as ag
+	                    join applications as a on a.id = ag.app_id
+	                    join games as g on ag.game_id = g.game_id
+	                    where ag.app_id = @id";
 
 				cmd.Parameters.AddWithValue("id", id);
 				using var reader = cmd.ExecuteReader();
@@ -159,11 +168,11 @@ namespace GameTeam.Scripts.Controllers
 			}
 			catch (Exception e)
 			{
-				throw new Exception($"Ошибка GetUserGames: {e}");
+				throw new Exception($"Ошибка GetGames: {e}");
 			}
 		}
 
-		public static List<Availability> GetUserAvailabilities(int id)
+		public static List<Availability> GetAvailabilities(int id, bool isUser)
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);
 			try
@@ -173,7 +182,8 @@ namespace GameTeam.Scripts.Controllers
 				var availabilities = new List<Availability>();
 				cmd.Connection = conn;
 
-				cmd.CommandText = @"
+				if (isUser)
+					cmd.CommandText = @"
                     select 
                         a.id,
                         a.start_time,
@@ -183,6 +193,18 @@ namespace GameTeam.Scripts.Controllers
                     join availabilities as a on ua.availability_id = a.id
                     join user_profiles as up on ua.user_id = up.user_id
                     where ua.user_id = @id";
+				else
+					cmd.CommandText = @"
+                    select 
+                        a.id,
+                        a.start_time,
+                        a.end_time,
+                        a.day_of_week
+                    from applications_to_availability as aa 
+                    join availabilities as a on aa.availability_id = a.id
+                    join applications as ap on aa.application_id = ap.id
+                    where aa.application_id = @id";
+				
 
 				cmd.Parameters.AddWithValue("id", id);
 				using var reader = cmd.ExecuteReader();
@@ -200,7 +222,7 @@ namespace GameTeam.Scripts.Controllers
 			}
 			catch (Exception e)
 			{
-				throw new Exception($"Ошибка GetUserGames: {e}");
+				throw new Exception($"Ошибка GetUser: {e}");
 			}
 		}
 
@@ -234,6 +256,34 @@ namespace GameTeam.Scripts.Controllers
 			catch (Exception e)
 			{
 				throw new Exception($"Ошибка GetUserProfile: {e}");
+			}
+		}
+
+		public static List<Application> GetAllApplications()
+		{
+			using var conn = new NpgsqlConnection(ConnectionString);
+			try
+			{
+				var applications = new List<Application>();
+				
+				conn.Open();
+				using var cmd = new NpgsqlCommand();
+				cmd.Connection = conn;
+				cmd.CommandText = @"
+					select * from applications";
+
+				using var reader = cmd.ExecuteReader();
+				while (reader.Read())
+				{
+					applications.Add(new Application(reader.GetInt32(0), reader.GetString(1),
+						reader.GetString(2), reader.GetString(3)));
+				}
+
+				return applications;
+			}
+			catch (Exception e)
+			{
+				throw new Exception($"Ошибка GetAllApplications: {e}");
 			}
 		}
 	}

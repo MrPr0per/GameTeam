@@ -19,7 +19,7 @@ public class UserProfile
 		UserId = userId;
 		Description = description;
 		Skills = skills;
-		Games = DatabaseController.GetUserGames(userId);
-		Availabilities = DatabaseController.GetUserAvailabilities(userId);
+		Games = DatabaseController.GetGames(userId, true);
+		Availabilities = DatabaseController.GetAvailabilities(userId, true);
 	}
 }

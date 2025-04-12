@@ -172,7 +172,7 @@ public class GetUserProfileAndGetUserGamesTest
     [Test]
     public void Test_GetUserGames_Returns_Correct_Game_List()
     {
-        var games = DatabaseController.GetUserGames(TestUserId);
+        var games = DatabaseController.GetGames(TestUserId, true);
 
         Assert.IsNotNull(games, "Список игр не должен быть null.");
         Assert.IsNotEmpty(games, "Список игр не должен быть пустым.");
@@ -206,7 +206,7 @@ public class GetUserProfileAndGetUserGamesTest
     [Test]
     public void Test_GetUserAvailabilities_Returns_Correct_Availability_List()
     {
-        var availabilities = DatabaseController.GetUserAvailabilities(TestUserId);
+        var availabilities = DatabaseController.GetAvailabilities(TestUserId, true);
 
         Assert.IsNotNull(availabilities, "Список доступностей не должен быть null.");
         Assert.IsNotEmpty(availabilities, "Список доступностей не должен быть пустым.");
