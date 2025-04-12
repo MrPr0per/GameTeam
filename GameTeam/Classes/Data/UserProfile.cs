@@ -11,6 +11,8 @@ public class UserProfile
 	public string Skills { get; }
 	
 	public List<Game> Games { get; }
+	
+	public List<Availability> Availabilities { get; }
 
 	public UserProfile(int userId, string description, string skills)
 	{
@@ -18,5 +20,6 @@ public class UserProfile
 		Description = description;
 		Skills = skills;
 		Games = DatabaseController.GetUserGames(userId);
+		Availabilities = DatabaseController.GetUserAvailabilities(userId);
 	}
 }
