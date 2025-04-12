@@ -1,3 +1,6 @@
+GameTeam/obj
+GameTeam/bin
+
 # Игнорирование для Node.js/JavaScript
 node_modules/
 npm-debug.log

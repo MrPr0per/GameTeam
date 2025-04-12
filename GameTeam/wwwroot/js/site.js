@@ -5,16 +5,8 @@
     const loginForm = document.getElementById('login-form');
     const formContainer = document.querySelector('.form-container');
 
-    // Инициализация валидации для всех форм
-    document.querySelectorAll('.auth-form').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            let isValid = true;
-            //ТУТ НУЖНО ДОПИСАТЬ ВСЯКИЕ ПРОВЕРКИ ПОЛЕЙ
+    addPasswordEqualityCheck();
 
-
-            if (!isValid) e.preventDefault();
-        });
-    });
 
     // Переключение форм
     tabLogin.addEventListener('click', () => {
@@ -38,12 +30,12 @@
         icon.addEventListener('click', function () {
             const form = this.closest('form');
             const inputs = form.querySelectorAll('.password-input');
-            
+
             // Переключаем видимость полей
             inputs.forEach(input => {
                 input.type = input.type === 'password' ? 'text' : 'password';
             });
-            
+
             // Синхронизация иконок в форме регистрации
             if (form.id === 'register-form') {
                 form.querySelectorAll('.toggle-password').forEach(icon => {
@@ -55,3 +47,47 @@
         });
     });
 });
+
+function addPasswordEqualityCheck() {
+    const delayBeforeError = 1000;
+
+    // Получаем оба поля ввода пароля
+    const passwordInputs = document.querySelectorAll('#register-form input.password-input');
+    const password1 = passwordInputs[0];
+    const password2 = passwordInputs[1];
+    const errorElement = document.getElementById('password-error');
+
+    // Добавляем обработчики событий с задержкой
+    password1.addEventListener('input', checkPasswords);
+    password2.addEventListener('input', checkPasswords);
+
+    // Функция для проверки совпадения паролей
+    function checkPasswords() {
+        // Получаем значения из обоих полей
+        const pass1 = password1.value;
+        const pass2 = password2.value;
+        console.log(pass1, pass2)
+        if (pass1 && pass2 && pass1 !== pass2) {
+            setTimeout(() => errorElement.style.display = 'none', delayBeforeError)
+        } else {
+            errorElement.style.display = 'block'; // отображаем
+        }
+    }
+}
+
+// document.querySelector('#register-form').addEventListener()
+// // Инициализация валидации для всех форм
+// document.querySelectorAll('.auth-form').forEach(form => {
+//     form.addEventListener('submit', function (e) {
+//         let isValid = true;
+//         // todo:
+//         // - вход
+//         //  - обработка ответа, редирект или ошибка
+//         // - регистрация
+//         //  - обработка ответа, редирект или ошибка
+//         //  - равенство паролей
+//
+//
+//         if (!isValid) e.preventDefault();
+//     });
+// });
