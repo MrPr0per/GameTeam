@@ -2,6 +2,7 @@
 using GameTeam.Scripts.Controllers;
 using GameTeam.Scripts;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -21,10 +22,9 @@ public class AuthController : ControllerBase
         var logged = DatabaseController.Login(data.Username, data.Email, data.Password, out username);
         if (logged)
         {
-            var token = CookieGenerator.GenerateJwtToken(username, config);
-
-
+            var userId = DatabaseController.GetIdByUsername(username);
             // Сохраняем информацию о пользователе в сессии
+            HttpContext.Session.SetString("UserId", userId.ToString());
             HttpContext.Session.SetString("Username", username);
             HttpContext.Session.SetString("IsAuthenticated", "true");
 
@@ -39,12 +39,18 @@ public class AuthController : ControllerBase
         if (data.Password != data.ConfirmPassword)
             return BadRequest(new { Message = "Пароли не совпадают" });
 
-        DatabaseController.Register(data.Username, data.Email, data.Password);
+        try
+        {
+            DatabaseController.Register(data.Username, data.Email, data.Password);
+        }
+        catch
+        {
+            return BadRequest(new { Message = "Имя пользователя занято" });
+        }
 
-        var token = CookieGenerator.GenerateJwtToken(data.Username, config);
-
-
+        var userId = DatabaseController.GetIdByUsername(data.Username);
         // Сохраняем информацию о пользователе в сессии
+        HttpContext.Session.SetString("UserId", userId.ToString());
         HttpContext.Session.SetString("Username", data.Username);
         HttpContext.Session.SetString("IsAuthenticated", "true");
 

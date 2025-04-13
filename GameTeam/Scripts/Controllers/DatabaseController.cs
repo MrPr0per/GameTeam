@@ -363,9 +363,11 @@ namespace GameTeam.Scripts.Controllers
 		/// 3. Обработку доступностей
 		/// </remarks>
 		/// <exception cref="Exception">Ошибки выполнения транзакции</exception>
-		public static void UpsertUserProfile(int userId, string? aboutDescription = null, string? skills = null,
+		public static void UpsertUserProfile(int? userId, string? aboutDescription = null, string? skills = null,
 			List<Game>? games = null, List<Availability>? availabilities = null)
 		{
+			if (userId is null) 
+				throw new ArgumentException("userId cannot be null");
 			using var conn = new NpgsqlConnection(ConnectionString);
 			conn.Open();
 			

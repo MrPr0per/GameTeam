@@ -1,15 +1,19 @@
 using GameTeam.Classes;
+using NodaTime;
+using NodaTime.Serialization.SystemTextJson;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+	.AddJsonOptions(options =>
+			{
+                options.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+			});
 
-// Äîáàâëÿåì ñåðâèñû ñåññèè
 builder.Services.AddSession(options =>
 {
-	options.IdleTimeout = TimeSpan.FromDays(1); // Âðåìÿ æèçíè ñåññèè
+	options.IdleTimeout = TimeSpan.FromDays(1); 
 	options.Cookie.HttpOnly = true;
 	options.Cookie.SameSite = SameSiteMode.Strict;
 	options.Cookie.Name = "GameTeam.Session";
@@ -17,7 +21,6 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
 	app.UseExceptionHandler("/Error");
@@ -29,17 +32,16 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Äîáàâëÿåì middleware ñåññèè ïåðåä àâòîðèçàöèåé
 app.UseSession();
 app.UseMiddleware<SessionAuthMiddleware>();
 
 app.UseAuthorization();
 
 app.MapRazorPages();
+
+#pragma warning disable ASP0014
 app.UseEndpoints(endpoints =>
 {
-
-	// èëè íàïðÿìóþ îòäàâàòü ñîäåðæèìîå ôàéëà
 	endpoints.MapGet("/Register", async context =>
 	{
 		var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
@@ -49,6 +51,7 @@ app.UseEndpoints(endpoints =>
 		await context.Response.SendFileAsync(filePath);
 	});
 });
+#pragma warning restore ASP0014
 app.MapControllers();
 
 app.Run();
