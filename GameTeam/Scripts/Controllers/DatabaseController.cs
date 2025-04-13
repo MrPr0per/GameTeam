@@ -307,7 +307,7 @@ namespace GameTeam.Scripts.Controllers
 					return null;
 
 				return new UserProfile(reader.GetInt32(0),
-					reader.GetString(1), reader.GetString(2));
+					reader.GetString(1));
 			}
 			catch (Exception e)
 			{
@@ -363,7 +363,7 @@ namespace GameTeam.Scripts.Controllers
 		/// 3. Обработку доступностей
 		/// </remarks>
 		/// <exception cref="Exception">Ошибки выполнения транзакции</exception>
-		public static void UpsertUserProfile(int? userId, string? aboutDescription = null, string? skills = null,
+		public static void UpsertUserProfile(int? userId, string? aboutDescription = null,
 			List<Game>? games = null, List<Availability>? availabilities = null)
 		{
 			if (userId is null) 
@@ -376,16 +376,14 @@ namespace GameTeam.Scripts.Controllers
 			{
 				// 1. Upsert в user_profiles
 				using (var cmd = new NpgsqlCommand(@"
-                    INSERT INTO user_profiles (user_id, about_description, skills)
-                    VALUES (@user_id, @aboutDescription, @skills)
+                    INSERT INTO user_profiles (user_id, about_description)
+                    VALUES (@user_id, @aboutDescription)
                     ON CONFLICT (user_id) DO UPDATE
-                        SET about_description = EXCLUDED.about_description,
-                            skills = EXCLUDED.skills;
+                        SET about_description = EXCLUDED.about_description
                 ", conn, transaction))
 				{
 					cmd.Parameters.AddWithValue("user_id", userId);
 					cmd.Parameters.AddWithValue("aboutDescription", aboutDescription ?? (object)DBNull.Value);
-					cmd.Parameters.AddWithValue("skills", skills ?? (object)DBNull.Value);
 					cmd.ExecuteNonQuery();
 				}
 
@@ -496,7 +494,7 @@ namespace GameTeam.Scripts.Controllers
 		/// 3. Обработку доступностей
 		/// </remarks>
 		/// <exception cref="Exception">Ошибки выполнения транзакции</exception>
-		public static void UpsertApplicationProfile(int applicationId, string? title = null, string? description = null,
+		public static void UpsertApplication(int applicationId, string? title = null, string? description = null,
 			string? contacts = null, List<Game>? games = null, List<Availability>? availabilities = null)
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);

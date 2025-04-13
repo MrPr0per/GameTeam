@@ -19,7 +19,6 @@ public class GetUserProfileAndGetUserGamesTest
     private const string TestEmail = "biba123123@mail.ru";
     private const string TestPassword = "123123123";
     private const string TestDescription = "Тестовое описание";
-    private const string TestSkills = "Тестовые навыки";
     private const int TestGameId = 987;
     private const string TestGameName = "TestGame";
     
@@ -53,13 +52,12 @@ public class GetUserProfileAndGetUserGamesTest
         
         // Вставляем профиль пользователя (user_profiles)
         using (var cmd = new NpgsqlCommand(@"
-            INSERT INTO user_profiles (user_id, about_description, skills)
-            VALUES (@user_id, @description, @skills)
-            ON CONFLICT (user_id) DO UPDATE SET about_description = EXCLUDED.about_description, skills = EXCLUDED.skills;", conn))
+            INSERT INTO user_profiles (user_id, about_description)
+            VALUES (@user_id, @description)
+            ON CONFLICT (user_id) DO UPDATE SET about_description = EXCLUDED.about_description;", conn))
         {
             cmd.Parameters.AddWithValue("user_id", TestUserId);
             cmd.Parameters.AddWithValue("description", TestDescription);
-            cmd.Parameters.AddWithValue("skills", TestSkills);
             cmd.ExecuteNonQuery();
         }
 
@@ -190,7 +188,6 @@ public class GetUserProfileAndGetUserGamesTest
         Assert.IsNotNull(profile, "Профиль пользователя не должен быть null.");
         Assert.AreEqual(TestUserId, profile.UserId, "UserId профиля не соответствует ожидаемому значению.");
         Assert.AreEqual(TestDescription, profile.Description, "Описание профиля не соответствует ожидаемому.");
-        Assert.AreEqual(TestSkills, profile.Skills, "Навыки профиля не соответствуют ожидаемому.");
     }
     
     [Test]

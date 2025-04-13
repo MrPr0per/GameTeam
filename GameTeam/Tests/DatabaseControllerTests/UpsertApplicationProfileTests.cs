@@ -73,7 +73,7 @@ public class UpsertApplicationProfileTests
     public void Test_UpsertApplicationProfile_BasicFields()
     {
         // Act: вызываем метод для вставки базовых данных приложения без игр и доступностей
-        DatabaseController.UpsertApplicationProfile(TestAppId, TestAppTitle, TestAppDescription, TestAppContacts, null, null);
+        DatabaseController.UpsertApplication(TestAppId, TestAppTitle, TestAppDescription, TestAppContacts, null, null);
 
         // Проверяем запись в таблице applications
         using var conn = new NpgsqlConnection(connectionString);
@@ -102,7 +102,7 @@ public class UpsertApplicationProfileTests
         };
 
         // Act: вызываем метод для вставки профиля приложения с играми
-        DatabaseController.UpsertApplicationProfile(TestAppId, TestAppTitle, TestAppDescription, TestAppContacts, games, null);
+        DatabaseController.UpsertApplication(TestAppId, TestAppTitle, TestAppDescription, TestAppContacts, games, null);
 
         using var conn = new NpgsqlConnection(connectionString);
         conn.Open();
@@ -135,7 +135,7 @@ public class UpsertApplicationProfileTests
         };
 
         // Act: вызываем метод для вставки профиля приложения с доступностями
-        DatabaseController.UpsertApplicationProfile(TestAppId, TestAppTitle, TestAppDescription, TestAppContacts, null, availabilities);
+        DatabaseController.UpsertApplication(TestAppId, TestAppTitle, TestAppDescription, TestAppContacts, null, availabilities);
 
         using var conn = new NpgsqlConnection(connectionString);
         conn.Open();
@@ -161,9 +161,9 @@ public class UpsertApplicationProfileTests
     public void Test_UpsertApplicationProfile_UpdateProfileFields()
     {
         // Сначала вставляем исходные данные
-        DatabaseController.UpsertApplicationProfile(TestAppId, TestAppTitle, TestAppDescription, TestAppContacts, null, null);
+        DatabaseController.UpsertApplication(TestAppId, TestAppTitle, TestAppDescription, TestAppContacts, null, null);
         // Затем обновляем профиль новыми значениями
-        DatabaseController.UpsertApplicationProfile(TestAppId, UpdatedAppTitle, UpdatedAppDescription, UpdatedAppContacts, null, null);
+        DatabaseController.UpsertApplication(TestAppId, UpdatedAppTitle, UpdatedAppDescription, UpdatedAppContacts, null, null);
 
         using var conn = new NpgsqlConnection(connectionString);
         conn.Open();

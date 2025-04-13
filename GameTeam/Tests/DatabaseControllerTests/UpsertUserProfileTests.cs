@@ -17,9 +17,7 @@ public class UpsertUserProfileTests
 
 	// Данные для профиля
 	private const string InitialDescription = "Initial description";
-	private const string InitialSkills = "Initial skills";
 	private const string UpdatedDescription = "Updated description";
-	private const string UpdatedSkills = "Updated skills";
 
 	// Данные для игры
 	private const int TestGameId = 987;
@@ -98,21 +96,19 @@ public class UpsertUserProfileTests
 	public void Test_UpsertUserProfile_BasicFields()
 	{
 		// Вставка профиля без дополнительных списков
-		DatabaseController.UpsertUserProfile(TestUserId, InitialDescription, InitialSkills, null, null);
+		DatabaseController.UpsertUserProfile(TestUserId, InitialDescription, null, null);
 
 		using var conn = new NpgsqlConnection(connectionString);
 		conn.Open();
 		
-		using (var cmd = new NpgsqlCommand("SELECT about_description, skills FROM user_profiles WHERE user_id = @id",
+		using (var cmd = new NpgsqlCommand("SELECT about_description FROM user_profiles WHERE user_id = @id",
 			       conn))
 		{
 			cmd.Parameters.AddWithValue("id", TestUserId);
 			using var reader = cmd.ExecuteReader();
 			Assert.IsTrue(reader.Read(), "Profile row not found");
 			var desc = reader.IsDBNull(0) ? null : reader.GetString(0);
-			var skills = reader.IsDBNull(1) ? null : reader.GetString(1);
 			Assert.AreEqual(InitialDescription, desc);
-			Assert.AreEqual(InitialSkills, skills);
 		}
 	}
 
@@ -121,22 +117,20 @@ public class UpsertUserProfileTests
 	{
 		var games = new List<Game> { new Game(TestGameId, TestGameName) };
 
-		DatabaseController.UpsertUserProfile(TestUserId, InitialDescription, InitialSkills, games, null);
+		DatabaseController.UpsertUserProfile(TestUserId, InitialDescription, games, null);
 
 		using var conn = new NpgsqlConnection(connectionString);
 		conn.Open();
 
 		// Проверяем профиль
-		using (var cmd = new NpgsqlCommand("SELECT about_description, skills FROM user_profiles WHERE user_id = @id",
+		using (var cmd = new NpgsqlCommand("SELECT about_description FROM user_profiles WHERE user_id = @id",
 			       conn))
 		{
 			cmd.Parameters.AddWithValue("id", TestUserId);
 			using var reader = cmd.ExecuteReader();
 			Assert.IsTrue(reader.Read(), "Profile row not found");
 			var desc = reader.IsDBNull(0) ? null : reader.GetString(0);
-			var skills = reader.IsDBNull(1) ? null : reader.GetString(1);
 			Assert.AreEqual(InitialDescription, desc);
-			Assert.AreEqual(InitialSkills, skills);
 		}
 
 		// Проверяем наличие записи в таблице games
@@ -166,22 +160,20 @@ public class UpsertUserProfileTests
 			new Availability(TestAvailabilityId, TestDayOfWeek, testStartTime, testEndTime)
 		};
 
-		DatabaseController.UpsertUserProfile(TestUserId, InitialDescription, InitialSkills, null, availabilities);
+		DatabaseController.UpsertUserProfile(TestUserId, InitialDescription, null, availabilities);
 
 		using var conn = new NpgsqlConnection(connectionString);
 		conn.Open();
 
 		// Проверяем профиль
-		using (var cmd = new NpgsqlCommand("SELECT about_description, skills FROM user_profiles WHERE user_id = @id",
+		using (var cmd = new NpgsqlCommand("SELECT about_description FROM user_profiles WHERE user_id = @id",
 			       conn))
 		{
 			cmd.Parameters.AddWithValue("id", TestUserId);
 			using var reader = cmd.ExecuteReader();
 			Assert.IsTrue(reader.Read(), "Profile row not found");
 			var desc = reader.IsDBNull(0) ? null : reader.GetString(0);
-			var skills = reader.IsDBNull(1) ? null : reader.GetString(1);
 			Assert.AreEqual(InitialDescription, desc);
-			Assert.AreEqual(InitialSkills, skills);
 		}
 
 		// Проверяем наличие записи в таблице availabilities
@@ -208,23 +200,21 @@ public class UpsertUserProfileTests
 	public void Test_UpsertUserProfile_UpdateProfileFields()
 	{
 		// Вставляем начальные данные
-		DatabaseController.UpsertUserProfile(TestUserId, InitialDescription, InitialSkills, null, null);
+		DatabaseController.UpsertUserProfile(TestUserId, InitialDescription, null, null);
 
 		// Затем обновляем профиль новыми значениями
-		DatabaseController.UpsertUserProfile(TestUserId, UpdatedDescription, UpdatedSkills, null, null);
+		DatabaseController.UpsertUserProfile(TestUserId, UpdatedDescription, null, null);
 
 		using var conn = new NpgsqlConnection(connectionString);
 		conn.Open();
-		using (var cmd = new NpgsqlCommand("SELECT about_description, skills FROM user_profiles WHERE user_id = @id",
+		using (var cmd = new NpgsqlCommand("SELECT about_description FROM user_profiles WHERE user_id = @id",
 			       conn))
 		{
 			cmd.Parameters.AddWithValue("id", TestUserId);
 			using var reader = cmd.ExecuteReader();
 			Assert.IsTrue(reader.Read(), "Profile row not found after update");
 			var desc = reader.IsDBNull(0) ? null : reader.GetString(0);
-			var skills = reader.IsDBNull(1) ? null : reader.GetString(1);
 			Assert.AreEqual(UpdatedDescription, desc, "Profile description was not updated correctly");
-			Assert.AreEqual(UpdatedSkills, skills, "Profile skills were not updated correctly");
 		}
 	}
 }

@@ -75,7 +75,6 @@ namespace GameTeam.Scripts.Controllers
                 DatabaseController.UpsertUserProfile(
                 userId,
                 request.AboutDescription,
-                request.Skills,
                 request.Games,
                 request.Availabilities);
 
