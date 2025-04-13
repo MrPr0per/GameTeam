@@ -163,6 +163,99 @@ namespace GameTeam.Scripts.Controllers
 		}
 
 		/// <summary>
+        /// Возвращает существующую игру по имени или создаёт новую, если такой записи нет.
+        /// </summary>
+        /// <param name="gameName">Название игры.</param>
+        /// <returns>Объект Game с заполненным Id и Name.</returns>
+        public static Game GetOrCreateGame(string gameName)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            conn.Open();
+            // Пытаемся найти игру по имени
+            using var cmd = new NpgsqlCommand("SELECT game_id FROM games WHERE game_name = @gameName", conn);
+            cmd.Parameters.AddWithValue("gameName", gameName);
+            var result = cmd.ExecuteScalar();
+            if (result != null)
+            {
+                var id = Convert.ToInt32(result);
+                return new Game(id, gameName);
+            }
+            else
+            {
+                // Если не найдена, вставляем новую запись и возвращаем её идентификатор
+                using var insertCmd = new NpgsqlCommand("INSERT INTO games (game_name) VALUES (@gameName) RETURNING game_id", conn);
+                insertCmd.Parameters.AddWithValue("gameName", gameName);
+                var newId = Convert.ToInt32(insertCmd.ExecuteScalar());
+                return new Game(newId, gameName);
+            }
+        }
+
+        /// <summary>
+        /// Возвращает существующую доступность по значениям или создаёт новую запись, если такой не существует.
+        /// </summary>
+        /// <param name="dayOfWeek">День недели (значение enum Availability.DayOfWeekEnum).</param>
+        /// <param name="start">Время начала (OffsetTime).</param>
+        /// <param name="end">Время окончания (OffsetTime).</param>
+        /// <returns>Объект Availability с заполненным Id, DayOfWeek, StartTime и EndTime.</returns>
+        public static Availability GetOrCreateAvailability(Availability.DayOfWeekEnum dayOfWeek, OffsetTime start, OffsetTime end)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            conn.Open();
+            // Пытаемся найти запись в таблице availabilities по параметрам
+            using var cmd = new NpgsqlCommand(
+                "SELECT id FROM availabilities WHERE day_of_week = @day_of_week AND start_time = @start_time AND end_time = @end_time", conn);
+           
+            cmd.Parameters.Add(new NpgsqlParameter
+            {
+	            ParameterName = "day_of_week",
+	            Value = dayOfWeek, // Значение типа Availability.DayOfWeekEnum
+	            DataTypeName = "day_of_week" // Имя PostgreSQL ENUM
+            });
+            cmd.Parameters.Add(new NpgsqlParameter("start_time", NpgsqlDbType.TimeTz)
+            {
+	            Value = start
+            });
+            
+            cmd.Parameters.Add(new NpgsqlParameter("end_time", NpgsqlDbType.TimeTz)
+            {
+	            Value = end
+            });
+            
+            var result = cmd.ExecuteScalar();
+            if (result != null)
+            {
+                var id = Convert.ToInt32(result);
+                return new Availability(id, dayOfWeek, start, end);
+            }
+            else
+            {
+	            using var insertCmd = new NpgsqlCommand(
+		            "INSERT INTO availabilities (day_of_week, start_time, end_time) " +
+		            "VALUES (@day_of_week, @start_time, @end_time) RETURNING id", 
+		            conn);
+
+	            // Правильные имена параметров и добавление к insertCmd
+	            insertCmd.Parameters.Add(new NpgsqlParameter
+	            {
+		            ParameterName = "day_of_week",
+		            Value = dayOfWeek,
+		            DataTypeName = "day_of_week"
+	            });
+	            insertCmd.Parameters.Add(new NpgsqlParameter("start_time", NpgsqlDbType.TimeTz)
+	            {
+		            Value = start
+	            });
+	            insertCmd.Parameters.Add(new NpgsqlParameter("end_time", NpgsqlDbType.TimeTz)
+	            {
+		            Value = end
+	            });
+
+	            var newId = Convert.ToInt32(insertCmd.ExecuteScalar());
+	            return new Availability(newId, dayOfWeek, start, end);
+            }
+        }
+		
+		/// <summary>
 		/// Получение списка игр для пользователя или анкеты
 		/// </summary>
 		/// <param name="id">ID сущности</param>
@@ -337,7 +430,7 @@ namespace GameTeam.Scripts.Controllers
 				while (reader.Read())
 				{
 					applications.Add(new Application(reader.GetInt32(0), reader.GetString(1),
-						reader.GetString(2), reader.GetString(3)));
+						reader.GetString(2), reader.GetString(3), reader.GetInt32(4)));
 				}
 
 				return applications;
@@ -477,11 +570,12 @@ namespace GameTeam.Scripts.Controllers
 				throw new Exception($"Ошибка UpsertUserProfile: {e.Message}", e);
 			}
 		}
-		
+
 		/// <summary>
 		/// Создание или обновление анкеты
 		/// </summary>
 		/// <param name="applicationId">ID анкеты</param>
+		/// <param name="purposeName">Название цели</param>
 		/// <param name="title">Заголовок</param>
 		/// <param name="description">Описание</param>
 		/// <param name="contacts">Контакты</param>
@@ -494,7 +588,7 @@ namespace GameTeam.Scripts.Controllers
 		/// 3. Обработку доступностей
 		/// </remarks>
 		/// <exception cref="Exception">Ошибки выполнения транзакции</exception>
-		public static void UpsertApplication(int applicationId, string? title = null, string? description = null,
+		public static void UpsertApplication(int applicationId, string purposeName, string title, string? description = null,
 			string? contacts = null, List<Game>? games = null, List<Availability>? availabilities = null)
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);
@@ -503,13 +597,28 @@ namespace GameTeam.Scripts.Controllers
 			using var transaction = conn.BeginTransaction();
 			try
 			{
-				// 1. Upsert в user_profiles
+				var purposeId = 0;
+				
 				using (var cmd = new NpgsqlCommand(@"
-                    INSERT INTO applications (id, title, description, contacts)
-                    VALUES (@application_id, @title, @description, @contacts)
+                        SELECT id FROM purposes WHERE purpose = @purpose;
+                    ", conn, transaction))
+				{
+					cmd.Parameters.AddWithValue("purpose", purposeName);
+					var result = cmd.ExecuteScalar();
+					
+					if (result != null)
+						purposeId = Convert.ToInt32(result);
+					else
+						throw new Exception($"Цель с именем '{purposeName}' не найдена в таблице purposes.");
+				}
+				
+				using (var cmd = new NpgsqlCommand(@"
+                    INSERT INTO applications (id, title, description, contacts, purpose_id)
+                    VALUES (@application_id, @title, @description, @contacts, @purpose_id)
                     ON CONFLICT (id) DO UPDATE
                         SET title = EXCLUDED.title,
                             description = EXCLUDED.description,
+                            purpose_id = EXCLUDED.purpose_id,
                             contacts = EXCLUDED.contacts;
                 ", conn, transaction))
 				{
@@ -517,6 +626,7 @@ namespace GameTeam.Scripts.Controllers
 					cmd.Parameters.AddWithValue("title", title ?? (object)DBNull.Value);
 					cmd.Parameters.AddWithValue("description", description ?? (object)DBNull.Value);
 					cmd.Parameters.AddWithValue("contacts", contacts ?? (object)DBNull.Value);
+					cmd.Parameters.AddWithValue("purpose_id", purposeId);
 					cmd.ExecuteNonQuery();
 				}
 

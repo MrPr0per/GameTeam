@@ -15,8 +15,10 @@ public class Application
 	public List<Availability> Availabilities { get; }
 	
 	public List<Game> Games { get; }
+	
+	public int PurposeId { get; }
 
-	public Application(int id, string title, string description, string contacts)
+	public Application(int id, string title, string description, string contacts, int purposeId)
 	{
 		Id = id;
 		Title = title;
@@ -24,5 +26,6 @@ public class Application
 		Contacts = contacts;
 		Availabilities = DatabaseController.GetAvailabilities(id, false);
 		Games = DatabaseController.GetGames(id, false);
+		PurposeId = purposeId;
 	}
 }
