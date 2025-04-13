@@ -1,27 +1,31 @@
 using GameTeam.Classes;
+using NodaTime;
+using NodaTime.Serialization.SystemTextJson;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+	.AddJsonOptions(options =>
+			{
+                options.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+			});
 
-// ��������� ������� ������
+
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromDays(1); // ����� ����� ������
-    options.Cookie.HttpOnly = true;
-    options.Cookie.SameSite = SameSiteMode.Strict;
-    options.Cookie.Name = "GameTeam.Session";
+	options.IdleTimeout = TimeSpan.FromDays(1); 
+	options.Cookie.HttpOnly = true;
+	options.Cookie.SameSite = SameSiteMode.Strict;
+	options.Cookie.Name = "GameTeam.Session";
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
+	app.UseExceptionHandler("/Error");
+	app.UseHsts();
 }
 
 app.UseHttpsRedirection();
@@ -29,17 +33,16 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// ��������� middleware ������ ����� ������������
 app.UseSession();
 app.UseMiddleware<SessionAuthMiddleware>();
 
 app.UseAuthorization();
 
 app.MapRazorPages();
+
+
 app.UseEndpoints(endpoints =>
 {
-
-    // ��� �������� �������� ���������� �����
     endpoints.MapGet("/Register", async context =>
     {
         var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
@@ -52,12 +55,11 @@ app.UseEndpoints(endpoints =>
     endpoints.MapGet("/Profile", async context =>
     {
         var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
-        var filePath = Path.Combine(env.WebRootPath, "pages/profile.html");
+        var filePath = Path.Combine(env.WebRootPath, "pages/Profile.html");
 
         context.Response.ContentType = "text/html";
         await context.Response.SendFileAsync(filePath);
     });
-
 
 });
 

@@ -32,6 +32,7 @@
                     <div class="header-profile-image"></div>
                     <div class="auth-status">ИванБезФамилии</div> <!-- Надо бы ограничить длину имени... -->
                 </div>
+
             </header>
 
             <main>
@@ -45,18 +46,22 @@
                         <form id="login-form" class="auth-form">
                             <div class="input-container">
                                 <label class="input-label">E-mail</label>
-                                <input type="email" class="input" required>
+                                <input type="email" class="input" name="email" required>
                             </div>
                             <div class="input-container">
                                 <label class="input-label">Пароль</label>
-                                <input type="password" class="input password-input" required>
+                                <input type="password" class="input password-input" name="password" required>
                                 <span class="toggle-password">
-                                    <svg class="eye-icon" viewBox="0 0 24 24">
-                                        <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                        <circle class="eye-open" cx="12" cy="12" r="3" />
-                                        <path class="eye-slash" d="M2 4L22 20" stroke-width="2" />
-                                    </svg>
-                                </span>
+                                <svg class="eye-icon" viewBox="0 0 24 24">
+                                    <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle class="eye-open" cx="12" cy="12" r="3"/>
+                                    <path class="eye-slash" d="M2 4L22 20" stroke-width="2"/>
+                                </svg>
+                            </span>
+                            </div>
+                            <!-- TODO: добавить стилей и анимаций-->
+                            <div id="login-error-block" style="display: none;">
+                                <span id="login-error-text"></span>
                             </div>
                             <button type="submit" class="btn-register">ВОЙТИ</button>
                         </form>
@@ -64,33 +69,37 @@
                         <form id="register-form" class="auth-form">
                             <div class="input-container">
                                 <label class="input-label">Имя</label>
-                                <input type="text" class="input" required>
+                                <input type="text" class="input" name="username" required>
                             </div>
                             <div class="input-container">
                                 <label class="input-label">E-mail</label>
-                                <input type="email" class="input" required>
+                                <input type="email" class="input" name="email" required>
                             </div>
                             <div class="input-container">
                                 <label class="input-label">Пароль</label>
-                                <input type="password" class="input password-input" required>
+                                <input type="password" class="input password-input" name="password" required>
                                 <span class="toggle-password">
-                                    <svg class="eye-icon" viewBox="0 0 24 24">
-                                        <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                        <circle class="eye-open" cx="12" cy="12" r="3" />
-                                        <path class="eye-slash" d="M2 4L22 20" stroke-width="2" />
-                                    </svg>
-                                </span>
+                            <svg class="eye-icon" viewBox="0 0 24 24">
+                                <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle class="eye-open" cx="12" cy="12" r="3"/>
+                                <path class="eye-slash" d="M2 4L22 20" stroke-width="2"/>
+                            </svg>
+                        </span>
                             </div>
                             <div class="input-container">
                                 <label class="input-label">Подтвердите пароль</label>
-                                <input type="password" class="input password-input" required>
+                                <input type="password" class="input password-input" name="confirmPassword" required>
                                 <span class="toggle-password">
-                                    <svg class="eye-icon" viewBox="0 0 24 24">
-                                        <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                        <circle class="eye-open" cx="12" cy="12" r="3" />
-                                        <path class="eye-slash" d="M2 4L22 20" stroke-width="2" />
-                                    </svg>
-                                </span>
+                            <svg class="eye-icon" viewBox="0 0 24 24">
+                                <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle class="eye-open" cx="12" cy="12" r="3"/>
+                                <path class="eye-slash" d="M2 4L22 20" stroke-width="2"/>
+                            </svg>
+                        </span>
+                            </div>
+                            <!-- TODO: добавить стилей и анимаций-->
+                            <div id="registration-error-block" class="error-message-block" style="display: none">
+                                <span id="registration-error-text"></span>
                             </div>
                             <button type="submit" class="btn-register">РЕГИСТРАЦИЯ</button>
                         </form>

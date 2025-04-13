@@ -1,0 +1,25 @@
+POST http://localhost:5013/data/upsert
+Content-Type: application/json
+
+{
+    "aboutDescription": "I love gaming!",
+    "skills": "FPS, RPG, Strategy",
+    "games": [
+        {
+            "id": 1,
+            "name": "Counter-Strike 2"
+        },
+        {
+            "id": 2,
+            "name": "Valorant"
+        }
+    ],
+    "availabilities": [
+        {
+            "id": 1,
+            "dayOfWeek": 0,
+            "startTime": "18:00:00+03:00",
+            "endTime": "22:00:00+03:00"
+        }
+    ]
+}
