@@ -6,10 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
 
-// Добавляем сервисы сессии
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromDays(1); // Время жизни сессии
+    options.IdleTimeout = TimeSpan.FromDays(1); // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict;
     options.Cookie.Name = "GameTeam.Session";
@@ -29,7 +29,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// Добавляем middleware сессии перед авторизацией
+// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ middleware пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 app.UseSession();
 app.UseMiddleware<SessionAuthMiddleware>();
 
@@ -39,7 +39,7 @@ app.MapRazorPages();
 app.UseEndpoints(endpoints =>
 {
 
-    // или напрямую отдавать содержимое файла
+    // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
     endpoints.MapGet("/Register", async context =>
     {
         var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
@@ -48,7 +48,19 @@ app.UseEndpoints(endpoints =>
         context.Response.ContentType = "text/html";
         await context.Response.SendFileAsync(filePath);
     });
+
+    endpoints.MapGet("/Profile", async context =>
+    {
+        var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        var filePath = Path.Combine(env.WebRootPath, "pages/profile.html");
+
+        context.Response.ContentType = "text/html";
+        await context.Response.SendFileAsync(filePath);
+    });
+
+
 });
+
 app.MapControllers();
 
 app.Run();

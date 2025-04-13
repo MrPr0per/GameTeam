@@ -14,6 +14,7 @@
             // Пропускаем проверку для API auth endpoints и страниц входа/регистрации
             if (context.Request.Path.StartsWithSegments("/api/auth") ||
                 context.Request.Path.StartsWithSegments("/Register") ||
+                context.Request.Path.StartsWithSegments("/Profile") ||
                 context.Request.Path.StartsWithSegments("/Login"))
             {
                 context.Response.Headers.Append("X-Is-Authenticated", context.Session.GetString("IsAuthenticated"));
