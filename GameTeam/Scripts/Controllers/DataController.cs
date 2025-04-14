@@ -92,9 +92,9 @@ namespace GameTeam.Scripts.Controllers
         }
 
         [HttpGet("applications/{from}/{to}")]
-        public string GetAllAplications(int from, int to)
+        public string GetAllApplications(int from, int to)
         {
-            var applicationsJson = HttpContext.Session.GetString("applcations");
+            var applicationsJson = HttpContext.Session.GetString("applications");
 
             if (string.IsNullOrEmpty(applicationsJson))
             {
@@ -103,7 +103,6 @@ namespace GameTeam.Scripts.Controllers
             }
 
             var applications = JsonSerializer.Deserialize<Application[]>(applicationsJson);
-
             return JsonSerializer.Serialize(applications.Skip(from).Take(to).ToArray());
         }
 
@@ -119,6 +118,7 @@ namespace GameTeam.Scripts.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.ToString());
                 return BadRequest(new { Message = "Что-то в бд не так" });
             }
 

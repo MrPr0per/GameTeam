@@ -2,27 +2,29 @@ POST http://localhost:5013/data/application
 Content-Type: application/json
 
 {
-  "id": 1,
-  "title": "Заявка на поиск команды",
-  "description": "Ищу команду для турниров по Dota 2",
-  "contacts": "player@example.com",
-  "purposeName": "team_search",
+  "id": 2,
+  "title": "Го играть",
+  "description": "Ищу команду для турниров по Cs 2",
+  "contacts": "player12@example.com",
+  "purposeName": "test",
   "availabilities": [
     {
-      "dayOfWeek": "Monday",
-      "startTime": "18:00:00+03:00",
-      "endTime": "22:00:00+03:00"
+        "id": 1,
+        "dayOfWeek": 3,
+        "startTime": "18:00:00+03:00",
+        "endTime": "22:00:00+03:00"
     },
     {
-      "dayOfWeek": "Saturday",
-      "startTime": "12:00:00+03:00",
-      "endTime": "18:00:00+03:00"
+        "id": 2,
+        "dayOfWeek": 4,
+        "startTime": "18:00:00+03:00",
+        "endTime": "22:00:00+03:00"
     }
   ],
   "games": [
     {
-      "id": 1,
-      "name": "Dota 2"
+      "id": 2,
+      "name": "Counter strike 2"
     }
   ]
 }

@@ -6,7 +6,7 @@ Content-Type: application/json
   "title": "Заявка на поиск команды",
   "description": "Ищу команду для турниров по Dota 2",
   "contacts": "player@example.com",
-  "purposeName": "fun",
+  "purposeName": "test",
   "availabilities": [
     {
         "id": 1,

@@ -27,8 +27,8 @@ namespace GameTeam.Classes
 
             if (context.Request.Path == "/")
             {
-                var applcations = DatabaseController.GetAllApplications();
-                context.Session.SetString("applications", JsonSerializer.Serialize(applcations));
+                var applications = DatabaseController.GetAllApplications();
+                context.Session.SetString("applications", JsonSerializer.Serialize(applications));
 
                 await _next(context);
             }
