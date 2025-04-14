@@ -1,4 +1,7 @@
-﻿namespace GameTeam.Classes
+﻿using GameTeam.Scripts.Controllers;
+using System.Text.Json;
+
+namespace GameTeam.Classes
 {
     public class SessionAuthMiddleware
     {
@@ -15,15 +18,22 @@
             if (string.IsNullOrEmpty(isAuthenticated) || isAuthenticated != "true")
             {
                 await _next(context);
-                return;
             }
             else
             {
                 context.Response.Headers.Append("X-Is-Authenticated", context.Session.GetString("IsAuthenticated"));
                 await _next(context);
-                return;
             }
 
+            if (context.Request.Path == "/")
+            {
+                var applcations = DatabaseController.GetAllApplications();
+                context.Session.SetString("applications", JsonSerializer.Serialize(applcations));
+
+                await _next(context);
+            }
+
+            return;
             /*
                 // Пропускаем проверку для API auth endpoints и страниц входа/регистрации
             if (context.Request.Path.StartsWithSegments("/api/auth") ||

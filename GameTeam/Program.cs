@@ -41,6 +41,7 @@ app.UseAuthorization();
 app.MapRazorPages();
 
 
+#pragma warning disable ASP0014 // Suggest using top level route registrations
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapGet("/Register", async context =>
@@ -62,6 +63,7 @@ app.UseEndpoints(endpoints =>
     });
 
 });
+#pragma warning restore ASP0014 // Suggest using top level route registrations
 
 app.MapControllers();
 

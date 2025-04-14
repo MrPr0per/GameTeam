@@ -1,0 +1,30 @@
+POST http://localhost:5013/data/application
+Content-Type: application/json
+
+{
+  "id": 1,
+  "title": "Заявка на поиск команды",
+  "description": "Ищу команду для турниров по Dota 2",
+  "contacts": "player@example.com",
+  "purposeName": "fun",
+  "availabilities": [
+    {
+        "id": 1,
+        "dayOfWeek": 0,
+        "startTime": "18:00:00+03:00",
+        "endTime": "22:00:00+03:00"
+    },
+    {
+        "id": 2,
+        "dayOfWeek": 5,
+        "startTime": "18:00:00+03:00",
+        "endTime": "22:00:00+03:00"
+    }
+  ],
+  "games": [
+    {
+      "id": 1,
+      "name": "Dota 2"
+    }
+  ]
+}

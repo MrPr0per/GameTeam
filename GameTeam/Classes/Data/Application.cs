@@ -4,19 +4,19 @@ namespace GameTeam.Classes.Data;
 
 public class Application
 {
-	public int Id { get; }
+	public int Id { get; set; }
 	
-	public string Title { get; }
+	public string Title { get; set; }
 	
-	public string Description { get; }
+	public string Description { get; set; }
 	
-	public string Contacts { get; }
+	public string Contacts { get; set; }
 	
-	public List<Availability> Availabilities { get; }
+	public List<Availability> Availabilities { get; set; }
 	
-	public List<Game> Games { get; }
+	public List<Game> Games { get; set; }
 	
-	public int PurposeId { get; }
+	public int PurposeId { get; set; }
 
 	public Application(int id, string title, string description, string contacts, int purposeId)
 	{

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using static AuthController;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -14,7 +15,7 @@ namespace GameTeam.Scripts.Controllers
     {
         // GET: api/<DataController>
         [HttpGet("profile")]
-        public string Get()
+        public string GetSelfProfile()
         {
             var username = HttpContext.Session.GetString("Username");
             if (string.IsNullOrEmpty(username))
@@ -36,7 +37,7 @@ namespace GameTeam.Scripts.Controllers
 
         // GET api/<DataController>/5
         [HttpGet("profile/{user}")]
-        public string Get(string user)
+        public string GetUserProfile(string user)
         {
             try
             {
@@ -89,6 +90,40 @@ namespace GameTeam.Scripts.Controllers
                 return StatusCode(500, new { Error = "Internal server error" });
             }
         }
+
+        [HttpGet("applications/{from}/{to}")]
+        public string GetAllAplications(int from, int to)
+        {
+            var applicationsJson = HttpContext.Session.GetString("applcations");
+
+            if (string.IsNullOrEmpty(applicationsJson))
+            {
+                Response.StatusCode = 400;
+                return "";
+            }
+
+            var applications = JsonSerializer.Deserialize<Application[]>(applicationsJson);
+
+            return JsonSerializer.Serialize(applications.Skip(from).Take(to).ToArray());
+        }
+
+        [HttpPost("application")]
+        public IActionResult UpserApplication([FromBody] ApplicationWithPurpose data)
+        {
+            if (data.Title == null || data.PurposeName == null)
+                return BadRequest(new { Message = "Нет title или purpose" });
+            try
+            {
+                DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, data.Description, 
+                                                     data.Contacts, data.Games, data.Availabilities);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = "Что-то в бд не так" });
+            }
+
+            return Ok(new { Message = "Application upserted" });
+        }
     }
 
 
@@ -104,5 +139,29 @@ namespace GameTeam.Scripts.Controllers
         public List<Game>? Games { get; set; }
 
         public List<Availability>? Availabilities { get; set; }
+    }
+
+
+    public class ApplicationWithPurpose
+    {
+        public int Id { get; }
+        public string Title { get; }
+        public string Description { get; }
+        public string Contacts { get; }
+        public List<Availability> Availabilities { get; }
+        public List<Game> Games { get; }
+        public string PurposeName { get; }
+
+        [JsonConstructor]
+        public ApplicationWithPurpose(int id, string title, string description, string contacts, string purposeName, List<Availability> availabilities, List<Game> games)
+        {
+            Id = id;
+            Title = title;
+            Description = description;
+            Contacts = contacts;
+            Availabilities = availabilities;
+            Games = games;
+            PurposeName = purposeName;
+        }
     }
 }
