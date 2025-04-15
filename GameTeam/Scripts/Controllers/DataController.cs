@@ -72,12 +72,25 @@ namespace GameTeam.Scripts.Controllers
                 if (userId is null)
                     return BadRequest();
 
+                List<Game> games;
+                List<Availability> availabilities;
+
+                if (!(request.Games is null))
+                    games = request.Games.Select(x => DatabaseController.GetOrCreateGame(x.Name)).ToList();
+                else
+                    games = null;
+
+                if (!(request.Availabilities is null))
+                    availabilities = request.Availabilities.Select(x => DatabaseController.GetOrCreateAvailability(x.DayOfWeek, x.StartTime, x.EndTime)).ToList();
+                else
+                    availabilities = null;
+
                 // Здесь должна быть бизнес-логика обработки запроса
                 DatabaseController.UpsertUserProfile(
                 userId,
                 request.AboutDescription,
-                request.Games,
-                request.Availabilities);
+                games,
+                availabilities);
 
                 return Ok(new { Success = true });
             }
