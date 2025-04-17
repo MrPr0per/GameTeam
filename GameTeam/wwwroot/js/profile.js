@@ -1,11 +1,9 @@
-
-
-
-// Артем, УДАЧИ!!!! /ᐠ｡ꞈ｡ᐟ\
-
-
-
 document.addEventListener('DOMContentLoaded', function () {
+    addEventListeners()
+    loafProfileInfo()
+});
+
+function addEventListeners() {
     const tabs = document.querySelectorAll('.tab-link');
     const panes = document.querySelectorAll('.tab-pane');
     const textarea = document.getElementById('description');
@@ -18,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let isEditing = false;
     let games = ['Майнкрафт', 'Дота'];
     let originalGames = [...games];
-    let originalDescription = textarea.value; 
+    let originalDescription = textarea.value;
 
     // Переключение вкладок
     tabs.forEach(tab => {
@@ -45,8 +43,8 @@ document.addEventListener('DOMContentLoaded', function () {
         saveCancelButtons.style.display = 'flex';
         isEditing = true;
         originalGames = [...games];
-        originalDescription = textarea.value; 
-        textarea.removeAttribute('readonly'); 
+        originalDescription = textarea.value;
+        textarea.removeAttribute('readonly');
         renderGames();
         document.getElementById('add-game-section').style.display = 'flex';
     });
@@ -57,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
         editButton.disabled = false;
         saveCancelButtons.style.display = 'none';
         isEditing = false;
-        textarea.setAttribute('readonly', true); 
+        textarea.setAttribute('readonly', true);
         renderGames();
         document.getElementById('add-game-section').style.display = 'none';
     });
@@ -69,8 +67,8 @@ document.addEventListener('DOMContentLoaded', function () {
         saveCancelButtons.style.display = 'none';
         isEditing = false;
         games = [...originalGames];
-        textarea.value = originalDescription; 
-        textarea.setAttribute('readonly', true); 
+        textarea.value = originalDescription;
+        textarea.setAttribute('readonly', true);
         renderGames();
         document.getElementById('add-game-section').style.display = 'none';
     });
@@ -110,4 +108,31 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     renderGames();
-});
+}
+
+
+function loafProfileInfo() {
+    fetch('/data/profile')
+        .then(r => {
+            if (r.ok) {
+                substituteProfileInfo(r.json())
+            } else {
+                showFetchProfileInfoErrorMessage(r)
+            }
+        })
+}
+
+function substituteProfileInfo(dataInfo) {
+    const descriptionField = document.getElementById('description');
+    const freeTimeTag = document.getElementById('free-time');
+    const gamesContainer =;
+
+}
+
+function showFetchProfileInfoErrorMessage(r) {
+    if (r.status === 401) {
+        console.log('Вы неавторизованы')
+    } else {
+        console.log(`Не обработанная ошибка: ${r}`)
+    }
+}
