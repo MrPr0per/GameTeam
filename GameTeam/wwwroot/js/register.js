@@ -114,8 +114,7 @@ function addLoginFormSubmissionProcessing() {
 		getData: (formValues) => ({
 			email: formValues.email,
 			password: formValues.password,
-			username: 'testuser',
-		}), // TODO: убрать заглушку
+		}),
 		defaultServerErrorMessage: 'Ошибка входа',
 	});
 }
