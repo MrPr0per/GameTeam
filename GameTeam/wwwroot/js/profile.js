@@ -1,25 +1,23 @@
 document.addEventListener('DOMContentLoaded', function () {
-	const tabs = document.querySelectorAll('.tab-link');
-	const panes = document.querySelectorAll('.tab-pane');
-	const textarea = document.getElementById('description');
-	const editButton = document.getElementById('edit-button');
-	const saveCancelButtons = document.getElementById('save-cancel-buttons');
-	const saveButton = document.getElementById('save-button');
-	const cancelButton = document.getElementById('cancel-button');
-	const addGameButton = document.getElementById('add-game-button');
-	const newGameInput = document.getElementById('new-game-input');
-	let isEditing = false;
-	let games = ['Майнкрафт', 'Дота'];
-	let originalGames = [...games];
-	let originalDescription = textarea.value;
+    addEventListeners()
+    loafProfileInfo()
+});
 
-	let myProfile = fetch('http://localhost:5013/data/profile', {
-		method: 'GET',
-		credentials: 'include',
-	}).then(profileData => {
-		console.log('Получены данные:', profileData);
-	});
-
+function addEventListeners() {
+    const tabs = document.querySelectorAll('.tab-link');
+    const panes = document.querySelectorAll('.tab-pane');
+    const textarea = document.getElementById('description');
+    const editButton = document.getElementById('edit-button');
+    const saveCancelButtons = document.getElementById('save-cancel-buttons');
+    const saveButton = document.getElementById('save-button');
+    const cancelButton = document.getElementById('cancel-button');
+    const addGameButton = document.getElementById('add-game-button');
+    const newGameInput = document.getElementById('new-game-input');
+    let isEditing = false;
+    let games = ['Майнкрафт', 'Дота'];
+    let originalGames = [...games];
+    let originalDescription = textarea.value;
+    
 	// Переключение вкладок
 	tabs.forEach(tab => {
 		tab.addEventListener('click', function () {
@@ -38,42 +36,42 @@ document.addEventListener('DOMContentLoaded', function () {
 	});
 	textarea.style.height = textarea.scrollHeight + 'px';
 
-	// Кнопка "Редактировать профиль"
-	editButton.addEventListener('click', function () {
-		editButton.textContent = 'Редактирование';
-		editButton.disabled = true;
-		saveCancelButtons.style.display = 'flex';
-		isEditing = true;
-		originalGames = [...games];
-		originalDescription = textarea.value;
-		textarea.removeAttribute('readonly');
-		renderGames();
-		document.getElementById('add-game-section').style.display = 'flex';
-	});
+    // Кнопка "Редактировать профиль"
+    editButton.addEventListener('click', function () {
+        editButton.textContent = 'Редактирование';
+        editButton.disabled = true;
+        saveCancelButtons.style.display = 'flex';
+        isEditing = true;
+        originalGames = [...games];
+        originalDescription = textarea.value;
+        textarea.removeAttribute('readonly');
+        renderGames();
+        document.getElementById('add-game-section').style.display = 'flex';
+    });
 
-	// Кнопка "Готово"
-	saveButton.addEventListener('click', function () {
-		editButton.textContent = 'Редактировать профиль';
-		editButton.disabled = false;
-		saveCancelButtons.style.display = 'none';
-		isEditing = false;
-		textarea.setAttribute('readonly', true);
-		renderGames();
-		document.getElementById('add-game-section').style.display = 'none';
-	});
+    // Кнопка "Готово"
+    saveButton.addEventListener('click', function () {
+        editButton.textContent = 'Редактировать профиль';
+        editButton.disabled = false;
+        saveCancelButtons.style.display = 'none';
+        isEditing = false;
+        textarea.setAttribute('readonly', true);
+        renderGames();
+        document.getElementById('add-game-section').style.display = 'none';
+    });
 
-	// Кнопка "Отмена"
-	cancelButton.addEventListener('click', function () {
-		editButton.textContent = 'Редактировать профиль';
-		editButton.disabled = false;
-		saveCancelButtons.style.display = 'none';
-		isEditing = false;
-		games = [...originalGames];
-		textarea.value = originalDescription;
-		textarea.setAttribute('readonly', true);
-		renderGames();
-		document.getElementById('add-game-section').style.display = 'none';
-	});
+    // Кнопка "Отмена"
+    cancelButton.addEventListener('click', function () {
+        editButton.textContent = 'Редактировать профиль';
+        editButton.disabled = false;
+        saveCancelButtons.style.display = 'none';
+        isEditing = false;
+        games = [...originalGames];
+        textarea.value = originalDescription;
+        textarea.setAttribute('readonly', true);
+        renderGames();
+        document.getElementById('add-game-section').style.display = 'none';
+    });
 
 	// Добавление новой игры
 	addGameButton.addEventListener('click', function () {
@@ -109,5 +107,38 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 	}
 
-	renderGames();
-});
+    renderGames();
+}
+
+
+function loafProfileInfo() {
+    let myProfile = fetch('http://localhost:5013/data/profile', {
+        method: 'GET',
+        credentials: 'include',
+    }).then(profileData => {
+        console.log('Получены данные:', profileData);
+    });
+    fetch('/data/profile')
+        .then(r => {
+            if (r.ok) {
+                substituteProfileInfo(r.json())
+            } else {
+                showFetchProfileInfoErrorMessage(r)
+            }
+        })
+}
+
+function substituteProfileInfo(dataInfo) {
+    const descriptionField = document.getElementById('description');
+    const freeTimeTag = document.getElementById('free-time');
+    const gamesContainer =;
+
+}
+
+function showFetchProfileInfoErrorMessage(r) {
+    if (r.status === 401) {
+        console.log('Вы неавторизованы')
+    } else {
+        console.log(`Не обработанная ошибка: ${r}`)
+    }
+}

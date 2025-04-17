@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GameTeam - Анкеты</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/questionnaires.css">
+</head>
+
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo">GameTeam</div>
+            <nav class="sidebar-nav">
+                <a href="#">
+                    <img src="../img/anketa.svg" alt="Анкеты" class="nav-icon">
+                    <span class="nav-text">Анкеты</span>
+                </a>
+                <a href="#">
+                    <img src="../img/my-ankety.svg" alt="Мои анкеты" class="nav-icon">
+                    <span class="nav-text">Мои анкеты</span>
+                </a>
+            </nav>
+        </aside>
+
+        <div class="content">
+            <header>
+                <div class="auth-wrapper">
+                    <div class="header-profile-image"></div>
+                    <div class="auth-status">Иван Иванов</div>
+                </div>
+            </header>
+
+            <div class="questionnaires-container">
+                
+            </div>
+        </div>
+
+        <template id="modal-template">
+            <div class="modal-overlay">
+                <div class="modal-content">
+                    <h2></h2>
+                    <div class="modal-section"><label>Описание:</label>
+                        <p class="modal-description"></p>
+                    </div>
+                    <div class="modal-section"><label>Игры:</label>
+                        <ul class="modal-games"></ul>
+                    </div>
+                    <div class="modal-section"><label>Цель:</label>
+                        <p class="modal-purpose"></p>
+                    </div>
+                    <div class="modal-section"><label>Время:</label>
+                        <p class="modal-availability"></p>
+                    </div>
+                    <div class="modal-section"><label>Контакты:</label>
+                        <p class="modal-contacts"></p>
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="close-button">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+    <script src="../js/questionnaires.js"></script>
+</body>
+
+</html>
