@@ -404,6 +404,45 @@ namespace GameTeam.Scripts.Controllers
 				throw new Exception($"Ошибка GetUserProfile: {e}");
 			}
 		}
+		
+		/// <summary>
+		/// Получение данных пользователя
+		/// </summary>
+		/// <param name="userId">Id пользователя</param>
+		/// <returns>Объект UserData или null если не найден</returns>
+		/// <exception cref="Exception">
+		/// - Ошибки выполнения запроса
+		/// </exception>
+		public static UserData GetUserData(int userId)
+		{
+			using var conn = new NpgsqlConnection(ConnectionString);
+			
+			try
+			{
+				conn.Open();
+				using var cmd = new NpgsqlCommand();
+				cmd.Connection = conn;
+
+				cmd.CommandText = @"
+                    select 
+                        username,
+                        email
+                    from users_data
+                    where id = @id";
+
+				cmd.Parameters.AddWithValue("id", userId);
+				using var reader = cmd.ExecuteReader();
+
+				if (!reader.Read())
+					return null;
+
+				return new UserData(userId, reader.GetString(1), reader.GetString(0));
+			}
+			catch (Exception e)
+			{
+				throw new Exception($"Ошибка GetUserData: {e}");
+			}
+		}
 
 		/// <summary>
 		/// Получение всех анкет из базы данных
