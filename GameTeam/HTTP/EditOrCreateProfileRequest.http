@@ -5,9 +5,7 @@ Content-Type: application/json
     "aboutDescription": "I love gaming!",
     "skills": "FPS, RPG, Strategy",
     "games": [
-
             "Counter-Strike 2",
-
             "Valorant"
     ],
     "availabilities": [

@@ -192,7 +192,7 @@ async function saveChanges() {
 		const postJson = {
 			aboutDescription: displayedProfileInfo.description,
 			skills: 'FPS, RPG, Strategy', // todo: убрать заглушку
-			games: displayedProfileInfo.games.map((name) => ({id: -1, name: name})), // todo: убрать заглушку
+			games: displayedProfileInfo.games,
 			availabilities: formatAvailabilitiesByDayToPostJson(displayedProfileInfo.availabilitiesByDay),
 		};
 		const r = await fetch('/data/upsert', {
@@ -290,7 +290,6 @@ function formatAvailabilitiesByDayToPostJson(availabilitiesByDay) {
 	availabilitiesByDay.forEach((intervals, day) => {
 		intervals.forEach(interval => {
 			result.push({
-				id: -1,
 				dayOfWeek: day,
 				startTime: `${formatter.format(interval.startTime)}+00:00`,
 				endTime: `${formatter.format(interval.endTime)}+00:00`,
