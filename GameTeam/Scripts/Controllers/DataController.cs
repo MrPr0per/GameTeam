@@ -1,5 +1,6 @@
 ﻿using GameTeam.Classes.Data;
 using Microsoft.AspNetCore.Mvc;
+using NodaTime;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -76,7 +77,7 @@ namespace GameTeam.Scripts.Controllers
                 List<Availability> availabilities;
 
                 if (!(request.Games is null))
-                    games = request.Games.Select(x => DatabaseController.GetOrCreateGame(x.Name)).ToList();
+                    games = request.Games.Select(x => DatabaseController.GetOrCreateGame(x)).ToList();
                 else
                     games = null;
 
@@ -116,18 +117,47 @@ namespace GameTeam.Scripts.Controllers
             }
 
             var applications = JsonSerializer.Deserialize<Application[]>(applicationsJson);
-            return JsonSerializer.Serialize(applications.Skip(from).Take(to).ToArray());
+            return JsonSerializer.Serialize(applications.Skip(from).Take(to - from + 1).ToArray());
+        }
+
+        [HttpGet("application/{id}")]
+        public string GetAllApplicationById(int id)
+        {
+            var applicationsJson = HttpContext.Session.GetString("applications");
+
+            if (string.IsNullOrEmpty(applicationsJson))
+            {
+                Response.StatusCode = 400;
+                return "";
+            }
+
+            var applications = JsonSerializer.Deserialize<Application[]>(applicationsJson);
+            return JsonSerializer.Serialize(applications.Where(x => x.Id == id).FirstOrDefault());
         }
 
         [HttpPost("application")]
-        public IActionResult UpserApplication([FromBody] ApplicationWithPurpose data)
+        public IActionResult UpsertApplication([FromBody] ApplicationWithPurpose data)
         {
             if (data.Title == null || data.PurposeName == null)
                 return BadRequest(new { Message = "Нет title или purpose" });
+
+            List<Game> games;
+            List<Availability> availabilities;
+
+            if (!(data.Games is null))
+                games = data.Games.Select(x => DatabaseController.GetOrCreateGame(x)).ToList();
+            else
+                games = null;
+
+            if (!(data.Availabilities is null))
+                availabilities = data.Availabilities.Select(x => DatabaseController.GetOrCreateAvailability(x.DayOfWeek, x.StartTime, x.EndTime)).ToList();
+            else
+                availabilities = null;
+
             try
             {
                 DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, data.Description, 
-                                                     data.Contacts, data.Games, data.Availabilities);
+                                                     data.Contacts, games, availabilities);
             }
             catch (Exception ex)
             {
@@ -149,9 +179,9 @@ namespace GameTeam.Scripts.Controllers
 
         public string? Skills { get; set; }
 
-        public List<Game>? Games { get; set; }
+        public List<string>? Games { get; set; }
 
-        public List<Availability>? Availabilities { get; set; }
+        public List<AvailabilityWithoutId>? Availabilities { get; set; }
     }
 
 
@@ -161,12 +191,12 @@ namespace GameTeam.Scripts.Controllers
         public string Title { get; }
         public string Description { get; }
         public string Contacts { get; }
-        public List<Availability> Availabilities { get; }
-        public List<Game> Games { get; }
+        public List<AvailabilityWithoutId> Availabilities { get; }
+        public List<string> Games { get; }
         public string PurposeName { get; }
 
         [JsonConstructor]
-        public ApplicationWithPurpose(int id, string title, string description, string contacts, string purposeName, List<Availability> availabilities, List<Game> games)
+        public ApplicationWithPurpose(int id, string title, string description, string contacts, string purposeName, List<AvailabilityWithoutId> availabilities, List<string> games)
         {
             Id = id;
             Title = title;
@@ -175,6 +205,24 @@ namespace GameTeam.Scripts.Controllers
             Availabilities = availabilities;
             Games = games;
             PurposeName = purposeName;
+        }
+    }
+
+    public class AvailabilityWithoutId
+    {
+
+        public Availability.DayOfWeekEnum DayOfWeek { get; }
+
+        public OffsetTime StartTime { get; }
+
+        public OffsetTime EndTime { get; }
+
+
+        public AvailabilityWithoutId(Availability.DayOfWeekEnum dayOfWeek, OffsetTime startTime, OffsetTime endTime)
+        {
+            DayOfWeek = dayOfWeek;
+            StartTime = startTime;
+            EndTime = endTime;
         }
     }
 }

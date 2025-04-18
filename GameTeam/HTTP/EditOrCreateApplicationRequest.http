@@ -9,22 +9,17 @@ Content-Type: application/json
   "purposeName": "test",
   "availabilities": [
     {
-        "id": 1,
         "dayOfWeek": 0,
         "startTime": "18:00:00+03:00",
         "endTime": "22:00:00+03:00"
     },
     {
-        "id": 2,
         "dayOfWeek": 5,
         "startTime": "18:00:00+03:00",
         "endTime": "22:00:00+03:00"
     }
   ],
   "games": [
-    {
-      "id": 1,
-      "name": "Dota 2"
-    }
+    "Dota 2"
   ]
 }
