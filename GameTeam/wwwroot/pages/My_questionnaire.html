@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GameTeam - Мои Анкеты</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/my_questionnaire.css">
+</head>
+
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo">GameTeam</div>
+            <nav class="sidebar-nav">
+                <a href="#">
+                    <img src="../img/anketa.svg" alt="Анкеты" class="nav-icon">
+                    <span class="nav-text">Анкеты</span>
+                </a>
+                <a href="#">
+                    <img src="../img/my-ankety.svg" alt="Мои анкеты" class="nav-icon">
+                    <span class="nav-text">Мои анкеты</span>
+                </a>
+            </nav>
+        </aside>
+
+        <div class="content">
+            <header>
+                <div class="auth-wrapper">
+                    <div class="header-profile-image"></div>
+                    <div class="auth-status">ИванБезФамилии</div>
+                </div>
+            </header>
+
+            <div class="questionnaire-container">
+                <div class="questionnaire-status">
+                    <span>Статус: </span><span id="status-text">не размещена</span>
+                </div>
+                <div class="questionnaire-content" id="questionnaire-content">
+                    <div class="questionnaire-section">
+                        <label>Название:<span class="required" style="display: none;">*</span></label>
+                        <h2 id="questionnaire-title" contenteditable="false" data-placeholder="Введите название анкеты">
+                        </h2>
+                    </div>
+                    <div class="questionnaire-section">
+                        <label>Описание:</label>
+                        <p id="questionnaire-description" contenteditable="false"
+                            data-placeholder="Введите описание анкеты"></p>
+                    </div>
+                    <div class="questionnaire-section">
+                        <label>Игры:<span class="required" style="display: none;">*</span></label>
+                        <div class="games-container">
+                            <ul id="questionnaire-games"></ul>
+                        </div>
+                        <div id="add-game-section" style="display: none;">
+                            <input type="text" id="new-game-input" placeholder="Новая игра">
+                            <button id="add-game-button" class="outline-button">Добавить</button>
+                        </div>
+                    </div>
+                    <div class="questionnaire-section">
+                        <label>Цель:<span class="required" style="display: none;">*</span></label>
+                        <p id="questionnaire-goal" contenteditable="false" data-placeholder="Введите цель игры"></p>
+                    </div>
+                    <div class="questionnaire-section">
+                        <label>Время:</label>
+                        <p id="questionnaire-time" contenteditable="false"
+                            data-placeholder="Введите удобное время для игры"></p>
+                    </div>
+                    <div class="questionnaire-section last-section">
+                        <label>Контакты:<span class="required" style="display: none;">*</span></label>
+                        <p id="questionnaire-contacts" contenteditable="false"
+                            data-placeholder="Введите ваши контакты (например, Telegram)"></p>
+                    </div>
+                </div>
+                <div class="bottom-section" id="bottom-section">
+                    <div class="status-buttons" id="status-buttons">
+                        <div class="place-button-wrapper">
+                            <button id="place-button" class="filled-button">Разместить анкету</button>
+                            <div class="warning" id="warning-message"></div>
+                        </div>
+                        <div class="edit-button-wrapper">
+                            <button id="edit-button" class="outline-button">Редактировать анкету</button>
+                            <div id="edit-message" style="display: none;">Чтобы редактировать, скройте анкету</div>
+                        </div>
+                    </div>
+                    <div class="edit-buttons" id="edit-buttons" style="display: none;">
+                        <button id="clear-button" class="outline-button">Очистить</button>
+                        <button id="cancel-button" class="outline-button">Отмена</button>
+                        <button id="save-button" class="filled-button">Сохранить изменения</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../js/my_questionnaire.js"></script>
+</body>
+
+</html>
