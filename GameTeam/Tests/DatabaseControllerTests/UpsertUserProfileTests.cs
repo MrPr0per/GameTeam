@@ -31,6 +31,14 @@ public class UpsertUserProfileTests
 
 	// Строка подключения
 	private readonly string connectionString = DatabaseController.ConnectionString;
+	
+	// Добавьте в начало класса UpsertUserProfileTests:
+	private const int TestGameId2 = 654;
+	private const string TestGameName2 = "New Game";
+	private const int TestAvailabilityId2 = 77777;
+	private readonly OffsetTime testStartTime2 = new OffsetTime(new LocalTime(14, 0, 0), Offset.FromHours(0));
+	private readonly OffsetTime testEndTime2   = new OffsetTime(new LocalTime(16, 0, 0), Offset.FromHours(0));
+
 
 	[SetUp]
 	public void SetUp()
@@ -88,6 +96,28 @@ public class UpsertUserProfileTests
 		using (var cmd = new NpgsqlCommand("DELETE FROM availabilities WHERE id = @availId;", conn))
 		{
 			cmd.Parameters.AddWithValue("availId", TestAvailabilityId);
+			cmd.ExecuteNonQuery();
+		}
+		
+		// и дополнительно
+		using (var cmd = new NpgsqlCommand("DELETE FROM user_to_games WHERE game_id = @gameId;", conn))
+		{
+			cmd.Parameters.AddWithValue("gameId", TestGameId2);
+			cmd.ExecuteNonQuery();
+		}
+		using (var cmd = new NpgsqlCommand("DELETE FROM games WHERE game_id = @gameId;", conn))
+		{
+			cmd.Parameters.AddWithValue("gameId", TestGameId2);
+			cmd.ExecuteNonQuery();
+		}
+		using (var cmd = new NpgsqlCommand("DELETE FROM users_to_availability WHERE availability_id = @availId;", conn))
+		{
+			cmd.Parameters.AddWithValue("availId", TestAvailabilityId2);
+			cmd.ExecuteNonQuery();
+		}
+		using (var cmd = new NpgsqlCommand("DELETE FROM availabilities WHERE id = @availId;", conn))
+		{
+			cmd.Parameters.AddWithValue("availId", TestAvailabilityId2);
 			cmd.ExecuteNonQuery();
 		}
 	}
@@ -216,5 +246,76 @@ public class UpsertUserProfileTests
 			var desc = reader.IsDBNull(0) ? null : reader.GetString(0);
 			Assert.AreEqual(UpdatedDescription, desc, "Profile description was not updated correctly");
 		}
+	}
+	
+	[Test]
+	public void Test_UpsertUserProfile_ReplacesOldRecords()
+	{
+	    // 1) Сначала создаём профиль с одними игровыми связями и доступностями
+	    var initialGames = new List<Game> 
+	    { 
+	        new Game(TestGameId, TestGameName) 
+	    };
+	    var initialAvailabilities = new List<Availability> 
+	    { 
+	        new Availability(TestAvailabilityId, TestDayOfWeek, testStartTime, testEndTime) 
+	    };
+
+	    DatabaseController.UpsertUserProfile(TestUserId, InitialDescription, initialGames, initialAvailabilities);
+
+	    // 2) Потом вызываем с другими списками — должны удалиться все старые связи
+	    var newGames = new List<Game>
+	    {
+	        new Game(TestGameId2, TestGameName2)
+	    };
+	    var newAvailabilities = new List<Availability>
+	    {
+	        new Availability(TestAvailabilityId2, Availability.DayOfWeekEnum.Tuesday, testStartTime2, testEndTime2)
+	    };
+
+	    DatabaseController.UpsertUserProfile(TestUserId, InitialDescription, newGames, newAvailabilities);
+
+	    using var conn = new NpgsqlConnection(connectionString);
+	    conn.Open();
+
+	    // Проверяем, что старая связь с TestGameId удалена
+	    using (var cmd = new NpgsqlCommand(
+	               "SELECT COUNT(*) FROM user_to_games WHERE user_id = @id AND game_id = @gameId", conn))
+	    {
+	        cmd.Parameters.AddWithValue("id", TestUserId);
+	        cmd.Parameters.AddWithValue("gameId", TestGameId);
+	        var oldGameCount = (long)cmd.ExecuteScalar();
+	        Assert.AreEqual(0, oldGameCount, "Старая связь с игрой должна быть удалена");
+	    }
+
+	    // Проверяем, что новая связь с TestGameId2 создана
+	    using (var cmd = new NpgsqlCommand(
+	               "SELECT COUNT(*) FROM user_to_games WHERE user_id = @id AND game_id = @gameId", conn))
+	    {
+	        cmd.Parameters.AddWithValue("id", TestUserId);
+	        cmd.Parameters.AddWithValue("gameId", TestGameId2);
+	        var newGameCount = (long)cmd.ExecuteScalar();
+	        Assert.Greater(newGameCount, 0, "Новая связь с игрой должна присутствовать");
+	    }
+
+	    // Проверяем, что старая доступность удалена
+	    using (var cmd = new NpgsqlCommand(
+	               "SELECT COUNT(*) FROM users_to_availability WHERE user_id = @id AND availability_id = @availId", conn))
+	    {
+	        cmd.Parameters.AddWithValue("id", TestUserId);
+	        cmd.Parameters.AddWithValue("availId", TestAvailabilityId);
+	        var oldAvailCount = (long)cmd.ExecuteScalar();
+	        Assert.AreEqual(0, oldAvailCount, "Старая доступность должна быть удалена");
+	    }
+
+	    // Проверяем, что новая доступность добавлена
+	    using (var cmd = new NpgsqlCommand(
+	               "SELECT COUNT(*) FROM users_to_availability WHERE user_id = @id AND availability_id = @availId", conn))
+	    {
+	        cmd.Parameters.AddWithValue("id", TestUserId);
+	        cmd.Parameters.AddWithValue("availId", TestAvailabilityId2);
+	        var newAvailCount = (long)cmd.ExecuteScalar();
+	        Assert.Greater(newAvailCount, 0, "Новая доступность должна присутствовать");
+	    }
 	}
 }

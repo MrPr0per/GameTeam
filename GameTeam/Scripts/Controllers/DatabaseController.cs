@@ -515,6 +515,24 @@ namespace GameTeam.Scripts.Controllers
 					cmd.Parameters.AddWithValue("aboutDescription", aboutDescription ?? (object)DBNull.Value);
 					cmd.ExecuteNonQuery();
 				}
+				
+				// Удаляем игры из таблицы user_to_games, чтобы запихать новые
+				using (var cmd = new NpgsqlCommand(@"
+                    delete from user_to_games where user_id = @user_id
+                ", conn, transaction))
+				{
+					cmd.Parameters.AddWithValue("user_id", userId);
+					cmd.ExecuteNonQuery();
+				}
+				
+				// Удаляем времена из таблицы users_to_availability, чтобы запихать новые
+				using (var cmd = new NpgsqlCommand(@"
+                    delete from users_to_availability where user_id = @user_id
+                ", conn, transaction))
+				{
+					cmd.Parameters.AddWithValue("user_id", userId);
+					cmd.ExecuteNonQuery();
+				}
 
 				if (games != null)
 				{
@@ -663,6 +681,24 @@ namespace GameTeam.Scripts.Controllers
 					cmd.Parameters.AddWithValue("description", description ?? (object)DBNull.Value);
 					cmd.Parameters.AddWithValue("contacts", contacts ?? (object)DBNull.Value);
 					cmd.Parameters.AddWithValue("purpose_id", purposeId);
+					cmd.ExecuteNonQuery();
+				}
+				
+				// Удаляем игры из таблицы applications_to_games, чтобы запихать новые
+				using (var cmd = new NpgsqlCommand(@"
+                    delete from applications_to_games where app_id = @app_id
+                ", conn, transaction))
+				{
+					cmd.Parameters.AddWithValue("app_id", applicationId);
+					cmd.ExecuteNonQuery();
+				}
+				
+				// Удаляем времена из таблицы applications_to_availability, чтобы запихать новые
+				using (var cmd = new NpgsqlCommand(@"
+                    delete from applications_to_availability where application_id = @app_id
+                ", conn, transaction))
+				{
+					cmd.Parameters.AddWithValue("app_id", applicationId);
 					cmd.ExecuteNonQuery();
 				}
 
