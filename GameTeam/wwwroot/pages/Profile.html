@@ -40,7 +40,7 @@
                         <h2>ИванБезФамилии</h2> <!-- А то тут будет весело -->
                         <p>super228vanya2010@gmail.com</p> <!-- Тут почта -->
                         <div class="edit-buttons">
-                            <button id="edit-button" class="outline-button">Редактировать профиль</button>
+                            <button id="edit-button" class="outline-button" disabled>Редактировать профиль</button>
                             <div id="save-cancel-buttons" style="display: none;">
                                 <button id="cancel-button" class="outline-button">Отмена</button>
                                 <button id="save-button" class="filled-button">Готово</button>
@@ -68,8 +68,16 @@
                         <div id="about" class="tab-pane active">
                             <textarea id="description" placeholder="Описание" readonly></textarea>
                         </div>
-                        <div id="free-time" class="tab-pane">
-                            <p>Время?</p> <!-- Тут время -->
+                        <div id="free-time" class="tab-pane"> <!-- Тут время -->
+                            <ul>
+                                <li>Пн: <span></span></li>
+                                <li>Вт: <span></span></li>
+                                <li>Ср: <span></span></li>
+                                <li>Чт: <span></span></li>
+                                <li>Пт: <span></span></li>
+                                <li>Сб: <span></span></li>
+                                <li>Вс: <span></span></li>
+                            </ul>
                         </div>
                         <div id="hobbies" class="tab-pane">
                             <div class="games-container">
