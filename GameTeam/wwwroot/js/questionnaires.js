@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
             loadMoreButton.disabled = true;
         }
 
-        fetch(`https://localhost:7179/data/applications/${offset}/${offset + limit}`)
+        fetch(`/data/applications/${offset}/${offset + limit}`)
             .then(response => response.json())
             .then(data => {
                 if (!Array.isArray(data) || data.length === 0) {

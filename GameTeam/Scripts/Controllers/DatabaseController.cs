@@ -2,6 +2,8 @@
 using GameTeam.Classes.Data;
 using NodaTime;
 using NpgsqlTypes;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace GameTeam.Scripts.Controllers
 {
@@ -34,19 +36,26 @@ namespace GameTeam.Scripts.Controllers
 			AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 		}
 
-		/// <summary>
-		/// Регистрация нового пользователя
-		/// </summary>
-		/// <param name="username">Имя пользователя</param>
-		/// <param name="email">Электронная почта</param>
-		/// <param name="password">Пароль</param>
-		/// <exception cref="Exception">
-		/// Возможные ошибки:
-		/// - "Имя пользователя уже занято"
-		/// - "Email уже занято"
-		/// - Общие ошибки подключения
-		/// </exception>
-		public static void Register(string username, string email, string password)
+
+
+
+        
+
+
+
+        /// <summary>
+        /// Регистрация нового пользователя
+        /// </summary>
+        /// <param name="username">Имя пользователя</param>
+        /// <param name="email">Электронная почта</param>
+        /// <param name="password">Пароль</param>
+        /// <exception cref="Exception">
+        /// Возможные ошибки:
+        /// - "Имя пользователя уже занято"
+        /// - "Email уже занято"
+        /// - Общие ошибки подключения
+        /// </exception>
+        public static void Register(string username, string email, string password, string salt)
 		{
 			using var conn = new NpgsqlConnection(ConnectionString);
 			try
@@ -55,14 +64,15 @@ namespace GameTeam.Scripts.Controllers
 				using var cmd = new NpgsqlCommand();
 				cmd.Connection = conn;
 				cmd.CommandText = @"
-                            INSERT INTO users_data (username, email, password) 
-                            VALUES (@username, @email, @password)";
+                            INSERT INTO users_data (username, email, password, salt) 
+                            VALUES (@username, @email, @password, @salt)";
 
 				cmd.Parameters.AddWithValue("username", username);
 				cmd.Parameters.AddWithValue("email", email);
 				cmd.Parameters.AddWithValue("password", password);
+                cmd.Parameters.AddWithValue("salt", salt);
 
-				cmd.ExecuteNonQuery();
+                cmd.ExecuteNonQuery();
 			}
 			catch (PostgresException ex) when (ex.SqlState == "23505")
 			{
@@ -159,7 +169,68 @@ namespace GameTeam.Scripts.Controllers
 			}
 		}
 
-		/// <summary>
+        /// <summary>
+        /// Получение ID пользователя по email
+        /// </summary>
+        /// <param name="email">Email пользователя</param>
+        /// <returns>ID пользователя или null если не найден</returns>
+        /// <exception cref="Exception">Ошибки выполнения запроса</exception>
+        public static int? GetIdByEmail(string email)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            try
+            {
+                conn.Open();
+                using var cmd = new NpgsqlCommand();
+                cmd.Connection = conn;
+
+                cmd.CommandText = @"
+            SELECT id FROM users_data
+            WHERE email = @email";
+
+                cmd.Parameters.AddWithValue("email", email);
+
+                using var reader = cmd.ExecuteReader();
+
+                if (!reader.Read())
+                    return null;
+
+                var id = reader.GetInt32(0);
+                return id;
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Ошибка GetUserIdByEmail: {e}");
+            }
+        }
+
+        public static string GetUserSalt(int userId)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            conn.Open();
+
+            try
+            {
+                // Выполняем запрос для получения соли пользователя по его ID
+                using var cmd = new NpgsqlCommand("SELECT salt FROM users_data WHERE id = @userId", conn);
+                cmd.Parameters.AddWithValue("userId", userId);
+
+                var result = cmd.ExecuteScalar();
+
+                if (result == null)
+                {
+                    throw new Exception($"Соль для пользователя с ID {userId} не найдена.");
+                }
+
+                return result.ToString();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при получении соли пользователя с ID {userId}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         /// Возвращает существующую игру по имени или создаёт новую, если такой записи нет.
         /// </summary>
         /// <param name="gameName">Название игры.</param>

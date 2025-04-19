@@ -172,6 +172,15 @@ namespace GameTeam.Scripts.Controllers
 
             return Ok(new { Message = "Application upserted" });
         }
+
+
+        [HttpGet("fuckit")]
+        public IActionResult UpsertApplicationasd()
+        {
+            var salt = DatabaseController.GetUserSalt(1);
+
+            return Ok(new { Message = salt });
+        }
     }
 
 

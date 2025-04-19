@@ -19,10 +19,21 @@ public class AuthController : ControllerBase
     public IActionResult Login([FromBody] LoginDto data)
     {
         var username = "";
-        var logged = DatabaseController.Login(data.Username, data.Email, data.Password, out username);
+        int? userId;
+        if (data.Username is not null)
+            userId = DatabaseController.GetIdByUsername(data.Username);
+        else if (data.Email is not null)
+            userId = DatabaseController.GetIdByEmail(data.Email);
+        else
+            return BadRequest(new { Message = "Логин или email не обнаружен" });
+
+        var salt = DatabaseController.GetUserSalt(userId.Value);
+
+        var password = HashOperator.HashPassword(data.Password, salt);
+
+        var logged = DatabaseController.Login(data.Username, data.Email, password, out username);
         if (logged)
         {
-            var userId = DatabaseController.GetIdByUsername(username);
             // Сохраняем информацию о пользователе в сессии
             HttpContext.Session.SetString("UserId", userId.ToString());
             HttpContext.Session.SetString("Username", username);
@@ -36,12 +47,13 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public IActionResult Register([FromBody] RegisterDto data)
     {
+        var salt = HashOperator.GenerateSalt();
         if (data.Password != data.ConfirmPassword)
             return BadRequest(new { Message = "Пароли не совпадают" });
 
         try
         {
-            DatabaseController.Register(data.Username, data.Email, data.Password);
+            DatabaseController.Register(data.Username, data.Email, HashOperator.HashPassword(data.Password, salt), salt);
         }
         catch
         {
