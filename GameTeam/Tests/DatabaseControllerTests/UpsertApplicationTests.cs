@@ -38,6 +38,13 @@ namespace GameTeam.Tests.DatabaseControllerTests
         // Строка подключения
         private readonly string connectionString = DatabaseController.ConnectionString;
 
+        // Новый тестовый набор
+        private const int TestGameId2 = 333;
+        private const string TestGameName2 = "New Application Game";
+        private const int TestAvailabilityId2 = 44444;
+        private readonly OffsetTime TestStartTime2 = new OffsetTime(new LocalTime(18, 0, 0), Offset.FromHours(0));
+        private readonly OffsetTime TestEndTime2   = new OffsetTime(new LocalTime(20, 0, 0), Offset.FromHours(0));
+        
         [SetUp]
         public void SetUp()
         {
@@ -103,6 +110,29 @@ namespace GameTeam.Tests.DatabaseControllerTests
                 cmd.Parameters.AddWithValue("purpose", UpdatedPurpose);
                 cmd.ExecuteNonQuery();
             }
+            
+            // Удаляем связи и мастер‑записи второго набора
+            using (var cmd = new NpgsqlCommand("DELETE FROM applications_to_games WHERE game_id = @gameId;", conn))
+            {
+                cmd.Parameters.AddWithValue("gameId", TestGameId2);
+                cmd.ExecuteNonQuery();
+            }
+            using (var cmd = new NpgsqlCommand("DELETE FROM games WHERE game_id = @gameId;", conn))
+            {
+                cmd.Parameters.AddWithValue("gameId", TestGameId2);
+                cmd.ExecuteNonQuery();
+            }
+            using (var cmd = new NpgsqlCommand("DELETE FROM applications_to_availability WHERE availability_id = @availId;", conn))
+            {
+                cmd.Parameters.AddWithValue("availId", TestAvailabilityId2);
+                cmd.ExecuteNonQuery();
+            }
+            using (var cmd = new NpgsqlCommand("DELETE FROM availabilities WHERE id = @availId;", conn))
+            {
+                cmd.Parameters.AddWithValue("availId", TestAvailabilityId2);
+                cmd.ExecuteNonQuery();
+            }
+
         }
 
         [Test]
@@ -213,9 +243,9 @@ namespace GameTeam.Tests.DatabaseControllerTests
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
             int purposeId;
-            var title = string.Empty;
-            var description = string.Empty;
-            var contacts = string.Empty;
+            var title = "";
+            var description = "";
+            var contacts = "";
             // Читаем обновленные данные из applications
             using (var cmd = new NpgsqlCommand("SELECT title, description, contacts, purpose_id FROM applications WHERE id = @id", conn))
             {
@@ -239,6 +269,67 @@ namespace GameTeam.Tests.DatabaseControllerTests
                 cmdPurpose.Parameters.AddWithValue("pid", purposeId);
                 var purpose = cmdPurpose.ExecuteScalar() as string;
                 Assert.AreEqual(UpdatedPurpose, purpose, "Значение поля purpose_id не обновилось корректно.");
+            }
+        }
+        
+        [Test]
+        public void Test_UpsertApplication_ReplacesOldRecords()
+        {
+            // 1) Сначала создаём приложение с первоначальными играми и доступностями
+            var initialGames = new List<Game> { new Game(TestGameId, TestGameName) };
+            var initialAvailabilities = new List<Availability>
+            {
+                new Availability(TestAvailabilityId, TestDayOfWeek, TestStartTime, TestEndTime)
+            };
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, initialGames, initialAvailabilities);
+
+            // 2) Повторный вызов с новыми списками — старые связи должны удалиться
+            var newGames = new List<Game> { new Game(TestGameId2, TestGameName2) };
+            var newAvailabilities = new List<Availability>
+            {
+                new Availability(TestAvailabilityId2, Availability.DayOfWeekEnum.Monday, TestStartTime2, TestEndTime2)
+            };
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, newGames, newAvailabilities);
+
+            using var conn = new NpgsqlConnection(connectionString);
+            conn.Open();
+
+            // Старые игровые связи удалены
+            using (var cmd = new NpgsqlCommand(
+                       "SELECT COUNT(*) FROM applications_to_games WHERE app_id = @appId AND game_id = @gameId", conn))
+            {
+                cmd.Parameters.AddWithValue("appId", TestAppId);
+                cmd.Parameters.AddWithValue("gameId", TestGameId);
+                var oldCount = (long)cmd.ExecuteScalar();
+                Assert.AreEqual(0, oldCount, "Старая связь с игрой не должна существовать");
+            }
+            // Новые игровые связи созданы
+            using (var cmd = new NpgsqlCommand(
+                       "SELECT COUNT(*) FROM applications_to_games WHERE app_id = @appId AND game_id = @gameId", conn))
+            {
+                cmd.Parameters.AddWithValue("appId", TestAppId);
+                cmd.Parameters.AddWithValue("gameId", TestGameId2);
+                var newCount = (long)cmd.ExecuteScalar();
+                Assert.Greater(newCount, 0, "Новая связь с игрой должна присутствовать");
+            }
+
+            // Старая доступность удалена
+            using (var cmd = new NpgsqlCommand(
+                       "SELECT COUNT(*) FROM applications_to_availability WHERE application_id = @appId AND availability_id = @availId", conn))
+            {
+                cmd.Parameters.AddWithValue("appId", TestAppId);
+                cmd.Parameters.AddWithValue("availId", TestAvailabilityId);
+                var oldAvCount = (long)cmd.ExecuteScalar();
+                Assert.AreEqual(0, oldAvCount, "Старая доступность не должна существовать");
+            }
+            // Новая доступность добавлена
+            using (var cmd = new NpgsqlCommand(
+                       "SELECT COUNT(*) FROM applications_to_availability WHERE application_id = @appId AND availability_id = @availId", conn))
+            {
+                cmd.Parameters.AddWithValue("appId", TestAppId);
+                cmd.Parameters.AddWithValue("availId", TestAvailabilityId2);
+                var newAvCount = (long)cmd.ExecuteScalar();
+                Assert.Greater(newAvCount, 0, "Новая доступность должна присутствовать");
             }
         }
     }
