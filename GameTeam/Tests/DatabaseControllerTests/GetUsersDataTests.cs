@@ -11,6 +11,7 @@ public class GetUserDataTests
     private const string TestUsername = "testuser_data";
     private const string TestEmail = "testdata@mail.ru";
     private const string TestPassword = "password123";
+    private const string TestSalt = "salt";
 
     private readonly string connectionString = DatabaseController.ConnectionString;
 
@@ -22,8 +23,8 @@ public class GetUserDataTests
 
         // Insert or update test user into users_data
         using var cmd = new NpgsqlCommand(@"
-            INSERT INTO users_data (id, username, email, password)
-            VALUES (@id, @username, @email, @password)
+            INSERT INTO users_data (id, username, email, password, salt)
+            VALUES (@id, @username, @email, @password, @salt)
             ON CONFLICT (id) DO UPDATE
               SET username = EXCLUDED.username,
                   email = EXCLUDED.email,
@@ -33,6 +34,7 @@ public class GetUserDataTests
         cmd.Parameters.AddWithValue("username", TestUsername);
         cmd.Parameters.AddWithValue("email", TestEmail);
         cmd.Parameters.AddWithValue("password", TestPassword);
+        cmd.Parameters.AddWithValue("salt", TestSalt);
         cmd.ExecuteNonQuery();
     }
 

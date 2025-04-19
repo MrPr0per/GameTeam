@@ -14,6 +14,7 @@ public class UpsertUserProfileTests
 	private const string TestUsername = "testuser";
 	private const string TestEmail = "testuser@example.com";
 	private const string TestPassword = "password";
+	private const string TestSalt = "salt";
 
 	// Данные для профиля
 	private const string InitialDescription = "Initial description";
@@ -48,8 +49,8 @@ public class UpsertUserProfileTests
 
 		// Вставляем тестового пользователя в таблицу users_data (нужно для внешнего ключа)
 		using (var cmd = new NpgsqlCommand(@"
-                INSERT INTO users_data (id, username, email, password)
-                VALUES (@id, @username, @email, @password)
+                INSERT INTO users_data (id, username, email, password, salt)
+                VALUES (@id, @username, @email, @password, @salt)
                 ON CONFLICT (id) DO UPDATE SET username = EXCLUDED.username, 
                     email = EXCLUDED.email, password = EXCLUDED.password;
             ", conn))
@@ -58,6 +59,7 @@ public class UpsertUserProfileTests
 			cmd.Parameters.AddWithValue("username", TestUsername);
 			cmd.Parameters.AddWithValue("email", TestEmail);
 			cmd.Parameters.AddWithValue("password", TestPassword);
+			cmd.Parameters.AddWithValue("salt", TestSalt);
 			cmd.ExecuteNonQuery();
 		}
 	}

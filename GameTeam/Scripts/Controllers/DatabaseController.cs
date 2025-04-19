@@ -534,10 +534,10 @@ namespace GameTeam.Scripts.Controllers
         }
 
         /// <summary>
-        /// Получение всех анкет пользователя по его ID (с учетом связей между таблицами)
+        /// Получение всех анкет пользователя по его ID 
         /// </summary>
         /// <param name="userId">ID пользователя</param>
-        /// <returns>Список анкет, в которых участвует пользователь</returns>
+        /// <returns>Список анкет, которые создал пользователь</returns>
         public static List<Application> GetAllApplicationsByUserId(int userId)
         {
             using var conn = new NpgsqlConnection(ConnectionString);
@@ -547,14 +547,12 @@ namespace GameTeam.Scripts.Controllers
             {
                 conn.Open();
 
-                // 1. Получаем все анкеты, где пользователь является участником
+                // 1. Получаем все анкеты, которые создал пользователь
                 using (var cmd = new NpgsqlCommand(@"
-            SELECT a.id, a.title, a.description, a.contacts, p.purpose
-            FROM applications a
-            JOIN participants pa ON a.id = pa.application_id
-            JOIN purposes p ON a.purpose_id = p.id
-            WHERE pa.user_id = @userId
-            ORDER BY a.id", conn))
+                    SELECT a.id, a.title, a.description, a.contacts, a.purpose_id, a.owner_id
+                    FROM applications a
+                    WHERE owner_id = @userId
+                    ORDER BY a.id", conn))
                 {
                     cmd.Parameters.AddWithValue("userId", userId);
 
@@ -566,7 +564,8 @@ namespace GameTeam.Scripts.Controllers
                             reader.GetString(1),
                             reader.IsDBNull(2) ? null : reader.GetString(2),
                             reader.IsDBNull(3) ? null : reader.GetString(3),
-                            reader.GetInt32(4)));
+                            reader.GetInt32(4),
+                            reader.GetInt32(5)));
                     }
                 }
 
@@ -600,7 +599,8 @@ namespace GameTeam.Scripts.Controllers
                 while (reader.Read())
                 {
                     applications.Add(new Application(reader.GetInt32(0), reader.GetString(1),
-                        reader.GetString(2), reader.GetString(3), reader.GetInt32(4)));
+                        reader.GetString(2), reader.GetString(3),
+                        reader.GetInt32(4), reader.GetInt32(5)));
                 }
 
                 return applications;
@@ -769,6 +769,7 @@ namespace GameTeam.Scripts.Controllers
         /// <param name="contacts">Контакты</param>
         /// <param name="games">Список игр</param>
         /// <param name="availabilities">Список доступностей</param>
+        /// <param name="owner_id">Id владельца</param>
         /// <remarks>
         /// Выполняет в транзакции:
         /// 1. Обновление основной информации
@@ -777,7 +778,7 @@ namespace GameTeam.Scripts.Controllers
         /// </remarks>
         /// <exception cref="Exception">Ошибки выполнения транзакции</exception>
         public static void UpsertApplication(int applicationId, string purposeName, string title, string? description = null,
-            string? contacts = null, List<Game>? games = null, List<Availability>? availabilities = null)
+            string? contacts = null, List<Game>? games = null, List<Availability>? availabilities = null, int? owner_id = null)
         {
             using var conn = new NpgsqlConnection(ConnectionString);
             conn.Open();
@@ -801,8 +802,8 @@ namespace GameTeam.Scripts.Controllers
                 }
 
                 using (var cmd = new NpgsqlCommand(@"
-                    INSERT INTO applications (id, title, description, contacts, purpose_id)
-                    VALUES (@application_id, @title, @description, @contacts, @purpose_id)
+                    INSERT INTO applications (id, title, description, contacts, purpose_id, owner_id)
+                    VALUES (@application_id, @title, @description, @contacts, @purpose_id, @owner_id)
                     ON CONFLICT (id) DO UPDATE
                         SET title = EXCLUDED.title,
                             description = EXCLUDED.description,
@@ -815,6 +816,7 @@ namespace GameTeam.Scripts.Controllers
                     cmd.Parameters.AddWithValue("description", description ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("contacts", contacts ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("purpose_id", purposeId);
+                    cmd.Parameters.AddWithValue("owner_id", owner_id);
                     cmd.ExecuteNonQuery();
                 }
 

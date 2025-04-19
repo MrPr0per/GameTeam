@@ -19,6 +19,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
         private const string TestAppTitle = "TestApplication";
         private const string TestAppDescription = "Описание заявки";
         private const string TestAppContacts = "Контакты";
+        private const int TestAppOwnerId = 12345;  // Новый столбец owner_id
 
         // Тестовые данные для доступности
         private const int TestAppAvailabilityId = 98765;
@@ -49,7 +50,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
                 cmd.ExecuteNonQuery();
             }
 
-            // Вставляем тестовую заявку (applications) с целью.
+            // Вставляем тестовую заявку (applications) с целью и owner_id.
             // Для этого сначала нужно узнать purpose_id по TestPurpose.
             int purposeId;
             using (var cmd = new NpgsqlCommand("SELECT id FROM purposes WHERE purpose = @purpose;", conn))
@@ -63,19 +64,21 @@ namespace GameTeam.Tests.DatabaseControllerTests
 
             // Вставка заявки
             using (var cmd = new NpgsqlCommand(@"
-                INSERT INTO applications (id, title, description, contacts, purpose_id)
-                VALUES (@id, @title, @description, @contacts, @purpose_id)
+                INSERT INTO applications (id, title, description, contacts, purpose_id, owner_id)
+                VALUES (@id, @title, @description, @contacts, @purpose_id, @owner_id)
                 ON CONFLICT (id) DO UPDATE SET 
                     title = EXCLUDED.title,
                     description = EXCLUDED.description,
                     contacts = EXCLUDED.contacts,
-                    purpose_id = EXCLUDED.purpose_id;", conn))
+                    purpose_id = EXCLUDED.purpose_id,
+                    owner_id = EXCLUDED.owner_id;", conn))
             {
                 cmd.Parameters.AddWithValue("id", TestAppId);
                 cmd.Parameters.AddWithValue("title", TestAppTitle);
                 cmd.Parameters.AddWithValue("description", TestAppDescription);
                 cmd.Parameters.AddWithValue("contacts", TestAppContacts);
                 cmd.Parameters.AddWithValue("purpose_id", purposeId);
+                cmd.Parameters.AddWithValue("owner_id", TestAppOwnerId);
                 cmd.ExecuteNonQuery();
             }
 
@@ -202,7 +205,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
         }
 
         [Test]
-        public void Test_GetAllApplications_Returns_Valid_Application_With_Availabilities_And_Games()
+        public void Test_GetAllApplications_Returns_Valid_Application_With_Availabilities_And_Games_And_Owner()
         {
             var applications = DatabaseController.GetAllApplications();
             Assert.IsNotNull(applications, "Список заявок не должен быть null.");
@@ -214,6 +217,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
             Assert.AreEqual(TestAppTitle, testApplication.Title, "Заголовок заявки не соответствует ожидаемому.");
             Assert.AreEqual(TestAppDescription, testApplication.Description, "Описание заявки не соответствует ожидаемому.");
             Assert.AreEqual(TestAppContacts, testApplication.Contacts, "Контакты заявки не соответствуют ожидаемым.");
+            Assert.AreEqual(TestAppOwnerId, testApplication.OwnerId, "OwnerId заявки не соответствует ожидаемому.");
         }
     }
 }
