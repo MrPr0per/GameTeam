@@ -11,6 +11,7 @@ public class GetIdByUsernameTest
 	private const int TestUserId = 12345;
 	private const string TestEmail = "biba123123@mail.ru";
 	private const string TestPassword = "123123123";
+	private const string TestSalt = "salt";
 
 	// Метод, который вызывается перед каждым тестом для подготовки данных
 	[SetUp]
@@ -21,14 +22,15 @@ public class GetIdByUsernameTest
 
 		// Вставляем тестовую запись. Если таблица уже содержит данные с таким id/username, можно использовать транзакцию или уникальные значения
 		using var cmd = new NpgsqlCommand(@"
-                INSERT INTO users_data (id, username, email, password)
-                VALUES (@id, @username, @email, @password)
+                INSERT INTO users_data (id, username, email, password, salt)
+                VALUES (@id, @username, @email, @password, @salt)
                 ON CONFLICT (username) DO UPDATE SET id = EXCLUDED.id;", conn);
 		
 		cmd.Parameters.AddWithValue("id", TestUserId);
 		cmd.Parameters.AddWithValue("username", TestUsername);
 		cmd.Parameters.AddWithValue("email", TestEmail);
 		cmd.Parameters.AddWithValue("password", TestPassword);
+		cmd.Parameters.AddWithValue("salt", TestSalt);
 		cmd.ExecuteNonQuery();
 	}
 

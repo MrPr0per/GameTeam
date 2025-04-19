@@ -11,13 +11,14 @@ using NUnit.Framework;
 namespace GameTeam.Tests.DatabaseControllerTests;
 
 [TestFixture]
-public class GetUserProfileAndGetUserGamesTest
+public class GetUserProfileTests
 {
     // Общие тестовые данные
     private const int TestUserId = 12345;
     private const string TestUsername = "testuser";
     private const string TestEmail = "biba123123@mail.ru";
     private const string TestPassword = "123123123";
+    private const string TestSalt = "salt";
     private const string TestDescription = "Тестовое описание";
     private const int TestGameId = 987;
     private const string TestGameName = "TestGame";
@@ -39,14 +40,15 @@ public class GetUserProfileAndGetUserGamesTest
 
         // Вставляем тестового пользователя (users_data)
         using (var cmd = new NpgsqlCommand(@"
-            INSERT INTO users_data (id, username, email, password)
-            VALUES (@id, @username, @email, @password)
+            INSERT INTO users_data (id, username, email, password, salt)
+            VALUES (@id, @username, @email, @password, @salt)
             ON CONFLICT (username) DO UPDATE SET id = EXCLUDED.id;", conn))
         {
             cmd.Parameters.AddWithValue("id", TestUserId);
             cmd.Parameters.AddWithValue("username", TestUsername);
             cmd.Parameters.AddWithValue("email", TestEmail);
             cmd.Parameters.AddWithValue("password", TestPassword);
+            cmd.Parameters.AddWithValue("salt", TestSalt);
             cmd.ExecuteNonQuery();
         }
         

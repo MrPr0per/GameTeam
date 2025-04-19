@@ -1,15 +1,15 @@
 ﻿document.addEventListener('DOMContentLoaded', function () {
-    addPasswordEqualityCheck(); // проверка того, что пароли равны после каждого введенного символа
-    addSwitchingForms(); // переключение форм логина и регистрации
+    addPasswordEqualityCheck(); // Проверка того, что пароли равны после каждого введенного символа
+    addSwitchingForms(); // Переключение форм логина и регистрации
     addSwitchingPasswordVisibility();
-    addLoginFormSubmissionProcessing();
-    addRegisterFormSubmissionProcessing();
+    addLoginFormSubmissionProcessing(); // Обработка формы входа
+    addRegisterFormSubmissionProcessing(); // Обработка формы регистрации
 });
 
+// Проверка равенства паролей
 function addPasswordEqualityCheck() {
     const delayBeforeError = 0; // todo: сейчас с задержкой выглядит не очень, с анимацией должно быть лучше
 
-    // Получаем оба поля ввода пароля
     const passwordInputs = document.querySelectorAll('#register-form input.password-input');
     const password1 = passwordInputs[0];
     const password2 = passwordInputs[1];
@@ -17,37 +17,33 @@ function addPasswordEqualityCheck() {
     const errorText = document.getElementById('registration-error-text');
     let showErrorTimeout;
 
-    // Добавляем обработчики событий с задержкой
     password1.addEventListener('input', checkPasswords);
     password2.addEventListener('input', checkPasswords);
 
-    // Функция для проверки совпадения паролей
     function checkPasswords() {
-        // Получаем значения из обоих полей
         const pass1 = password1.value;
         const pass2 = password2.value;
-        // если не совпадают - добавляем таймер с появлением ошибки
+
         if (pass1 && pass2 && pass1 !== pass2) {
             showErrorTimeout = setTimeout(() => {
                 errorText.innerText = 'Пароли не совпадают';
                 errorElement.style.display = 'block';
             }, delayBeforeError);
-        }
-        // если совпадают - убираем и ошибку и таймер
-        else {
+        } else {
             errorElement.style.display = 'none';
             clearTimeout(showErrorTimeout);
         }
     }
 }
 
+// Переключение между формами регистрации и логина
 function addSwitchingForms() {
     const tabRegister = document.getElementById('tab-register');
     const tabLogin = document.getElementById('tab-login');
     const registerForm = document.getElementById('register-form');
     const loginForm = document.getElementById('login-form');
     const formContainer = document.querySelector('.form-container');
-    // Переключение форм
+
     tabLogin.addEventListener('click', () => {
         tabLogin.classList.add('active');
         tabRegister.classList.remove('active');
@@ -65,19 +61,17 @@ function addSwitchingForms() {
     });
 }
 
+// Переключение видимости пароля
 function addSwitchingPasswordVisibility() {
-    // Обработчик переключения видимости паролей
     document.querySelectorAll('.toggle-password').forEach(icon => {
         icon.addEventListener('click', function () {
             const form = this.closest('form');
             const inputs = form.querySelectorAll('.password-input');
 
-            // Переключаем видимость полей
             inputs.forEach(input => {
                 input.type = input.type === 'password' ? 'text' : 'password';
             });
 
-            // Синхронизация иконок в форме регистрации
             if (form.id === 'register-form') {
                 form.querySelectorAll('.toggle-password').forEach(icon => {
                     icon.classList.toggle('active');
@@ -89,60 +83,89 @@ function addSwitchingPasswordVisibility() {
     });
 }
 
+// Обработка формы регистрации
 function addRegisterFormSubmissionProcessing() {
-    setupFormSubmission({
-        formId: 'register-form',
-        errorBlockId: 'registration-error-block',
-        errorTextId: 'registration-error-text',
-        apiUrl: '/api/auth/register',
-        getData: (formValues) => ({
-            username: formValues.username,
-            email: formValues.email,
-            password: formValues.password,
-            confirmPassword: formValues.password,
-        }),
-        defaultServerErrorMessage: 'Ошибка регистрации',
-    });
-}
-
-function addLoginFormSubmissionProcessing() {
-    setupFormSubmission({
-        formId: 'login-form',
-        errorBlockId: 'login-error-block',
-        errorTextId: 'login-error-text',
-        apiUrl: '/api/auth/login',
-        getData: (formValues) => ({
-            email: formValues.email,
-            password: formValues.password,
-        }),
-        defaultServerErrorMessage: 'Ошибка входа',
-    });
-}
-
-function setupFormSubmission({formId, errorBlockId, errorTextId, apiUrl, getData, defaultServerErrorMessage}) {
-    const form = document.getElementById(formId);
-    const errorBlock = document.getElementById(errorBlockId);
-    const errorText = document.getElementById(errorTextId);
+    const form = document.getElementById('register-form');
+    const errorBlock = document.getElementById('registration-error-block');
+    const errorText = document.getElementById('registration-error-text');
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
         const formData = new FormData(form);
         const formValues = Object.fromEntries(formData.entries());
-        const data = getData(formValues);
+        const data = handleRegisterDataSubmit(formValues); // Используем отдельную функцию для регистрации
+
+        // Дополнительная валидация или проверка, которая специфична для регистрации
+        if (!data.username || !data.email || !formValues.password) {
+            showError('Пожалуйста, заполните все поля');
+            return;
+        }
 
         try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data),
-            });
+            const saltResponse = await fetch('api/auth/salt', { method: 'GET', });
+
+            const salt = await saltResponse.text(); 
+
+            data.password = await hashPassword(formValues.password, salt);
+
+            const response = await postData('/api/auth/register', data);
 
             if (response.ok) {
-                window.location.href = '/profile';
+                window.location.href = '/profile'; // Перенаправление после успешной регистрации
             } else {
                 const result = await response.json();
-                showError(result.message || defaultServerErrorMessage);
+                showError(result.message || 'Ошибка регистрации');
+            }
+        } catch (error) {
+            showError('Сервер недоступен');
+        }
+    });
+
+    function showError(message) {
+        errorBlock.style.display = 'block';
+        errorText.innerText = message;
+    }
+}
+
+// Обработка формы входа
+function addLoginFormSubmissionProcessing() {
+    const form = document.getElementById('login-form');
+    const errorBlock = document.getElementById('login-error-block');
+    const errorText = document.getElementById('login-error-text');
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const formValues = Object.fromEntries(formData.entries());
+        const data = handleLoginSubmit(formValues); // Используем отдельную функцию для логина
+
+        if (!data.email || !formValues.password) {
+            showError('Пожалуйста, введите email и пароль');
+            return;
+        }
+
+        try {
+            const response = await postData('/api/auth/login', data);
+
+            const [salt, challenge] = await response.json(); 
+            const passwordSalt = await hashPassword(formValues.password, salt)
+
+            const passwordChallanged = await hashPassword(passwordSalt, challenge);
+
+            const responseAuth =
+            await fetch('/api/auth/loginpass/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: passwordChallanged }),
+            });
+
+            if (responseAuth.ok) {
+                window.location.href = '/profile'; // Перенаправление после успешного входа
+            } else {
+                const result = await responseAuth.json();
+                showError(result.message || 'Ошибка входа');
             }
         } catch {
             showError('Сервер недоступен');
@@ -153,4 +176,58 @@ function setupFormSubmission({formId, errorBlockId, errorTextId, apiUrl, getData
         errorBlock.style.display = 'block';
         errorText.innerText = message;
     }
+}
+
+// Функция для подготовки данных для регистрации
+function handleRegisterDataSubmit(formValues) {
+    return {
+        username: formValues.username,
+        email: formValues.email,
+    };
+}
+
+function handleRegisterSubmit(formValues) {
+    return {
+        username: formValues.username,
+        email: formValues.email,
+        password: formValues.password,
+    };
+}
+
+// Функция для подготовки данных для входа
+function handleLoginSubmit(formValues) {
+    return {
+        email: formValues.email
+    };
+}
+
+// Функция для отправки POST-запроса
+async function postData(url, data) {
+    return await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    });
+}
+
+async function hashPassword(password, salt) {
+    // 1. Кодируем пароль в UTF-8 (как в C#)
+    const passwordBytes = new TextEncoder().encode(password);
+
+    // 2. Декодируем соль из Base64 (как Convert.FromBase64String в C#)
+    const saltBytes = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
+
+    // 3. Объединяем массивы (аналогично Buffer.BlockCopy)
+    const combined = new Uint8Array(passwordBytes.length + saltBytes.length);
+    combined.set(passwordBytes);
+    combined.set(saltBytes, passwordBytes.length);
+
+    // 4. Хешируем (SHA-256)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', combined);
+
+    // 5. Конвертируем в Base64 (как Convert.ToBase64String)
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashBase64 = btoa(String.fromCharCode.apply(null, hashArray));
+
+    return hashBase64;
 }

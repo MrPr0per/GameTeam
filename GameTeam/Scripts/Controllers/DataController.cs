@@ -1,5 +1,6 @@
 ﻿using GameTeam.Classes.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NodaTime;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
@@ -109,6 +110,26 @@ namespace GameTeam.Scripts.Controllers
             }
         }
 
+
+        [HttpGet("selfapplications")]
+        public string GetSelfApplicationsByUserId()
+        {
+            var username = HttpContext.Session.GetString("Username");
+            if (string.IsNullOrEmpty(username))
+            {
+                Response.StatusCode = 401;
+                return "";
+            }
+            var userId = DatabaseController.GetIdByUsername(username);
+
+
+
+            var applications = DatabaseController.GetAllApplicationsByUserId(userId.Value);
+
+
+            return JsonSerializer.Serialize(applications);
+        }
+
         [HttpGet("applications/{from}/{to}")]
         public string GetAllApplications(int from, int to)
         {
@@ -143,6 +164,11 @@ namespace GameTeam.Scripts.Controllers
         [HttpPost("application")]
         public IActionResult UpsertApplication([FromBody] ApplicationWithPurpose data)
         {
+            var userId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
             if (data.Title == null || data.PurposeName == null)
                 return BadRequest(new { Message = "Нет title или purpose" });
 
@@ -162,7 +188,7 @@ namespace GameTeam.Scripts.Controllers
             try
             {
                 DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, data.Description, 
-                                                     data.Contacts, games, availabilities);
+                                                     data.Contacts, games, availabilities, int.Parse(userId));
             }
             catch (Exception ex)
             {
@@ -171,6 +197,12 @@ namespace GameTeam.Scripts.Controllers
             }
 
             return Ok(new { Message = "Application upserted" });
+        }
+        public IActionResult UpsertApplicationasd()
+        {
+            var salt = DatabaseController.GetUserSalt(1);
+
+            return Ok(new { Message = salt });
         }
     }
 

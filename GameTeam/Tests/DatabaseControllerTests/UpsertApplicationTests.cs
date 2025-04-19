@@ -13,58 +13,59 @@ namespace GameTeam.Tests.DatabaseControllerTests
     [TestFixture]
     public class UpsertApplicationTests
     {
-        // Тестовые данные для приложения (application)
         private const int TestAppId = 22222;
-        private const string TestPurpose = "SomePurpose"; // начальная цель
-        private const string UpdatedPurpose = "UpdatedPurpose"; // цель для обновления
+        private const string TestPurpose = "SomePurpose";
+        private const string UpdatedPurpose = "UpdatedPurpose";
         private const string TestAppTitle = "Initial App Title";
         private const string TestAppDescription = "Initial App Description";
         private const string TestAppContacts = "Initial Contacts";
+        private const int TestAppOwnerId = 55555;
 
         private const string UpdatedAppTitle = "Updated App Title";
         private const string UpdatedAppDescription = "Updated App Description";
         private const string UpdatedAppContacts = "Updated Contacts";
 
-        // Данные для игры
         private const int TestGameId = 888;
         private const string TestGameName = "Test Application Game";
 
-        // Данные для доступности
         private const int TestAvailabilityId = 98765;
         private const Availability.DayOfWeekEnum TestDayOfWeek = Availability.DayOfWeekEnum.Friday;
-        private readonly OffsetTime TestStartTime = new OffsetTime(new LocalTime(14, 0, 0), Offset.FromHours(0));
-        private readonly OffsetTime TestEndTime = new OffsetTime(new LocalTime(16, 0, 0), Offset.FromHours(0));
+        private readonly OffsetTime TestStartTime = new OffsetTime(new LocalTime(14, 0), Offset.FromHours(0));
+        private readonly OffsetTime TestEndTime = new OffsetTime(new LocalTime(16, 0), Offset.FromHours(0));
 
-        // Строка подключения
-        private readonly string connectionString = DatabaseController.ConnectionString;
-
-        // Новый тестовый набор
         private const int TestGameId2 = 333;
         private const string TestGameName2 = "New Application Game";
         private const int TestAvailabilityId2 = 44444;
-        private readonly OffsetTime TestStartTime2 = new OffsetTime(new LocalTime(18, 0, 0), Offset.FromHours(0));
-        private readonly OffsetTime TestEndTime2   = new OffsetTime(new LocalTime(20, 0, 0), Offset.FromHours(0));
-        
+        private readonly OffsetTime TestStartTime2 = new OffsetTime(new LocalTime(18, 0), Offset.FromHours(0));
+        private readonly OffsetTime TestEndTime2 = new OffsetTime(new LocalTime(20, 0), Offset.FromHours(0));
+
+        private readonly string connectionString = DatabaseController.ConnectionString;
+
         [SetUp]
         public void SetUp()
         {
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
-            // Создаем запись для начальной цели и для цели обновления, если их ещё нет.
-            using (var cmd = new NpgsqlCommand(@"
-                INSERT INTO purposes (id, purpose)
-                VALUES (DEFAULT, @purpose)
-                ON CONFLICT (purpose) DO NOTHING;
-            ", conn))
-            {
-                // Создаем начальную цель TestPurpose
-                cmd.Parameters.AddWithValue("purpose", TestPurpose);
-                cmd.ExecuteNonQuery();
-                cmd.Parameters.Clear();
-                // Создаем цель для обновления UpdatedPurpose
-                cmd.Parameters.AddWithValue("purpose", UpdatedPurpose);
-                cmd.ExecuteNonQuery();
-            }
+            // Create test user for owner
+            using var cmdUser = new NpgsqlCommand(
+                "INSERT INTO users_data (id, username, email, password, salt) VALUES (@id, @username, @email, @password, @salt) ON CONFLICT (id) DO NOTHING;",
+                conn);
+            cmdUser.Parameters.AddWithValue("id", TestAppOwnerId);
+            cmdUser.Parameters.AddWithValue("username", "owner_user");
+            cmdUser.Parameters.AddWithValue("email", "owner@example.com");
+            cmdUser.Parameters.AddWithValue("password", "pass");
+            cmdUser.Parameters.AddWithValue("salt", "salt");
+            cmdUser.ExecuteNonQuery();
+
+            // Create purposes
+            using var cmdP = new NpgsqlCommand(
+                "INSERT INTO purposes (id, purpose) VALUES (DEFAULT, @purpose) ON CONFLICT (purpose) DO NOTHING;",
+                conn);
+            cmdP.Parameters.AddWithValue("purpose", TestPurpose);
+            cmdP.ExecuteNonQuery();
+            cmdP.Parameters.Clear();
+            cmdP.Parameters.AddWithValue("purpose", UpdatedPurpose);
+            cmdP.ExecuteNonQuery();
         }
 
         [TearDown]
@@ -72,265 +73,182 @@ namespace GameTeam.Tests.DatabaseControllerTests
         {
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
+            // Clean application and relations
+            using var cmd = new NpgsqlCommand(
+                "DELETE FROM applications_to_games WHERE app_id = @id; " +
+                "DELETE FROM applications_to_availability WHERE application_id = @id; " +
+                "DELETE FROM applications WHERE id = @id;", conn);
+            cmd.Parameters.AddWithValue("id", TestAppId);
+            cmd.ExecuteNonQuery();
 
-            // Удаляем связи в таблицах приложения
-            using (var cmd = new NpgsqlCommand("DELETE FROM applications_to_games WHERE app_id = @id;", conn))
-            {
-                cmd.Parameters.AddWithValue("id", TestAppId);
-                cmd.ExecuteNonQuery();
-            }
-            using (var cmd = new NpgsqlCommand("DELETE FROM applications_to_availability WHERE application_id = @id;", conn))
-            {
-                cmd.Parameters.AddWithValue("id", TestAppId);
-                cmd.ExecuteNonQuery();
-            }
-            // Удаляем запись из таблицы applications
-            using (var cmd = new NpgsqlCommand("DELETE FROM applications WHERE id = @id;", conn))
-            {
-                cmd.Parameters.AddWithValue("id", TestAppId);
-                cmd.ExecuteNonQuery();
-            }
-            // Удаляем тестовые записи из мастер‑таблиц (игры и доступности)
-            using (var cmd = new NpgsqlCommand("DELETE FROM games WHERE game_id = @gameId;", conn))
-            {
-                cmd.Parameters.AddWithValue("gameId", TestGameId);
-                cmd.ExecuteNonQuery();
-            }
-            using (var cmd = new NpgsqlCommand("DELETE FROM availabilities WHERE id = @availId;", conn))
-            {
-                cmd.Parameters.AddWithValue("availId", TestAvailabilityId);
-                cmd.ExecuteNonQuery();
-            }
-            // Удаляем тестовые цели из purposes
-            using (var cmd = new NpgsqlCommand("DELETE FROM purposes WHERE purpose = @purpose;", conn))
-            {
-                cmd.Parameters.AddWithValue("purpose", TestPurpose);
-                cmd.ExecuteNonQuery();
-                cmd.Parameters.Clear();
-                cmd.Parameters.AddWithValue("purpose", UpdatedPurpose);
-                cmd.ExecuteNonQuery();
-            }
-            
-            // Удаляем связи и мастер‑записи второго набора
-            using (var cmd = new NpgsqlCommand("DELETE FROM applications_to_games WHERE game_id = @gameId;", conn))
-            {
-                cmd.Parameters.AddWithValue("gameId", TestGameId2);
-                cmd.ExecuteNonQuery();
-            }
-            using (var cmd = new NpgsqlCommand("DELETE FROM games WHERE game_id = @gameId;", conn))
-            {
-                cmd.Parameters.AddWithValue("gameId", TestGameId2);
-                cmd.ExecuteNonQuery();
-            }
-            using (var cmd = new NpgsqlCommand("DELETE FROM applications_to_availability WHERE availability_id = @availId;", conn))
-            {
-                cmd.Parameters.AddWithValue("availId", TestAvailabilityId2);
-                cmd.ExecuteNonQuery();
-            }
-            using (var cmd = new NpgsqlCommand("DELETE FROM availabilities WHERE id = @availId;", conn))
-            {
-                cmd.Parameters.AddWithValue("availId", TestAvailabilityId2);
-                cmd.ExecuteNonQuery();
-            }
+            // Clean games and availabilities
+            using var cmdGA = new NpgsqlCommand(
+                "DELETE FROM games WHERE game_id IN (@g1, @g2); " +
+                "DELETE FROM availabilities WHERE id IN (@a1, @a2);", conn);
+            cmdGA.Parameters.AddWithValue("g1", TestGameId);
+            cmdGA.Parameters.AddWithValue("g2", TestGameId2);
+            cmdGA.Parameters.AddWithValue("a1", TestAvailabilityId);
+            cmdGA.Parameters.AddWithValue("a2", TestAvailabilityId2);
+            cmdGA.ExecuteNonQuery();
 
+            // Clean purposes
+            using var cmdP = new NpgsqlCommand(
+                "DELETE FROM purposes WHERE purpose IN (@p1, @p2);", conn);
+            cmdP.Parameters.AddWithValue("p1", TestPurpose);
+            cmdP.Parameters.AddWithValue("p2", UpdatedPurpose);
+            cmdP.ExecuteNonQuery();
+
+            // Clean user
+            using var cmdUser = new NpgsqlCommand(
+                "DELETE FROM users_data WHERE id = @id;", conn);
+            cmdUser.Parameters.AddWithValue("id", TestAppOwnerId);
+            cmdUser.ExecuteNonQuery();
         }
 
         [Test]
         public void Test_UpsertApplication_BasicFields()
         {
-            // Act: вызываем метод для вставки базовых данных приложения без игр и доступностей, используя TestPurpose.
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, null, null);
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, null, null, TestAppOwnerId);
 
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
-            int purposeId = 0;
 
-            // Читаем запись из applications
-            using (var cmd = new NpgsqlCommand("SELECT title, description, contacts, purpose_id FROM applications WHERE id = @id", conn))
+            string title = null, description = null, contacts = null;
+            int purposeId = 0, ownerId = 0;
+            using (var cmd = new NpgsqlCommand(
+                "SELECT title, description, contacts, purpose_id, owner_id FROM applications WHERE id = @id;", conn))
             {
                 cmd.Parameters.AddWithValue("id", TestAppId);
                 using (var reader = cmd.ExecuteReader())
                 {
-                    Assert.IsTrue(reader.Read(), "Запись приложения не найдена.");
-                    var title = reader.IsDBNull(0) ? null : reader.GetString(0);
-                    var description = reader.IsDBNull(1) ? null : reader.GetString(1);
-                    var contacts = reader.IsDBNull(2) ? null : reader.GetString(2);
+                    Assert.IsTrue(reader.Read(), "Application record not found.");
+                    title = reader.IsDBNull(0) ? null : reader.GetString(0);
+                    description = reader.IsDBNull(1) ? null : reader.GetString(1);
+                    contacts = reader.IsDBNull(2) ? null : reader.GetString(2);
                     purposeId = reader.GetInt32(3);
-
-                    Assert.AreEqual(TestAppTitle, title, "Неверное значение поля title.");
-                    Assert.AreEqual(TestAppDescription, description, "Неверное значение поля description.");
-                    Assert.AreEqual(TestAppContacts, contacts, "Неверное значение поля contacts.");
+                    ownerId = reader.GetInt32(4);
                 }
             }
+            Assert.AreEqual(TestAppTitle, title, "Field title incorrect.");
+            Assert.AreEqual(TestAppDescription, description, "Field description incorrect.");
+            Assert.AreEqual(TestAppContacts, contacts, "Field contacts incorrect.");
+            Assert.AreEqual(TestAppOwnerId, ownerId, "Field owner_id incorrect.");
 
-            // Проверяем, что purpose_id соответствует TestPurpose
-            using (var cmdPurpose = new NpgsqlCommand("SELECT purpose FROM purposes WHERE id = @pid", conn))
-            {
-                cmdPurpose.Parameters.AddWithValue("pid", purposeId);
-                var purpose = cmdPurpose.ExecuteScalar() as string;
-                Assert.AreEqual(TestPurpose, purpose, "Неверное значение поля purpose_id.");
-            }
+            using var cmdPurpose = new NpgsqlCommand(
+                "SELECT purpose FROM purposes WHERE id = @pid;", conn);
+            cmdPurpose.Parameters.AddWithValue("pid", purposeId);
+            var purpose = cmdPurpose.ExecuteScalar() as string;
+            Assert.AreEqual(TestPurpose, purpose, "Field purpose_id incorrect.");
         }
 
         [Test]
         public void Test_UpsertApplication_WithGames()
         {
-            // Подготавливаем список игр
             var games = new List<Game> { new Game(TestGameId, TestGameName) };
-
-            // Act: вызываем метод для вставки приложения с играми, используя TestPurpose.
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, games, null);
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, games, null, TestAppOwnerId);
 
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
-            // Проверяем запись в таблице games
-            using (var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM games WHERE game_id = @gameId", conn))
-            {
-                cmd.Parameters.AddWithValue("gameId", TestGameId);
-                var count = (long)cmd.ExecuteScalar();
-                Assert.Greater(count, 0, "Запись игры не найдена в таблице games.");
-            }
+            using var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM games WHERE game_id = @gameId;", conn);
+            cmd.Parameters.AddWithValue("gameId", TestGameId);
+            Assert.Greater((long)cmd.ExecuteScalar(), 0, "Game not found in games table.");
 
-            // Проверяем связь в applications_to_games
-            using (var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM applications_to_games WHERE app_id = @appId AND game_id = @gameId", conn))
-            {
-                cmd.Parameters.AddWithValue("appId", TestAppId);
-                cmd.Parameters.AddWithValue("gameId", TestGameId);
-                var count = (long)cmd.ExecuteScalar();
-                Assert.Greater(count, 0, "Связь приложения с игрой не установлена в applications_to_games.");
-            }
+            using var cmdJoin = new NpgsqlCommand(
+                "SELECT owner_id FROM applications WHERE id = @appId", conn);
+            cmdJoin.Parameters.AddWithValue("appId", TestAppId);
+            Assert.AreEqual(TestAppOwnerId, (int)cmdJoin.ExecuteScalar(), "owner_id not set for application games.");
         }
 
         [Test]
         public void Test_UpsertApplication_WithAvailabilities()
         {
-            // Подготавливаем список доступностей
-            var availabilities = new List<Availability>
-            {
-                new Availability(TestAvailabilityId, TestDayOfWeek, TestStartTime, TestEndTime)
-            };
-
-            // Act: вызываем метод для вставки приложения с доступностями, используя TestPurpose.
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, null, availabilities);
+            var avs = new List<Availability> { new Availability(TestAvailabilityId, TestDayOfWeek, TestStartTime, TestEndTime) };
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, null, avs, TestAppOwnerId);
 
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
-            // Проверяем наличие записи в таблице availabilities
-            using (var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM availabilities WHERE id = @availId", conn))
-            {
-                cmd.Parameters.AddWithValue("availId", TestAvailabilityId);
-                var count = (long)cmd.ExecuteScalar();
-                Assert.Greater(count, 0, "Запись доступности не найдена в таблице availabilities.");
-            }
-            // Проверяем связь в applications_to_availability
-            using (var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM applications_to_availability WHERE application_id = @appId AND availability_id = @availId", conn))
-            {
-                cmd.Parameters.AddWithValue("appId", TestAppId);
-                cmd.Parameters.AddWithValue("availId", TestAvailabilityId);
-                var count = (long)cmd.ExecuteScalar();
-                Assert.Greater(count, 0, "Связь приложения с доступностью не установлена в applications_to_availability.");
-            }
+            using var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM availabilities WHERE id = @aid;", conn);
+            cmd.Parameters.AddWithValue("aid", TestAvailabilityId);
+            Assert.Greater((long)cmd.ExecuteScalar(), 0, "Availability not found.");
+
+            using var cmdJoin = new NpgsqlCommand(
+                "SELECT owner_id FROM applications WHERE id = @appId", conn);
+            cmdJoin.Parameters.AddWithValue("appId", TestAppId);
+            Assert.AreEqual(TestAppOwnerId, (int)cmdJoin.ExecuteScalar(), "owner_id not set for application availabilities.");
         }
 
         [Test]
         public void Test_UpsertApplication_UpdateProfileFields()
         {
-            // Сначала вставляем исходные данные с целью TestPurpose
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, null, null);
-            // Затем обновляем данные, включая изменение цели на UpdatedPurpose
-            DatabaseController.UpsertApplication(TestAppId, UpdatedPurpose, UpdatedAppTitle, UpdatedAppDescription, UpdatedAppContacts, null, null);
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, null, null, TestAppOwnerId);
+            DatabaseController.UpsertApplication(TestAppId, UpdatedPurpose, UpdatedAppTitle, UpdatedAppDescription, UpdatedAppContacts, null, null, TestAppOwnerId);
 
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
-            int purposeId;
-            var title = "";
-            var description = "";
-            var contacts = "";
-            // Читаем обновленные данные из applications
-            using (var cmd = new NpgsqlCommand("SELECT title, description, contacts, purpose_id FROM applications WHERE id = @id", conn))
+            string title = null, description = null, contacts = null;
+            int purposeId = 0, ownerId = 0;
+            using (var cmd = new NpgsqlCommand(
+                "SELECT title, description, contacts, purpose_id, owner_id FROM applications WHERE id = @id;", conn))
             {
                 cmd.Parameters.AddWithValue("id", TestAppId);
                 using (var reader = cmd.ExecuteReader())
                 {
-                    Assert.IsTrue(reader.Read(), "Запись приложения не найдена после обновления.");
-                    title = reader.IsDBNull(0) ? "" : reader.GetString(0);
-                    description = reader.IsDBNull(1) ? "" : reader.GetString(1);
-                    contacts = reader.IsDBNull(2) ? "" : reader.GetString(2);
+                    Assert.IsTrue(reader.Read(), "Application not found after update.");
+                    title = reader.GetString(0);
+                    description = reader.GetString(1);
+                    contacts = reader.GetString(2);
                     purposeId = reader.GetInt32(3);
+                    ownerId = reader.GetInt32(4);
                 }
             }
-            Assert.AreEqual(UpdatedAppTitle, title, "Значение title не обновилось корректно.");
-            Assert.AreEqual(UpdatedAppDescription, description, "Значение description не обновилось корректно.");
-            Assert.AreEqual(UpdatedAppContacts, contacts, "Значение contacts не обновилось корректно.");
+            Assert.AreEqual(UpdatedAppTitle, title, "title not updated.");
+            Assert.AreEqual(UpdatedAppDescription, description, "description not updated.");
+            Assert.AreEqual(UpdatedAppContacts, contacts, "contacts not updated.");
+            Assert.AreEqual(TestAppOwnerId, ownerId, "owner_id should persist.");
 
-            // Проверяем, что purpose_id теперь соответствует UpdatedPurpose
-            using (var cmdPurpose = new NpgsqlCommand("SELECT purpose FROM purposes WHERE id = @pid", conn))
-            {
-                cmdPurpose.Parameters.AddWithValue("pid", purposeId);
-                var purpose = cmdPurpose.ExecuteScalar() as string;
-                Assert.AreEqual(UpdatedPurpose, purpose, "Значение поля purpose_id не обновилось корректно.");
-            }
+            using var cmdPurpose = new NpgsqlCommand(
+                "SELECT purpose FROM purposes WHERE id = @pid;", conn);
+            cmdPurpose.Parameters.AddWithValue("pid", purposeId);
+            var purpose = cmdPurpose.ExecuteScalar() as string;
+            Assert.AreEqual(UpdatedPurpose, purpose, "purpose_id not updated.");
         }
-        
+
         [Test]
         public void Test_UpsertApplication_ReplacesOldRecords()
         {
-            // 1) Сначала создаём приложение с первоначальными играми и доступностями
             var initialGames = new List<Game> { new Game(TestGameId, TestGameName) };
-            var initialAvailabilities = new List<Availability>
-            {
-                new Availability(TestAvailabilityId, TestDayOfWeek, TestStartTime, TestEndTime)
-            };
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, initialGames, initialAvailabilities);
+            var initialAvs = new List<Availability> { new Availability(TestAvailabilityId, TestDayOfWeek, TestStartTime, TestEndTime) };
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, initialGames, initialAvs, TestAppOwnerId);
 
-            // 2) Повторный вызов с новыми списками — старые связи должны удалиться
             var newGames = new List<Game> { new Game(TestGameId2, TestGameName2) };
-            var newAvailabilities = new List<Availability>
-            {
-                new Availability(TestAvailabilityId2, Availability.DayOfWeekEnum.Monday, TestStartTime2, TestEndTime2)
-            };
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, newGames, newAvailabilities);
+            var newAvs = new List<Availability> { new Availability(TestAvailabilityId2, Availability.DayOfWeekEnum.Monday, TestStartTime2, TestEndTime2) };
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, newGames, newAvs, TestAppOwnerId);
 
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
+            using var cmdOldGame = new NpgsqlCommand(
+                "SELECT COUNT(*) FROM applications_to_games WHERE app_id = @id AND game_id = @old;", conn);
+            cmdOldGame.Parameters.AddWithValue("id", TestAppId);
+            cmdOldGame.Parameters.AddWithValue("old", TestGameId);
+            Assert.AreEqual(0L, (long)cmdOldGame.ExecuteScalar(), "Old game link should be removed.");
 
-            // Старые игровые связи удалены
-            using (var cmd = new NpgsqlCommand(
-                       "SELECT COUNT(*) FROM applications_to_games WHERE app_id = @appId AND game_id = @gameId", conn))
-            {
-                cmd.Parameters.AddWithValue("appId", TestAppId);
-                cmd.Parameters.AddWithValue("gameId", TestGameId);
-                var oldCount = (long)cmd.ExecuteScalar();
-                Assert.AreEqual(0, oldCount, "Старая связь с игрой не должна существовать");
-            }
-            // Новые игровые связи созданы
-            using (var cmd = new NpgsqlCommand(
-                       "SELECT COUNT(*) FROM applications_to_games WHERE app_id = @appId AND game_id = @gameId", conn))
-            {
-                cmd.Parameters.AddWithValue("appId", TestAppId);
-                cmd.Parameters.AddWithValue("gameId", TestGameId2);
-                var newCount = (long)cmd.ExecuteScalar();
-                Assert.Greater(newCount, 0, "Новая связь с игрой должна присутствовать");
-            }
+            using var cmdNewGame = new NpgsqlCommand(
+                "SELECT COUNT(*) FROM applications_to_games WHERE app_id = @id AND game_id = @new;", conn);
+            cmdNewGame.Parameters.AddWithValue("id", TestAppId);
+            cmdNewGame.Parameters.AddWithValue("new", TestGameId2);
+            Assert.Greater((long)cmdNewGame.ExecuteScalar(), 0, "New game link should exist.");
 
-            // Старая доступность удалена
-            using (var cmd = new NpgsqlCommand(
-                       "SELECT COUNT(*) FROM applications_to_availability WHERE application_id = @appId AND availability_id = @availId", conn))
-            {
-                cmd.Parameters.AddWithValue("appId", TestAppId);
-                cmd.Parameters.AddWithValue("availId", TestAvailabilityId);
-                var oldAvCount = (long)cmd.ExecuteScalar();
-                Assert.AreEqual(0, oldAvCount, "Старая доступность не должна существовать");
-            }
-            // Новая доступность добавлена
-            using (var cmd = new NpgsqlCommand(
-                       "SELECT COUNT(*) FROM applications_to_availability WHERE application_id = @appId AND availability_id = @availId", conn))
-            {
-                cmd.Parameters.AddWithValue("appId", TestAppId);
-                cmd.Parameters.AddWithValue("availId", TestAvailabilityId2);
-                var newAvCount = (long)cmd.ExecuteScalar();
-                Assert.Greater(newAvCount, 0, "Новая доступность должна присутствовать");
-            }
+            using var cmdOldAv = new NpgsqlCommand(
+                "SELECT COUNT(*) FROM applications_to_availability WHERE application_id = @id AND availability_id = @old;", conn);
+            cmdOldAv.Parameters.AddWithValue("id", TestAppId);
+            cmdOldAv.Parameters.AddWithValue("old", TestAvailabilityId);
+            Assert.AreEqual(0L, (long)cmdOldAv.ExecuteScalar(), "Old availability should be removed.");
+
+            using var cmdNewAv = new NpgsqlCommand(
+                "SELECT COUNT(*) FROM applications_to_availability WHERE application_id = @id AND availability_id = @new;", conn);
+            cmdNewAv.Parameters.AddWithValue("id", TestAppId);
+            cmdNewAv.Parameters.AddWithValue("new", TestAvailabilityId2);
+            Assert.Greater((long)cmdNewAv.ExecuteScalar(), 0, "New availability should exist.");
         }
     }
 }
