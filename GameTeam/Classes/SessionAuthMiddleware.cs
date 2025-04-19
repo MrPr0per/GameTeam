@@ -15,6 +15,10 @@ namespace GameTeam.Classes
         public async Task Invoke(HttpContext context)
         {
             var isAuthenticated = context.Session.GetString("IsAuthenticated");
+
+            if (context.Request.Path.StartsWithSegments("/Questionnaires"))
+                context.Session.SetString("applications", "");
+
             if (string.IsNullOrEmpty(isAuthenticated) || isAuthenticated != "true")
             {
                 await _next(context);
@@ -26,16 +30,14 @@ namespace GameTeam.Classes
                 await _next(context);
             }
 
-            if (context.Request.Path == "/")
-            {
-                var applications = DatabaseController.GetAllApplications();
-                context.Session.SetString("applications", JsonSerializer.Serialize(applications));
-
-                await _next(context);
-            }
+            
 
             return;
             /*
+
+            
+
+
                 // Пропускаем проверку для API auth endpoints и страниц входа/регистрации
             if (context.Request.Path.StartsWithSegments("/api/auth") ||
                 context.Request.Path.StartsWithSegments("/Register") ||

@@ -2,8 +2,8 @@ POST http://localhost:5013/data/application
 Content-Type: application/json
 
 {
-  "id": 1,
-  "title": "Заявка на поиск команды",
+  "id": -1,
+  "title": "Заявка на поиск командыыы",
   "description": "Ищу команду для турниров по Dota 2",
   "contacts": "player@example.com",
   "purposeName": "test",
@@ -20,6 +20,6 @@ Content-Type: application/json
     }
   ],
   "games": [
-    "Dota 2"
+    "Dota 2", "Valorant"
   ]
 }

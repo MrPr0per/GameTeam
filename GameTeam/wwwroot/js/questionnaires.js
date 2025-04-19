@@ -1,78 +1,102 @@
 document.addEventListener('DOMContentLoaded', function () {
     const questionnairesContainer = document.querySelector('.questionnaires-container');
     const modalTemplate = document.getElementById('modal-template');
+    const loadMoreButton = document.getElementById('load-more-button');
+    const loadMoreContainer = document.querySelector('.load-more-container');
 
-    // Тестим
-    const questionnaires = [
-        {
-            title: "Анкетка",
-            description: "Описание ".repeat(70),
-            games: ["Кря", "Кря", "Кря"],
-            purpose: "Играть по кайфу",
-            availability: "с 18:00 до 22:00 хз как выводить",
-            contacts: "КонтурТолк: Имя Фамилия"
-        },
-        {
-            title: "Анкетка Еще Одна",
-            description: "Описание ".repeat(10),
-            games: ["Кря", "Кря", "Кря"],
-            purpose: "Играть по кайфу",
-            availability: "с 18:00 до 22:00 хз как выводить",
-            contacts: "Тг: @....."
+    let offset = 0;
+    const limit = 5;
+    let loading = false;
+    let endReached = false;
+
+    loadQuestionnaires();
+
+    loadMoreButton.addEventListener('click', function () {
+        if (loading || endReached) return;
+        loadQuestionnaires();
+    });
+
+    function loadQuestionnaires() {
+        loading = true;
+
+        if (loadMoreButton) {
+            loadMoreButton.textContent = 'Загрузка...';
+            loadMoreButton.disabled = true;
         }
 
+        fetch(`https://localhost:7179/data/applications/${offset}/${offset + limit}`)
+            .then(response => response.json())
+            .then(data => {
+                if (!Array.isArray(data) || data.length === 0) {
+                    endReached = true;
+                    if (loadMoreButton) {
+                        loadMoreButton.remove();
+                    }
+                    return;
+                }
 
-    ];
+                const questionnaires = data.map(item => ({
+                    title: item.Title,
+                    description: item.Description,
+                    games: item.Games.map(g => g.Name),
+                    purpose: getPurposeText(item.PurposeId),
+                    availability: formatAvailabilities(item.Availabilities),
+                    contacts: item.Contacts
+                }));
 
-    questionnaires.forEach(q => {
-        const questionnaireDiv = document.createElement('div');
-        questionnaireDiv.className = 'questionnaire';
+                questionnaires.forEach(q => {
+                    const questionnaireDiv = document.createElement('div');
+                    questionnaireDiv.className = 'questionnaire';
 
-        // Тут данные для краткого описания анкеты
-        const title = document.createElement('h2');
-        title.textContent = q.title;
+                    const title = document.createElement('h2');
+                    title.textContent = q.title;
 
-        const description = document.createElement('p');
-        description.textContent = q.description;
+                    const description = document.createElement('p');
+                    description.textContent = q.description;
 
+                    const button = document.createElement('button');
+                    button.className = 'filled-button';
+                    button.textContent = 'Подробнее';
+                    button.addEventListener('click', () => openModal(q));
 
+                    questionnaireDiv.appendChild(title);
+                    questionnaireDiv.appendChild(description);
+                    questionnaireDiv.appendChild(button);
 
-        const button = document.createElement('button');
-        button.className = 'filled-button';
-        button.textContent = 'Подробнее';
-        button.addEventListener('click', () => openModal(q));
+                    questionnairesContainer.appendChild(questionnaireDiv);
+                });
 
-        questionnaireDiv.appendChild(title);
-        questionnaireDiv.appendChild(description);
-        questionnaireDiv.appendChild(button);
+                offset += data.length;
 
-        questionnairesContainer.appendChild(questionnaireDiv);
-    });
+                if (data.length < limit && loadMoreButton) {
+                    loadMoreButton.remove();
+                    endReached = true;
+                }
+            })
+            .catch(error => {
+                console.error("Ошибка при загрузке анкет:", error);
+            })
+            .finally(() => {
+                loading = false;
+                if (!endReached && loadMoreButton) {
+                    loadMoreButton.textContent = 'Загрузить ещё';
+                    loadMoreButton.disabled = false;
+                }
+            });
+    }
 
     function openModal(questionnaire) {
         const modalOverlay = modalTemplate.content.cloneNode(true).firstElementChild;
         const modalContent = modalOverlay.querySelector('.modal-content');
-        const title = modalContent.querySelector('h2');
-        const description = modalContent.querySelector('.modal-description');
-        const gamesList = modalContent.querySelector('.modal-games');
-        const purpose = modalContent.querySelector('.modal-purpose');
-        const availability = modalContent.querySelector('.modal-availability'); 
-        const contacts = modalContent.querySelector('.modal-contacts');
-        const closeButton = modalContent.querySelector('.close-button');
 
+        modalContent.querySelector('h2').textContent = questionnaire.title;
+        modalContent.querySelector('.modal-description').textContent = questionnaire.description;
+        modalContent.querySelector('.modal-games').innerHTML = questionnaire.games.map(g => `<li>${g}</li>`).join('');
+        modalContent.querySelector('.modal-purpose').textContent = questionnaire.purpose;
+        modalContent.querySelector('.modal-availability').innerHTML = questionnaire.availability;
+        modalContent.querySelector('.modal-contacts').textContent = questionnaire.contacts;
 
-        // Тут данные для полной анкеты
-        title.textContent = questionnaire.title;
-        description.textContent = questionnaire.description;
-        gamesList.innerHTML = questionnaire.games.map(game => `<li>${game}</li>`).join('');
-        purpose.textContent = questionnaire.purpose;
-        availability.textContent = questionnaire.availability;
-        contacts.textContent =  questionnaire.contacts;
-
-
-
-        closeButton.addEventListener('click', () => closeModal(modalOverlay));
-
+        modalContent.querySelector('.close-button').addEventListener('click', () => closeModal(modalOverlay));
         modalOverlay.addEventListener('click', (e) => {
             if (e.target === modalOverlay) {
                 closeModal(modalOverlay);
@@ -84,5 +108,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function closeModal(modalOverlay) {
         modalOverlay.remove();
+    }
+
+    function getPurposeText(id) {
+        const purposes = {
+            1: "Поиск команды",
+            2: "Поиск игроков",
+            3: "Совместная игра"
+        };
+        return purposes[id] || "Неизвестная цель";
+    }
+
+    function formatAvailabilities(availabilities) {
+        const days = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
+
+        if (!availabilities || availabilities.length === 0) return "Не указано";
+
+        return availabilities.map(a => {
+            const dayName = days[a.DayOfWeek] || "Неизвестный день";
+            const startHour = String(a.StartTime.Hour).padStart(2, '0');
+            const startMinute = String(a.StartTime.Minute).padStart(2, '0');
+            const endHour = String(a.EndTime.Hour).padStart(2, '0');
+            const endMinute = String(a.EndTime.Minute).padStart(2, '0');
+
+            return `${dayName}: ${startHour}:${startMinute} – ${endHour}:${endMinute}`;
+        }).join('<br>');
     }
 });

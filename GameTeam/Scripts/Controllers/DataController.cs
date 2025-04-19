@@ -116,8 +116,9 @@ namespace GameTeam.Scripts.Controllers
 
             if (string.IsNullOrEmpty(applicationsJson))
             {
-                Response.StatusCode = 400;
-                return "";
+                var applicationsData = DatabaseController.GetAllApplications();
+                HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
+                return JsonSerializer.Serialize(applicationsData.Skip(from).Take(to - from + 1).ToArray());
             }
 
             var applications = JsonSerializer.Deserialize<Application[]>(applicationsJson);
