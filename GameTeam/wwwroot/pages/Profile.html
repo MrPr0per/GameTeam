@@ -10,92 +10,92 @@
 </head>
 
 <body>
-<div class="layout">
-    <aside class="sidebar">
-        <div class="logo">GameTeam</div>
-        <nav class="sidebar-nav">
-            <a href="#">
-                <img src="../img/anketa.svg" alt="Анкеты" class="nav-icon">
-                <span class="nav-text">Анкеты</span>
-            </a>
-            <a href="#">
-                <img src="../img/my-ankety.svg" alt="Мои анкеты" class="nav-icon">
-                <span class="nav-text">Мои анкеты</span>
-            </a>
-        </nav>
-    </aside>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="logo">GameTeam</div>
+            <nav class="sidebar-nav">
+                <a href="/Questionnaires">
+                    <img src="../img/anketa.svg" alt="Анкеты" class="nav-icon">
+                    <span class="nav-text">Анкеты</span>
+                </a>
+                <a href="/My_questionnaires">
+                    <img src="../img/my-ankety.svg" alt="Мои анкеты" class="nav-icon">
+                    <span class="nav-text">Мои анкеты</span>
+                </a>
+            </nav>
+        </aside>
 
-    <div class="content">
-        <header>
-            <div class="auth-wrapper">
-                <div class="header-profile-image"></div>
-                <div class="auth-status user-name"></div> <!-- Надо бы ограничить длину имени... -->
-            </div>
-        </header>
+        <div class="content">
+            <header>
+                <div class="auth-wrapper">
+                    <div class="header-profile-image"></div>
+                    <div class="auth-status user-name"></div> <!-- Надо бы ограничить длину имени... -->
+                </div>
+            </header>
 
-        <div class="profile-container">
-            <div class="profile-header">
-                <div class="profile-image"></div>
-                <div class="profile-info">
-                    <h2 class="user-name"></h2> <!-- А то тут будет весело -->
-                    <p id="user-email"></p> <!-- Тут почта -->
-                    <div class="edit-buttons">
-                        <button id="edit-button" class="outline-button" disabled>Редактировать профиль</button>
-                        <div id="save-cancel-buttons" style="display: none;">
-                            <button id="cancel-button" class="outline-button">Отмена</button>
-                            <button id="save-button" class="filled-button">Готово</button>
+            <div class="profile-container">
+                <div class="profile-header">
+                    <div class="profile-image"></div>
+                    <div class="profile-info">
+                        <h2 class="user-name"></h2> <!-- А то тут будет весело -->
+                        <p id="user-email"></p> <!-- Тут почта -->
+                        <div class="edit-buttons">
+                            <button id="edit-button" class="outline-button" disabled>Редактировать профиль</button>
+                            <div id="save-cancel-buttons" style="display: none;">
+                                <button id="cancel-button" class="outline-button">Отмена</button>
+                                <button id="save-button" class="filled-button">Готово</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="tabs-section">
-                <ul class="tabs">
-                    <li class="tab-link active" data-tab="about">
-                        <img src="../img/about.svg" alt="Обо мне">
-                        Обо мне
-                    </li>
-                    <!--                        <li class="tab-link" data-tab="free-time">-->
-                    <!--                            <img src="../img/free-time.svg" alt="Свободное время">-->
-                    <!--                            Свободное время-->
-                    <!--                        </li>-->
-                    <li class="tab-link" data-tab="hobbies">
-                        <img src="../img/plays.svg" alt="Игры">
-                        Игры
-                    </li>
-                </ul>
-                <div class="tab-content">
-                    <div id="about" class="tab-pane active">
-                        <textarea id="description" placeholder="Описание" readonly></textarea>
-                    </div>
-                    <div id="free-time" class="tab-pane"> <!-- Тут время -->
-                        <ul>
-                            <li>Пн: <span></span></li>
-                            <li>Вт: <span></span></li>
-                            <li>Ср: <span></span></li>
-                            <li>Чт: <span></span></li>
-                            <li>Пт: <span></span></li>
-                            <li>Сб: <span></span></li>
-                            <li>Вс: <span></span></li>
-                        </ul>
-                    </div>
-                    <div id="hobbies" class="tab-pane">
-                        <div class="games-container">
-                            <ul id="games-list">
-                                <!-- Тут игры -->
+                <div class="tabs-section">
+                    <ul class="tabs">
+                        <li class="tab-link active" data-tab="about">
+                            <img src="../img/about.svg" alt="Обо мне">
+                            Обо мне
+                        </li>
+                        <!--                        <li class="tab-link" data-tab="free-time">-->
+                        <!--                            <img src="../img/free-time.svg" alt="Свободное время">-->
+                        <!--                            Свободное время-->
+                        <!--                        </li>-->
+                        <li class="tab-link" data-tab="hobbies">
+                            <img src="../img/plays.svg" alt="Игры">
+                            Игры
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <div id="about" class="tab-pane active">
+                            <textarea id="description" placeholder="Описание" readonly></textarea>
+                        </div>
+                        <div id="free-time" class="tab-pane"> <!-- Тут время -->
+                            <ul>
+                                <li>Пн: <span></span></li>
+                                <li>Вт: <span></span></li>
+                                <li>Ср: <span></span></li>
+                                <li>Чт: <span></span></li>
+                                <li>Пт: <span></span></li>
+                                <li>Сб: <span></span></li>
+                                <li>Вс: <span></span></li>
                             </ul>
                         </div>
-                        <div id="add-game-section" style="display: none;">
-                            <input type="text" id="new-game-input" placeholder="Новая игра">
-                            <button id="add-game-button" class="outline-button">Добавить</button>
+                        <div id="hobbies" class="tab-pane">
+                            <div class="games-container">
+                                <ul id="games-list">
+                                    <!-- Тут игры -->
+                                </ul>
+                            </div>
+                            <div id="add-game-section" style="display: none;">
+                                <input type="text" id="new-game-input" placeholder="Новая игра">
+                                <button id="add-game-button" class="outline-button">Добавить</button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<script src="../js/profile.js"></script>
+    <script src="../js/profile.js"></script>
 </body>
 
 </html>
