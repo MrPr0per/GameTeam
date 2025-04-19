@@ -2,6 +2,7 @@ using GameTeam.Classes;
 using GameTeam.Scripts.Controllers;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,10 @@ builder.Services.AddControllers()
                 options.JsonSerializerOptions.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
 			});
 
+
+
+
+builder.WebHost.UseUrls("http://*:80", "https://*:443");
 
 builder.Services.AddSession(options =>
 {
@@ -32,6 +37,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseForwardedHeaders();
+
+
 
 app.UseRouting();
 

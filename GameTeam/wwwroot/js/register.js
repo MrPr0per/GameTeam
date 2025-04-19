@@ -107,13 +107,9 @@ function addRegisterFormSubmissionProcessing() {
 
             const salt = await saltResponse.text(); 
 
-            data.password = await hashPassword(formValues.password, salt)
+            data.password = await hashPassword(formValues.password, salt);
 
             const response = await postData('/api/auth/register', data);
-
-            if (response.ok) {
-                const result = await response.json();
-            }
 
             if (response.ok) {
                 window.location.href = '/profile'; // Перенаправление после успешной регистрации
@@ -121,7 +117,7 @@ function addRegisterFormSubmissionProcessing() {
                 const result = await response.json();
                 showError(result.message || 'Ошибка регистрации');
             }
-        } catch {
+        } catch (error) {
             showError('Сервер недоступен');
         }
     });

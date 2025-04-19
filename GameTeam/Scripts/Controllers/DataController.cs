@@ -1,5 +1,6 @@
 ﻿using GameTeam.Classes.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NodaTime;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
@@ -163,6 +164,11 @@ namespace GameTeam.Scripts.Controllers
         [HttpPost("application")]
         public IActionResult UpsertApplication([FromBody] ApplicationWithPurpose data)
         {
+            var userId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
             if (data.Title == null || data.PurposeName == null)
                 return BadRequest(new { Message = "Нет title или purpose" });
 
@@ -182,7 +188,7 @@ namespace GameTeam.Scripts.Controllers
             try
             {
                 DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, data.Description, 
-                                                     data.Contacts, games, availabilities);
+                                                     data.Contacts, games, availabilities, int.Parse(userId));
             }
             catch (Exception ex)
             {
