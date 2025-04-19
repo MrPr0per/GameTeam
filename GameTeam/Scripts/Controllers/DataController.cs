@@ -26,14 +26,18 @@ namespace GameTeam.Scripts.Controllers
             }
 
             var profile = DatabaseController.GetUserProfile(username);
+            var userId = DatabaseController.GetIdByUsername(username);
 
             if (profile is null)
             {
                 Response.StatusCode = 400;
-                return "";
-            }
+                return "";            }
 
-            return JsonSerializer.Serialize(profile);
+            var userData = DatabaseController.GetUserData(int.Parse(HttpContext.Session.GetString("UserId")));
+
+            var profileWithUsername = new UserProfileWithData(profile, userData);
+
+            return JsonSerializer.Serialize(profileWithUsername);
         }
 
         // GET api/<DataController>/5
@@ -170,6 +174,40 @@ namespace GameTeam.Scripts.Controllers
     }
 
 
+    public class UserProfileWithData
+    {
+        public int UserId { get; }
+
+        public string Username { get; }
+
+        public string Email { get; }
+
+        public string Description { get; }
+
+        public List<Game> Games { get; }
+
+        public List<Availability> Availabilities { get; }
+
+        public UserProfileWithData(int userId, string username, string email, string description)
+        {
+            UserId = userId;
+            Username = username;
+            Email = email;
+            Description = description;
+            Games = DatabaseController.GetGames(userId, true);
+            Availabilities = DatabaseController.GetAvailabilities(userId, true);
+        }
+
+        public UserProfileWithData(UserProfile profile, UserData data)
+        {
+            UserId = profile.UserId;
+            Username = data.Username;
+            Email = data.Email;
+            Description = profile.Description;
+            Games = profile.Games;
+            Availabilities = profile.Availabilities;
+        }
+    }
 
     public class UpsertUserProfileRequest
     {

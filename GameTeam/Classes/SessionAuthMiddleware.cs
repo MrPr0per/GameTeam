@@ -22,6 +22,7 @@ namespace GameTeam.Classes
             else
             {
                 context.Response.Headers.Append("X-Is-Authenticated", context.Session.GetString("IsAuthenticated"));
+                context.Response.Headers.Append("X-Username", context.Session.GetString("Username"));
                 await _next(context);
             }
 
