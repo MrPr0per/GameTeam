@@ -31,7 +31,6 @@ public class AuthController : ControllerBase
         }
 
         var userData = DatabaseController.GetPasswordAndSalt(userId.Value);
-        Console.WriteLine(userData.Value.passwordHash);
         var challenge = HashOperator.GenerateSalt();
 
         HttpContext.Session.SetString("UserPassword", HashOperator.HashPassword(userData.Value.passwordHash, challenge));
@@ -43,10 +42,7 @@ public class AuthController : ControllerBase
     [HttpPost("loginpass")] // Изменил на HttpPost, так как логин обычно через POST
     public IActionResult LoginSecond([FromBody] LoginDtoPass data)
     {
-        Console.WriteLine(data.Password);
-        
         var passwordReal = HttpContext.Session.GetString("UserPassword");
-        Console.WriteLine(passwordReal);
         if (passwordReal == data.Password)
         {
             var userId = int.Parse(HttpContext.Session.GetString("UserId"));
