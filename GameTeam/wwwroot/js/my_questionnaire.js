@@ -150,6 +150,17 @@ document.addEventListener('DOMContentLoaded', function () {
             isPlaced = false;
             updateStatusAndButtons();
         } else if (isFormValid()) {
+            fetch('http://localhost:5013/data/application', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(), // todo
+            })
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+
             alert('Анкета размещена!');
             isPlaced = true;
             updateStatusAndButtons();
@@ -166,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // "Очистить"
     clearButton.addEventListener('click', function () {
         if (isEditing) {
-            questionnaireData = { title: "", description: "", games: [], goal: "", time: "", contacts: "" };
+            questionnaireData = {title: "", description: "", games: [], goal: "", time: "", contacts: ""};
             displayQuestionnaire();
             updateStatusAndButtons();
         }
