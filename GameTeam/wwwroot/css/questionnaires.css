@@ -296,3 +296,43 @@ header {
 .close-button:hover {
     background-color: #1E4FC7;
 }
+
+
+
+.load-more-container {
+    display: flex;
+    justify-content: center; /* Центрирует кнопку по горизонтали */
+    margin-top: 30px; /* Отступ сверху, чтобы не прижималась к нижней части экрана */
+    margin-bottom: 20px; /* Отступ снизу */
+}
+
+.load-more-button {
+    padding: 10px 20px;
+    background-color: #2563EB;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+
+/* Эффект при наведении на кнопку */
+.load-more-button:hover {
+    background-color: #1E4FC7; /* Темный синий цвет при наведении */
+    transform: scale(1.05); /* Увеличиваем кнопку при наведении */
+}
+
+/* Эффект при нажатии на кнопку */
+.load-more-button:active {
+    background-color: #173F9B; /* Еще более темный синий при нажатии */
+    transform: scale(1); /* Отменяем увеличение при нажатии */
+}
+
+/* Стиль для кнопки в процессе загрузки (когда она в состоянии "loading") */
+.load-more-button[disabled] {
+    background-color: #E0E0E0; /* Серый цвет для состояния "Загрузка" */
+    cursor: not-allowed;
+    pointer-events: none; /* Отключаем клики */
+}
