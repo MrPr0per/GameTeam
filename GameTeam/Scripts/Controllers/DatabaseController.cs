@@ -534,6 +534,51 @@ namespace GameTeam.Scripts.Controllers
         }
 
         /// <summary>
+        /// Получение всех анкет пользователя по его ID (с учетом связей между таблицами)
+        /// </summary>
+        /// <param name="userId">ID пользователя</param>
+        /// <returns>Список анкет, в которых участвует пользователь</returns>
+        public static List<Application> GetAllApplicationsByUserId(int userId)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            var applications = new List<Application>();
+
+            try
+            {
+                conn.Open();
+
+                // 1. Получаем все анкеты, где пользователь является участником
+                using (var cmd = new NpgsqlCommand(@"
+            SELECT a.id, a.title, a.description, a.contacts, p.purpose
+            FROM applications a
+            JOIN participants pa ON a.id = pa.application_id
+            JOIN purposes p ON a.purpose_id = p.id
+            WHERE pa.user_id = @userId
+            ORDER BY a.id", conn))
+                {
+                    cmd.Parameters.AddWithValue("userId", userId);
+
+                    using var reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        applications.Add(new Application(
+                            reader.GetInt32(0),
+                            reader.GetString(1),
+                            reader.IsDBNull(2) ? null : reader.GetString(2),
+                            reader.IsDBNull(3) ? null : reader.GetString(3),
+                            reader.GetInt32(4)));
+                    }
+                }
+
+                return applications;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при получении анкет пользователя: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         /// Получение всех анкет из базы данных
         /// </summary>
         /// <returns>Список объектов Application</returns>

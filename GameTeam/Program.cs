@@ -46,6 +46,12 @@ app.MapRazorPages();
 #pragma warning disable ASP0014 // Suggest using top level route registrations
 app.UseEndpoints(endpoints =>
 {
+    endpoints.MapGet("/", async context =>
+    {
+        context.Response.Redirect("/Register");
+        await Task.CompletedTask;
+    });
+
     endpoints.MapGet("/Register", async context =>
     {
         var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();

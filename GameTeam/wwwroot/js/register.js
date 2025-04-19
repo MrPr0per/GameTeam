@@ -116,7 +116,7 @@ function addRegisterFormSubmissionProcessing() {
             }
 
             if (response.ok) {
-                //window.location.href = '/profile'; // Перенаправление после успешной регистрации
+                window.location.href = '/profile'; // Перенаправление после успешной регистрации
             } else {
                 const result = await response.json();
                 showError(result.message || 'Ошибка регистрации');

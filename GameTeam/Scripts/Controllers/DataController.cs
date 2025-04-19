@@ -109,6 +109,26 @@ namespace GameTeam.Scripts.Controllers
             }
         }
 
+
+        [HttpGet("selfapplications")]
+        public string GetSelfApplicationsByUserId()
+        {
+            var username = HttpContext.Session.GetString("Username");
+            if (string.IsNullOrEmpty(username))
+            {
+                Response.StatusCode = 401;
+                return "";
+            }
+            var userId = DatabaseController.GetIdByUsername(username);
+
+
+
+            var applications = DatabaseController.GetAllApplicationsByUserId(userId.Value);
+
+
+            return JsonSerializer.Serialize(applications);
+        }
+
         [HttpGet("applications/{from}/{to}")]
         public string GetAllApplications(int from, int to)
         {
@@ -172,9 +192,6 @@ namespace GameTeam.Scripts.Controllers
 
             return Ok(new { Message = "Application upserted" });
         }
-
-
-        [HttpGet("fuckit")]
         public IActionResult UpsertApplicationasd()
         {
             var salt = DatabaseController.GetUserSalt(1);
