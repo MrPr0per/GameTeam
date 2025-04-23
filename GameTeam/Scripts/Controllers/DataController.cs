@@ -69,14 +69,9 @@ namespace GameTeam.Scripts.Controllers
         {
             try
             {
-                var username = HttpContext.Session.GetString("Username");
-                if (string.IsNullOrEmpty(username))
+                var userId = HttpContext.Session.GetString("UserId");
+                if (string.IsNullOrEmpty(userId))
                     return Unauthorized();
-
-                var userId = DatabaseController.GetIdByUsername(username);
-
-                if (userId is null)
-                    return BadRequest();
 
                 List<Game> games;
                 List<Availability> availabilities;
@@ -93,7 +88,7 @@ namespace GameTeam.Scripts.Controllers
 
                 // Здесь должна быть бизнес-логика обработки запроса
                 DatabaseController.UpsertUserProfile(
-                userId,
+                int.Parse(userId),
                 request.AboutDescription,
                 games,
                 availabilities);
@@ -114,18 +109,14 @@ namespace GameTeam.Scripts.Controllers
         [HttpGet("selfapplications")]
         public string GetSelfApplicationsByUserId()
         {
-            var username = HttpContext.Session.GetString("Username");
-            if (string.IsNullOrEmpty(username))
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
             {
                 Response.StatusCode = 401;
                 return "";
             }
-            var userId = DatabaseController.GetIdByUsername(username);
 
-
-
-            var applications = DatabaseController.GetAllApplicationsByUserId(userId.Value);
-
+            var applications = DatabaseController.GetAllApplicationsByUserId(int.Parse(userId));
 
             return JsonSerializer.Serialize(applications);
         }
@@ -159,6 +150,12 @@ namespace GameTeam.Scripts.Controllers
 
             var applications = JsonSerializer.Deserialize<Application[]>(applicationsJson);
             return JsonSerializer.Serialize(applications.Where(x => x.Id == id).FirstOrDefault());
+        }
+
+        [HttpGet("applicationid")]
+        public string GetApplicationId()
+        {
+            return (DatabaseController.GetTotalApplicationsCount() + 1).ToString();
         }
 
         [HttpPost("application")]
@@ -200,13 +197,18 @@ namespace GameTeam.Scripts.Controllers
         }
 
 
-        [HttpGet("delete/application/{id}")]
+        [HttpGet("deleteapplication/{id}")]
         public IActionResult DeleteApplicationById(int id)
         {
+            var ownerId = DatabaseController.GetUserIdByApplicationId(id);
+
+            if (ownerId.ToString() != HttpContext.Session.GetString("UserId"))
+                return Unauthorized(new { Message = "Попытка удалить не свою анкету" });
+
             var success = DatabaseController.DeleteApplication(id);
 
             if (success)
-                return Ok();
+                return Ok(new { Message = "Анкета удалена" });
 
             return BadRequest(new { Message = "Не удалилось" });
         }

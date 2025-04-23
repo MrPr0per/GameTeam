@@ -220,14 +220,23 @@ function updateStatusAndButtons() {
 
 // todo: убрать дублирование с профилем
 async function loadMyQuestionnaire() {
-	serverQuestionnaire = {
-		title: '',
-		description: '',
-		games: [],
-		goal: '',
-		time: '',
-		contacts: '',
-	};
+	const response = await fetch('data/selfapplications', { method: 'GET', });
+	
+	if (response.status != 200) {
+		serverQuestionnaire = {
+			title: '',
+			description: '',
+			games: [],
+			goal: '',
+			time: '',
+			contacts: '',
+		};
+	} else {
+		const application = await response.json();
+
+		serverQuestionnaire = transformQuestionnaire(application[0]); //Пока что загружаем первую анкету
+	}
+	
 	localQuestionnaire = structuredClone(serverQuestionnaire);
 
 	// todo: пока делаем вид, что с сервака всегда прилетает пустота
@@ -255,9 +264,11 @@ async function loadMyQuestionnaire() {
 	// 	});
 }
 
-function getJsonForPostQuestionnaire() {
+async function getJsonForPostQuestionnaire() {
+	const response = await fetch('data/applicationid', { method: 'GET', });
+	const applicationId = await response.text();
 	return {
-		id: -1, // todo: убрать заглушку
+		id: applicationId, // todo: убрать заглушку
 		title: localQuestionnaire.title,
 		description: localQuestionnaire.description,
 		contacts: localQuestionnaire.contacts,
@@ -307,12 +318,56 @@ async function postMyQuestionnaire() {
 		headers: {
 			'Content-Type': 'application/json',
 		},
-		body: JSON.stringify(getJsonForPostQuestionnaire()),
+		body: JSON.stringify(await getJsonForPostQuestionnaire()),
 	});
 	if (response.ok) return true;
 	showServerError('Ошибка при отправке анкеты', response);
 	return false;
 }
+
+function transformQuestionnaire(questionnaireData) {
+	// Обрабатываем игры (с защитой от ошибок)
+	let games = [];
+	if (Array.isArray(questionnaireData.Games)) {
+		games = questionnaireData.Games
+			.map(game => game?.Name || '')
+			.filter(name => name);
+	}
+
+	// Маппинг для целей
+	const goalMap = {
+		1: 'test',
+		2: 'Соревнование',
+		3: 'Обучение'
+		// Добавьте другие соответствия по необходимости
+	};
+
+	// Получаем цель
+	const goal = goalMap[questionnaireData.PurposeId];
+
+	let time = '';
+	if (Array.isArray(questionnaireData.Availabilities) && questionnaireData.Availabilities.length > 0) {
+		time = questionnaireData.Availabilities
+			.map(avail => {
+				const day = avail.day_of_week || 'День не указан';
+				const start = avail.start_time || '--:--';
+				const end = avail.end_time || '--:--';
+				return `${day}: ${start} - ${end}`;
+			})
+			.join(', ');
+	}
+
+	// Возвращаем преобразованный объект
+	return {
+		title: questionnaireData.Title,
+		description: questionnaireData.Description,
+		games: games,
+		goal: goal,
+		time: time,
+		contacts: questionnaireData.Contacts
+	};
+}
+
 
 async function hideMyQuestionnaire() {
 	// todo

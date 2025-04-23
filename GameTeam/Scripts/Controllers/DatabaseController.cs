@@ -547,12 +547,12 @@ namespace GameTeam.Scripts.Controllers
             {
                 conn.Open();
 
-                // 1. Получаем все анкеты, которые создал пользователь
+                // Получаем название цели (purpose) вместе с анкетой
                 using (var cmd = new NpgsqlCommand(@"
-                    SELECT a.id, a.title, a.description, a.contacts, a.purpose_id, a.owner_id
-                    FROM applications a
-                    WHERE owner_id = @userId
-                    ORDER BY a.id", conn))
+            SELECT a.id, a.title, a.description, a.contacts, a.purpose_id, a.owner_id
+            FROM applications a
+            WHERE a.owner_id = @userId
+            ORDER BY a.id", conn))
                 {
                     cmd.Parameters.AddWithValue("userId", userId);
 
@@ -560,13 +560,20 @@ namespace GameTeam.Scripts.Controllers
                     while (reader.Read())
                     {
                         applications.Add(new Application(
-                            reader.GetInt32(0),
-                            reader.GetString(1),
-                            reader.IsDBNull(2) ? null : reader.GetString(2),
-                            reader.IsDBNull(3) ? null : reader.GetString(3),
-                            reader.GetInt32(4),
-                            reader.GetInt32(5)));
+                            reader.GetInt32(0),       // id
+                            reader.GetString(1),      // title
+                            reader.IsDBNull(2) ? null : reader.GetString(2), // description
+                            reader.IsDBNull(3) ? null : reader.GetString(3),  // contacts
+                            reader.GetInt32(4),      // purpose (ранее было purpose_id)
+                            reader.GetInt32(5)));     // owner_id
                     }
+                }
+
+                // Для каждой анкеты загружаем связанные игры и доступности
+                foreach (var app in applications)
+                {
+                    app.Games = GetGames(app.Id, false);
+                    app.Availabilities = GetAvailabilities(app.Id, false);
                 }
 
                 return applications;
@@ -930,6 +937,28 @@ namespace GameTeam.Scripts.Controllers
         }
 
         /// <summary>
+        /// Получает общее количество анкет в системе
+        /// </summary>
+        /// <returns>Общее количество анкет</returns>
+        public static int GetTotalApplicationsCount()
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+
+            try
+            {
+                conn.Open();
+
+                using var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM applications", conn);
+
+                return Convert.ToInt32(cmd.ExecuteScalar());
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при получении общего количества анкет: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         /// Deletes an application and all its related data from the database
         /// </summary>
         /// <param name="applicationId">ID of the application to delete</param>
@@ -994,6 +1023,36 @@ namespace GameTeam.Scripts.Controllers
             {
                 transaction.Rollback();
                 throw new Exception($"Error deleting application: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Получает ID владельца анкеты по ID анкеты
+        /// </summary>
+        /// <param name="applicationId">ID анкеты</param>
+        /// <returns>ID пользователя-владельца или null, если анкета не найдена</returns>
+        public static int? GetUserIdByApplicationId(int applicationId)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+
+            try
+            {
+                conn.Open();
+
+                using var cmd = new NpgsqlCommand(@"
+            SELECT owner_id 
+            FROM applications 
+            WHERE id = @applicationId", conn);
+
+                cmd.Parameters.AddWithValue("applicationId", applicationId);
+
+                var result = cmd.ExecuteScalar();
+
+                return result != null ? Convert.ToInt32(result) : (int?)null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при получении владельца анкеты: {ex.Message}", ex);
             }
         }
     }
