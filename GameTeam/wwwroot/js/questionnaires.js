@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let endReached = false;
 
     loadQuestionnaires();
+    loadAndRenderUserName();
+
 
     loadMoreButton.addEventListener('click', function () {
         if (loading || endReached) return;
@@ -84,6 +86,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
     }
+
+    function loadAndRenderUserName() {
+        fetch('/data/profile')
+            .then(r => {
+                if (r.ok) {
+                    return r.json();
+                } else if (r.status === 401) {
+                    window.location.href = '/register';
+                } else {
+                    console.error('Ошибка при загрузке профиля', r);
+                }
+            })
+            .then(json => {
+                if (json !== undefined) {
+                    const name = json['Username'];
+                    document.querySelectorAll('.user-name').forEach(el => el.textContent = name);
+                }
+            })
+            .catch(err => {
+                console.error('Ошибка при получении имени пользователя:', err);
+            });
+    }
+
 
     function openModal(questionnaire) {
         const modalOverlay = modalTemplate.content.cloneNode(true).firstElementChild;

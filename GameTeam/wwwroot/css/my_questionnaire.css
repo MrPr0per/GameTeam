@@ -119,8 +119,13 @@ header {
 
 .auth-status {
     color: #666;
+    text-decoration: none;
 }
 
+.auth-status:hover {
+    color: #2563EB;
+    text-decoration: none;
+}
 
 
 
