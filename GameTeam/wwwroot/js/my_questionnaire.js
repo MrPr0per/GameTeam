@@ -2,7 +2,14 @@ let debugMode = true;
 
 let isEditing = false;
 let isPlaced = false;
-let serverQuestionnaire = null; // то, что сохранено на сервере
+let serverQuestionnaire = { // то, что сохранено на сервере
+	title: '',
+	description: '',
+	games: [],
+	goal: '',
+	time: '',
+	contacts: '',
+};
 let localQuestionnaire = { // локальные изменения, еще не запощенные
 	title: '',
 	description: '',
@@ -24,8 +31,29 @@ document.addEventListener('DOMContentLoaded', function () {
 	loadAndRenderUserName();
 });
 
+const buttonsActivator = {
+	originalTexts: new Map(),
+
+	setButtonPending(button) {
+		if (button.id) {
+			this.originalTexts.set(button.id, button.innerText);
+			button.innerText = 'Загрузка...';
+		}
+		button.disabled = true;
+	},
+
+	resetButtonPending(button) {
+		if (button.id && this.originalTexts.has(button.id)) {
+			button.innerText = this.originalTexts.get(button.id);
+			this.originalTexts.delete(button.id);
+		}
+		button.disabled = false;
+	},
+};
+
+
 function addEventListeners() {
-	const placeButton = document.getElementById('place-button');
+	const placeOrHideButton = document.getElementById('place-button');
 	const editButton = document.getElementById('edit-button');
 	const clearButton = document.getElementById('clear-button');
 	const cancelButton = document.getElementById('cancel-button');
@@ -40,49 +68,23 @@ function addEventListeners() {
 	const addGameSection = document.getElementById('add-game-section');
 	const warningMessage = document.getElementById('warning-message');
 
-	// Включение режима редактирования
-	function enableEditMode() {
-		isEditing = true;
-		serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
-		questionnaireContent.querySelectorAll('[contenteditable]').forEach(el => {
-			el.contentEditable = true;
-			el.innerHTML = el.innerText.trim();
-		});
-		displayQuestionnaire();
-		updateStatusAndButtons();
-	}
-
-	// Выключение режима редактирования
-	function disableEditMode(saveChanges = true) {
-		isEditing = false;
-		if (saveChanges) {
-			localQuestionnaire.title = document.getElementById('questionnaire-title').innerText.trim();
-			localQuestionnaire.description = document.getElementById('questionnaire-description').innerText.trim();
-			localQuestionnaire.games = Array.from(gamesList.querySelectorAll('li')).map(li => li.querySelector('span').textContent.trim());
-			localQuestionnaire.goal = document.getElementById('questionnaire-goal').innerText.trim();
-			// localQuestionnaire.time = document.getElementById('questionnaire-time').innerText.trim();
-			localQuestionnaire.contacts = document.getElementById('questionnaire-contacts').innerText.trim();
-		} else {
-			localQuestionnaire = serverQuestionnaire;
-		}
-		questionnaireContent.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = false);
-		displayQuestionnaire();
-		updateStatusAndButtons();
-	}
-
 	// "Разместить анкету" / "Скрыть анкету"
-	placeButton.addEventListener('click', function () {
-		if (isEditing) return;
+	placeOrHideButton.addEventListener('click', function () {
+		if (isEditing) return; // в режиме редактирования эта кнопка скрыта
 		if (isPlaced) {
+			buttonsActivator.setButtonPending(placeOrHideButton);
 			hideMyQuestionnaire()
 				.then((success) => {
+					buttonsActivator.resetButtonPending(placeOrHideButton);
 					if (!success) return;
 					isPlaced = false;
 					updateStatusAndButtons();
 				});
 		} else if (isFormValid()) {
+			buttonsActivator.setButtonPending(placeOrHideButton);
 			postMyQuestionnaire()
 				.then((success) => {
+					buttonsActivator.resetButtonPending(placeOrHideButton);
 					if (success) {
 						isPlaced = true;
 						updateStatusAndButtons();
@@ -127,6 +129,36 @@ function addEventListeners() {
 			updateStatusAndButtons();
 		}
 	});
+}
+
+// Включение режима редактирования
+function enableEditMode() {
+	isEditing = true;
+	serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
+	questionnaireContent.querySelectorAll('[contenteditable]').forEach(el => {
+		el.contentEditable = true;
+		el.innerHTML = el.innerText.trim();
+	});
+	displayQuestionnaire();
+	updateStatusAndButtons();
+}
+
+// Выключение режима редактирования
+function disableEditMode(saveChanges = true) {
+	isEditing = false;
+	if (saveChanges) {
+		localQuestionnaire.title = document.getElementById('questionnaire-title').innerText.trim();
+		localQuestionnaire.description = document.getElementById('questionnaire-description').innerText.trim();
+		localQuestionnaire.games = Array.from(gamesList.querySelectorAll('li')).map(li => li.querySelector('span').textContent.trim());
+		localQuestionnaire.goal = document.getElementById('questionnaire-goal').innerText.trim();
+		// localQuestionnaire.time = document.getElementById('questionnaire-time').innerText.trim();
+		localQuestionnaire.contacts = document.getElementById('questionnaire-contacts').innerText.trim();
+	} else {
+		localQuestionnaire = serverQuestionnaire;
+	}
+	questionnaireContent.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = false);
+	displayQuestionnaire();
+	updateStatusAndButtons();
 }
 
 // Функция для отображения анкеты
@@ -177,7 +209,6 @@ function isFormValid() {
 	return title !== '' && games.length > 0 && goal !== '' && contacts !== '';
 }
 
-
 // Функция для обновления статуса и кнопок
 function updateStatusAndButtons() {
 	const placeButton = document.getElementById('place-button');
@@ -218,11 +249,10 @@ function updateStatusAndButtons() {
 	}
 }
 
-
 // todo: убрать дублирование с профилем
 async function loadMyQuestionnaire() {
-	const response = await fetch('data/selfapplications', { method: 'GET', });
-	
+	const response = await fetch('data/selfapplications', {method: 'GET'});
+
 	if (response.status != 200) {
 		serverQuestionnaire = {
 			id: -1,
@@ -238,7 +268,7 @@ async function loadMyQuestionnaire() {
 
 		serverQuestionnaire = transformQuestionnaire(application[0]); //Пока что загружаем первую анкету
 	}
-	
+
 	localQuestionnaire = structuredClone(serverQuestionnaire);
 
 	// todo: пока делаем вид, что с сервака всегда прилетает пустота
@@ -266,7 +296,6 @@ async function loadMyQuestionnaire() {
 	// 	});
 }
 
-
 function loadAndRenderUserName() {
 	fetch('/data/profile')
 		.then(r => {
@@ -289,11 +318,10 @@ function loadAndRenderUserName() {
 		});
 }
 
-
 async function getJsonForPostQuestionnaire() {
 	let applicationId = -1;
 	if (serverQuestionnaire.id === -1) {
-		const response = await fetch('data/applicationid', { method: 'GET', });
+		const response = await fetch('data/applicationid', {method: 'GET'});
 		applicationId = await response.text();
 	} else {
 		applicationId = serverQuestionnaire.id;
@@ -369,7 +397,7 @@ function transformQuestionnaire(questionnaireData) {
 	const goalMap = {
 		1: 'test',
 		2: 'Соревнование',
-		3: 'Обучение'
+		3: 'Обучение',
 		// Добавьте другие соответствия по необходимости
 	};
 
@@ -396,15 +424,13 @@ function transformQuestionnaire(questionnaireData) {
 		games: games,
 		goal: goal,
 		time: time,
-		contacts: questionnaireData.Contacts
+		contacts: questionnaireData.Contacts,
 	};
 }
-
 
 async function hideMyQuestionnaire() {
 	// todo
 }
-
 
 // todo: убрать дублирование
 function showServerError(message, ...debugInfo) {
