@@ -2,9 +2,9 @@ POST http://localhost:5013/data/application
 Content-Type: application/json
 
 {
-  "id": -1,
-  "title": "Заявка на поиск командыыы",
-  "description": "Ищу команду для турниров по Dota 2",
+  "id": 13,
+  "title": "Хи хи ха ха",
+  "description": "Ищу команду для турниров по",
   "contacts": "player@example.com",
   "purposeName": "test",
   "availabilities": [
@@ -14,12 +14,12 @@ Content-Type: application/json
         "endTime": "22:00:00+03:00"
     },
     {
-        "dayOfWeek": 5,
+        "dayOfWeek": 3,
         "startTime": "18:00:00+03:00",
         "endTime": "22:00:00+03:00"
     }
   ],
   "games": [
-    "Dota 2", "Valorant"
+    "Dota 2", "Valorant", "Rainbow six siege"
   ]
 }

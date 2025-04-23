@@ -21,6 +21,7 @@ namespace GameTeam.Classes
 
             if (string.IsNullOrEmpty(isAuthenticated) || isAuthenticated != "true")
             {
+                context.Response.Headers.Append("X-Is-Authenticated", context.Session.GetString("IsAuthenticated"));
                 await _next(context);
             }
             else

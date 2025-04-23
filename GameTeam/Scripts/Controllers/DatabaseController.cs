@@ -928,5 +928,73 @@ namespace GameTeam.Scripts.Controllers
                 throw new Exception($"Ошибка UpsertUserProfile: {e.Message}", e);
             }
         }
+
+        /// <summary>
+        /// Deletes an application and all its related data from the database
+        /// </summary>
+        /// <param name="applicationId">ID of the application to delete</param>
+        /// <exception cref="Exception">Throws when there's an error during deletion</exception>
+        public static bool DeleteApplication(int applicationId)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            conn.Open();
+
+            using var transaction = conn.BeginTransaction();
+            try
+            {
+                // 1. Delete from participants table first (due to foreign key constraints)
+                using (var cmd = new NpgsqlCommand(@"
+            DELETE FROM participants 
+            WHERE application_id = @applicationId
+        ", conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("applicationId", applicationId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                // 2. Delete from applications_to_games
+                using (var cmd = new NpgsqlCommand(@"
+            DELETE FROM applications_to_games 
+            WHERE app_id = @applicationId
+        ", conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("applicationId", applicationId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                // 3. Delete from applications_to_availability
+                using (var cmd = new NpgsqlCommand(@"
+            DELETE FROM applications_to_availability 
+            WHERE application_id = @applicationId
+        ", conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("applicationId", applicationId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                // 4. Finally delete the application itself
+                using (var cmd = new NpgsqlCommand(@"
+            DELETE FROM applications 
+            WHERE id = @applicationId
+        ", conn, transaction))
+                {
+                    cmd.Parameters.AddWithValue("applicationId", applicationId);
+                    var rowsAffected = cmd.ExecuteNonQuery();
+
+                    if (rowsAffected == 0)
+                    {
+                        throw new Exception($"Application with ID {applicationId} not found");
+                    }
+                }
+
+                transaction.Commit();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw new Exception($"Error deleting application: {ex.Message}", ex);
+            }
+        }
     }
 }

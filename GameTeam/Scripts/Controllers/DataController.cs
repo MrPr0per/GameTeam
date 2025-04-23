@@ -198,11 +198,17 @@ namespace GameTeam.Scripts.Controllers
 
             return Ok(new { Message = "Application upserted" });
         }
-        public IActionResult UpsertApplicationasd()
-        {
-            var salt = DatabaseController.GetUserSalt(1);
 
-            return Ok(new { Message = salt });
+
+        [HttpGet("delete/application/{id}")]
+        public IActionResult DeleteApplicationById(int id)
+        {
+            var success = DatabaseController.DeleteApplication(id);
+
+            if (success)
+                return Ok();
+
+            return BadRequest(new { Message = "Не удалилось" });
         }
     }
 
