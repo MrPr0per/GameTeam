@@ -2,6 +2,7 @@ let debugMode = true;
 
 let isEditing = false;
 let isPlaced = false;
+// todo: сделать для этих объектов класс
 let serverQuestionnaire = { // то, что сохранено на сервере
 	title: '',
 	description: '',
@@ -34,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
 const buttonsActivator = {
 	originalTexts: new Map(),
 
-	setButtonPending(button) {
+	setPending(button) {
 		if (button.id) {
 			this.originalTexts.set(button.id, button.innerText);
 			button.innerText = 'Загрузка...';
@@ -42,7 +43,7 @@ const buttonsActivator = {
 		button.disabled = true;
 	},
 
-	resetButtonPending(button) {
+	resetPending(button) {
 		if (button.id && this.originalTexts.has(button.id)) {
 			button.innerText = this.originalTexts.get(button.id);
 			this.originalTexts.delete(button.id);
@@ -50,7 +51,6 @@ const buttonsActivator = {
 		button.disabled = false;
 	},
 };
-
 
 function addEventListeners() {
 	const placeOrHideButton = document.getElementById('place-button');
@@ -60,35 +60,28 @@ function addEventListeners() {
 	const saveButton = document.getElementById('save-button');
 	const addGameButton = document.getElementById('add-game-button');
 	const newGameInput = document.getElementById('new-game-input');
-	const editButtons = document.getElementById('edit-buttons');
-	const statusButtons = document.getElementById('status-buttons');
-	const questionnaireContent = document.getElementById('questionnaire-content');
-	const statusText = document.getElementById('status-text');
-	const gamesList = document.getElementById('questionnaire-games');
-	const addGameSection = document.getElementById('add-game-section');
 	const warningMessage = document.getElementById('warning-message');
 
 	// "Разместить анкету" / "Скрыть анкету"
 	placeOrHideButton.addEventListener('click', function () {
 		if (isEditing) return; // в режиме редактирования эта кнопка скрыта
-		if (isPlaced) {
-			buttonsActivator.setButtonPending(placeOrHideButton);
+		if (isPlaced) { // для кнопки "скрыть":
+			buttonsActivator.setPending(placeOrHideButton);
 			hideMyQuestionnaire()
 				.then((success) => {
-					buttonsActivator.resetButtonPending(placeOrHideButton);
-					if (!success) return;
+					buttonsActivator.resetPending(placeOrHideButton);
+					if (!success) return; // отображение ошибки уже вызовется в hideMyQuestionnaire, тут ничего делать не нужно
 					isPlaced = false;
 					updateStatusAndButtons();
 				});
-		} else if (isFormValid()) {
-			buttonsActivator.setButtonPending(placeOrHideButton);
+		} else if (isFormValid()) { // для кнопки "разместить":
+			buttonsActivator.setPending(placeOrHideButton);
 			postMyQuestionnaire()
 				.then((success) => {
-					buttonsActivator.resetButtonPending(placeOrHideButton);
-					if (success) {
-						isPlaced = true;
-						updateStatusAndButtons();
-					}
+					buttonsActivator.resetPending(placeOrHideButton);
+					if (!success) return;
+					isPlaced = true;
+					updateStatusAndButtons();
 				});
 		} else {
 			warningMessage.textContent = 'Заполните все обязательные поля';
@@ -133,6 +126,7 @@ function addEventListeners() {
 
 // Включение режима редактирования
 function enableEditMode() {
+	const questionnaireContent = document.getElementById('questionnaire-content');
 	isEditing = true;
 	serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
 	questionnaireContent.querySelectorAll('[contenteditable]').forEach(el => {
@@ -145,6 +139,9 @@ function enableEditMode() {
 
 // Выключение режима редактирования
 function disableEditMode(saveChanges = true) {
+	const questionnaireContent = document.getElementById('questionnaire-content');
+	const gamesList = document.getElementById('questionnaire-games');
+
 	isEditing = false;
 	if (saveChanges) {
 		localQuestionnaire.title = document.getElementById('questionnaire-title').innerText.trim();
@@ -206,7 +203,10 @@ function isFormValid() {
 	const games = localQuestionnaire.games;
 	const goal = localQuestionnaire.goal.trim();
 	const contacts = localQuestionnaire.contacts.trim();
-	return title !== '' && games.length > 0 && goal !== '' && contacts !== '';
+	return title !== ''
+		&& games.length > 0
+		&& goal !== ''
+		&& contacts !== '';
 }
 
 // Функция для обновления статуса и кнопок
@@ -253,7 +253,7 @@ function updateStatusAndButtons() {
 async function loadMyQuestionnaire() {
 	const response = await fetch('data/selfapplications', {method: 'GET'});
 
-	if (response.status != 200) {
+	if (!response.ok) {
 		serverQuestionnaire = {
 			id: -1,
 			title: '',
@@ -266,7 +266,7 @@ async function loadMyQuestionnaire() {
 	} else {
 		const application = await response.json();
 
-		serverQuestionnaire = transformQuestionnaire(application[0]); //Пока что загружаем первую анкету
+		serverQuestionnaire = transformQuestionnaire(application[0]); // Пока что загружаем первую анкету
 	}
 
 	localQuestionnaire = structuredClone(serverQuestionnaire);
