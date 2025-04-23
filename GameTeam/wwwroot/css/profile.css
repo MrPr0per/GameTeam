@@ -128,8 +128,6 @@ header {
 }
 
 
-
-
 .profile-container {
     width: 800px;
     min-width: 700px;
@@ -210,6 +208,11 @@ header {
     cursor: not-allowed;
 }
 
+.filled-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .filled-button {
     padding: 5px 15px;
     background-color: #2563EB;
@@ -220,7 +223,7 @@ header {
     font-size: 14px;
 }
 
-.filled-button:hover {
+.filled-button:hover:not(:disabled) {
     background-color: #1E4FC7;
 }
 
