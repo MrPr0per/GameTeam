@@ -187,7 +187,7 @@ function isFormValid() {
 	const contacts = localQuestionnaire.contacts.trim();
 	return title !== ''
 		&& games.length > 0
-		&& goal !== ''
+		// && goal !== ''
 		&& contacts !== '';
 }
 
