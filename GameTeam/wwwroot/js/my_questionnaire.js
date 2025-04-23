@@ -430,6 +430,7 @@ function transformQuestionnaire(questionnaireData) {
 
 async function hideMyQuestionnaire() {
 	// todo
+	return true;
 }
 
 // todo: убрать дублирование
