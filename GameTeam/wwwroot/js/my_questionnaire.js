@@ -225,6 +225,7 @@ async function loadMyQuestionnaire() {
 	
 	if (response.status != 200) {
 		serverQuestionnaire = {
+			id: -1,
 			title: '',
 			description: '',
 			games: [],
@@ -290,8 +291,13 @@ function loadAndRenderUserName() {
 
 
 async function getJsonForPostQuestionnaire() {
-	const response = await fetch('data/applicationid', { method: 'GET', });
-	const applicationId = await response.text();
+	let applicationId = -1;
+	if (serverQuestionnaire.id === -1) {
+		const response = await fetch('data/applicationid', { method: 'GET', });
+		applicationId = await response.text();
+	} else {
+		applicationId = serverQuestionnaire.id;
+	}
 	return {
 		id: applicationId, // todo: убрать заглушку
 		title: localQuestionnaire.title,
@@ -384,6 +390,7 @@ function transformQuestionnaire(questionnaireData) {
 
 	// Возвращаем преобразованный объект
 	return {
+		id: questionnaireData.Id,
 		title: questionnaireData.Title,
 		description: questionnaireData.Description,
 		games: games,
