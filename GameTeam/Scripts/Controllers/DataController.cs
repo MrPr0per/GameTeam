@@ -5,7 +5,6 @@ using NodaTime;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using static AuthController;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -15,7 +14,6 @@ namespace GameTeam.Scripts.Controllers
     [ApiController]
     public class DataController : ControllerBase
     {
-        // GET: api/<DataController>
         [HttpGet("profile")]
         public string GetSelfProfile()
         {
@@ -27,7 +25,6 @@ namespace GameTeam.Scripts.Controllers
             }
 
             var profile = DatabaseController.GetUserProfile(username);
-            var userId = DatabaseController.GetIdByUsername(username);
 
             if (profile is null)
             {
@@ -86,7 +83,6 @@ namespace GameTeam.Scripts.Controllers
                 else
                     availabilities = null;
 
-                // Здесь должна быть бизнес-логика обработки запроса
                 DatabaseController.UpsertUserProfile(
                 int.Parse(userId),
                 request.AboutDescription,
