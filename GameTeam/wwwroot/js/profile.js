@@ -4,6 +4,7 @@
 // todo: апи не удаляет игры
 
 const debugMode = true;
+let isAuthenticated = false;
 
 let realProfileInfo = {
     name: '',

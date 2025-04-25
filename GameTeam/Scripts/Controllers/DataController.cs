@@ -22,7 +22,7 @@ namespace GameTeam.Scripts.Controllers
             var username = HttpContext.Session.GetString("Username");
             if (string.IsNullOrEmpty(username))
             {
-                Response.StatusCode = 401;
+                Response.StatusCode = 200;
                 return "";
             }
 
