@@ -5,6 +5,7 @@
 import {buttonsActivator} from './buttonsActivator.js';
 
 const debugMode = true;
+let isAuthenticated = false;
 
 let realProfileInfo = {
 	name: '',

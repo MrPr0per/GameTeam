@@ -16,7 +16,7 @@ public class AuthController : ControllerBase
         this.config = config;
     }
 
-    [HttpPost("login")] // Изменил на HttpPost, так как логин обычно через POST
+    [HttpPost("login")]
     public string[] Login([FromBody] LoginDto data)
     {
         int? userId;
@@ -39,7 +39,7 @@ public class AuthController : ControllerBase
         return new[] { userData.Value.salt, challenge };
     }
 
-    [HttpPost("loginpass")] // Изменил на HttpPost, так как логин обычно через POST
+    [HttpPost("loginpass")]
     public IActionResult LoginSecond([FromBody] LoginDtoPass data)
     {
         var passwordReal = HttpContext.Session.GetString("UserPassword");
@@ -52,6 +52,9 @@ public class AuthController : ControllerBase
             HttpContext.Session.SetString("UserId", userId.ToString());
             HttpContext.Session.SetString("Username", username);
             HttpContext.Session.SetString("IsAuthenticated", "true");
+
+            HttpContext.Response.Headers.Append("X-Is-Authenticated", "true");
+            HttpContext.Response.Headers.Append("X-Username", username);
 
             return Ok(new { Message = "Login successful" });
         }
@@ -76,7 +79,7 @@ public class AuthController : ControllerBase
     public IActionResult Register([FromBody] RegisterDto data)
     {
         var salt = HttpContext.Session.GetString("Salt");
-        Console.WriteLine(salt);
+
         try
         {
             DatabaseController.Register(data.Username, data.Email, data.Password, salt);
@@ -87,12 +90,16 @@ public class AuthController : ControllerBase
         }
 
         var userId = DatabaseController.GetIdByUsername(data.Username);
+        DatabaseController.UpsertUserProfile(userId, "");
 
         HttpContext.Session.Clear();
-        // Сохраняем информацию о пользователе в сессии
+
         HttpContext.Session.SetString("UserId", userId.ToString());
         HttpContext.Session.SetString("Username", data.Username);
         HttpContext.Session.SetString("IsAuthenticated", "true");
+
+        HttpContext.Response.Headers.Append("X-Is-Authenticated", "true");
+        HttpContext.Response.Headers.Append("X-Username", data.Username);
 
         return Ok(new { Message = "Registration successful" });
     }
@@ -100,8 +107,6 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public IActionResult Logout()
     {
-
-        // Очищаем сессию
         HttpContext.Session.Clear();
 
         return Ok(new { Message = "Logout successful" });

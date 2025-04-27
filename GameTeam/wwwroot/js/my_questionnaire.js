@@ -247,8 +247,19 @@ async function loadMyQuestionnaire() {
 		};
 	} else {
 		const application = await response.json();
-
-		serverQuestionnaire = transformQuestionnaire(application[0]); // Пока что загружаем первую анкету
+		if (application[0]) {
+			serverQuestionnaire = transformQuestionnaire(application[0]); //Пока что загружаем первую анкету
+		} else {
+			serverQuestionnaire = {
+				id: -1,
+				title: '',
+				description: '',
+				games: [],
+				goal: '',
+				time: '',
+				contacts: '',
+			}
+		}
 	}
 
 	localQuestionnaire = structuredClone(serverQuestionnaire);

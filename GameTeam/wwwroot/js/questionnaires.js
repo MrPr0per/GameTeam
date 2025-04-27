@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalTemplate = document.getElementById('modal-template');
     const loadMoreButton = document.getElementById('load-more-button');
     const loadMoreContainer = document.querySelector('.load-more-container');
+    const myQuestionnairesLink = document.querySelector('.my-q');
+    let isAuthenticated = false;
 
     let offset = 0;
     const limit = 5;
@@ -11,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     loadQuestionnaires();
     loadAndRenderUserName();
-
 
     loadMoreButton.addEventListener('click', function () {
         if (loading || endReached) return;
@@ -89,26 +90,44 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function loadAndRenderUserName() {
         fetch('/data/profile')
-            .then(r => {
-                if (r.ok) {
-                    return r.json();
-                } else if (r.status === 401) {
-                    window.location.href = '/register';
-                } else {
-                    console.error('Ошибка при загрузке профиля', r);
+            .then(response => {
+                isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
+                const userNameElements = document.querySelectorAll('.user-name');
+
+                if (myQuestionnairesLink) {
+                    myQuestionnairesLink.style.display = isAuthenticated ? 'flex' : 'none';
                 }
-            })
-            .then(json => {
-                if (json !== undefined) {
-                    const name = json['Username'];
-                    document.querySelectorAll('.user-name').forEach(el => el.textContent = name);
+
+                const profileElement = document.querySelectorAll('.auth-status.user-name');
+                if (!isAuthenticated) {
+                    profileElement.forEach(el => el.href = '../pages/Register.html');
+                }
+                else {
+                    profileElement.forEach(el => el.href = '../pages/Profile.html');
+                }
+
+                if (response.ok) {
+                    return response.json().then(json => {
+                        if (isAuthenticated && json && json['Username']) {
+                            userNameElements.forEach(el => el.textContent = json['Username']);
+                        } else {
+                            userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
+                        }
+                    });
+                } else {
+                    // Для статуса 401 или других ошибок устанавливаем "Вход не выполнен"
+                    userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
+                    if (myQuestionnairesLink) {
+                        myQuestionnairesLink.style.display = 'none';
+                    }
+                    return Promise.reject('Profile load error');
                 }
             })
             .catch(err => {
                 console.error('Ошибка при получении имени пользователя:', err);
+                document.querySelectorAll('.user-name').forEach(el => el.textContent = 'Вход не выполнен');
             });
     }
-
 
     function openModal(questionnaire) {
         const modalOverlay = modalTemplate.content.cloneNode(true).firstElementChild;
