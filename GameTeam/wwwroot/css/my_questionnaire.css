@@ -128,9 +128,6 @@ header {
     text-decoration: none;
 }
 
-
-
-
 .questionnaire-container {
     display: flex;
     flex-direction: column;
@@ -169,17 +166,23 @@ header {
 .questionnaire-content h2 {
     color: #000;
     font-weight: normal;
-    margin: 0 0 15px;
+    margin: 0 0;
     word-wrap: break-word;
     overflow-wrap: break-word;
     line-height: 1.2;
+    font-size: 25px;
 }
+
 
 .questionnaire-section {
     display: flex;
     flex-direction: column;
     gap: 5px;
     margin-bottom: 15px;
+}
+
+.questionnaire-section:first-child {
+    margin-top: 5px;
 }
 
 .questionnaire-section.last-section {
@@ -189,6 +192,18 @@ header {
 .questionnaire-section label {
     font-weight: bold;
     color: #333;
+    font-size: 16px;
+}
+
+.questionnaire-section> :not(label) {
+    flex: 1;
+    padding-left: 10px;
+}
+
+
+
+.questionnaire-section:first-of-type label {
+    font-size: 21px !important;
 }
 
 .questionnaire-section .required {
@@ -203,29 +218,85 @@ header {
     color: #333;
     line-height: 1.5;
     white-space: pre-wrap;
+    font-size: 16px;
+}
+
+#questionnaire-goal p {
+    margin: 0;
+    font-size: 16px;
+}
+
+#questionnaire-goal select {
+    font-size: 16px;
+    padding: 5px;
+    border: 2px solid #2563EB;
+    border-radius: 5px;
+    width: 230px;
+    background-color: white;
+}
+
+.time-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 16px;
+    gap: 5px;
+}
+
+.time-row span {
+    margin: 0 5px;
+}
+
+.time-input {
+    width: 60px;
+    padding: 5px;
+    text-align: center;
+    border: 2px solid #2563EB;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+#questionnaire-time {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, auto);
+    grid-auto-flow: column;
+    column-gap: 10px;
+    row-gap: 5px;
+}
+
+#questionnaire-time .time-row {
+    margin-bottom: 0;
 }
 
 .games-container ul {
-    padding-left: 20px;
-    list-style-type: disc;
-    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding-left: 0;
+    list-style-type: none;
 }
 
 .game-item {
-    margin-bottom: 5px;
+    display: flex;
+    font-size: 16px;
     position: relative;
-    display: list-item;
-    list-style-type: disc;
-    list-style-position: outside;
+    word-break: break-word;
+}
+
+.game-item::before {
+    content: "•";
+    margin-right: 5px;
+    align-self: flex-start;
 }
 
 .game-item-content {
-    display: inline-flex;
-    align-items: center;
+    display: inline;
 }
 
 .game-item-content span:first-child {
-    margin-right: 0;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .game-item .delete-game {
@@ -233,11 +304,12 @@ header {
     color: red;
     cursor: pointer;
     font-size: 14px;
-    margin-left: 8px;
+    margin-left: 5px;
+    white-space: nowrap;
 }
 
 .game-item.editing .delete-game {
-    display: inline-block;
+    display: inline;
 }
 
 
@@ -247,6 +319,7 @@ header {
     border-radius: 5px;
     margin-right: 10px;
     width: 200px;
+    font-size: 16px;
 }
 
 [contenteditable="true"]:empty:before {
@@ -264,6 +337,7 @@ header {
     outline: none;
     transition: border-color 0.3s;
     white-space: pre-wrap;
+    font-size: 16px;
 }
 
 [contenteditable="true"]:hover,
