@@ -180,8 +180,9 @@ namespace GameTeam.Scripts.Controllers
 
             try
             {
-                DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, data.Description, 
-                                                     data.Contacts, games, availabilities, int.Parse(userId));
+                //TODO надо добавить поддержку is_hidden
+                // DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, data.Description, 
+                //                                      data.Contacts, games, availabilities, int.Parse(userId));
             }
             catch (Exception ex)
             {

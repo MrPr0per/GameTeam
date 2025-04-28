@@ -1,20 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using Npgsql;
 using NUnit.Framework;
-using GameTeam.Classes.Data;
 using GameTeam.Scripts.Controllers;
 
 namespace GameTeam.Tests.DatabaseControllerTests
 {
     [TestFixture]
-    public class GetApplicationsByUserIdTests
+    public class ChangeApplicationVisibilityTests
     {
         private const int TestUserId1 = 55555;
         private const int TestUserId2 = 77777;
+        private const int TestAppId1  = 2001;
+        private const int TestAppId2  = 2002;
         private readonly string connectionString = DatabaseController.ConnectionString;
-
         private int purposeId;
 
         [SetUp]
@@ -22,9 +20,12 @@ namespace GameTeam.Tests.DatabaseControllerTests
         {
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
+
             // Create test users
             using (var cmd = new NpgsqlCommand(
-                "INSERT INTO users_data (id, username, email, password, salt) VALUES (@id, @username, @email, @password, @salt) ON CONFLICT(id) DO NOTHING;",
+                @"INSERT INTO users_data (id, username, email, password, salt)
+                  VALUES (@id, @username, @email, @password, @salt)
+                  ON CONFLICT(id) DO NOTHING;",
                 conn))
             {
                 cmd.Parameters.AddWithValue("id", TestUserId1);
@@ -33,6 +34,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
                 cmd.Parameters.AddWithValue("password", "pass1");
                 cmd.Parameters.AddWithValue("salt", "salt1");
                 cmd.ExecuteNonQuery();
+
                 cmd.Parameters.Clear();
                 cmd.Parameters.AddWithValue("id", TestUserId2);
                 cmd.Parameters.AddWithValue("username", "user2");
@@ -41,14 +43,18 @@ namespace GameTeam.Tests.DatabaseControllerTests
                 cmd.Parameters.AddWithValue("salt", "salt2");
                 cmd.ExecuteNonQuery();
             }
+
             // Create purpose
             using (var cmd = new NpgsqlCommand(
-                "INSERT INTO purposes (purpose) VALUES (@p) ON CONFLICT(purpose) DO NOTHING;",
+                @"INSERT INTO purposes (purpose)
+                  VALUES (@p)
+                  ON CONFLICT(purpose) DO NOTHING;",
                 conn))
             {
                 cmd.Parameters.AddWithValue("p", "TestPurpose");
                 cmd.ExecuteNonQuery();
             }
+
             // Retrieve purpose_id
             using (var cmd = new NpgsqlCommand(
                 "SELECT id FROM purposes WHERE purpose = @p;",
@@ -64,6 +70,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
         {
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
+
             // Clean up applications
             using (var cmd = new NpgsqlCommand(
                 "DELETE FROM applications WHERE owner_id IN (@u1, @u2);",
@@ -73,6 +80,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
                 cmd.Parameters.AddWithValue("u2", TestUserId2);
                 cmd.ExecuteNonQuery();
             }
+
             // Clean up users
             using (var cmd = new NpgsqlCommand(
                 "DELETE FROM users_data WHERE id IN (@u1, @u2);",
@@ -82,6 +90,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
                 cmd.Parameters.AddWithValue("u2", TestUserId2);
                 cmd.ExecuteNonQuery();
             }
+
             // Clean up purposes
             using (var cmd = new NpgsqlCommand(
                 "DELETE FROM purposes WHERE id = @pid;",
@@ -93,56 +102,88 @@ namespace GameTeam.Tests.DatabaseControllerTests
         }
 
         [Test]
-        public void Test_GetAllApplicationsByUserId_ReturnsOnlyUserApplications()
+        public void ChangeVisibility_ShouldSetHiddenTrue_WhenInitiallyFalse()
         {
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
 
-            // Insert application for user1
+            // Insert application initially visible
             using (var cmd = new NpgsqlCommand(
-                "INSERT INTO applications (id, title, description, contacts, purpose_id, owner_id, is_hidden) " +
-                "VALUES (@id, @title, @desc, @cont, @pid, @uid, @is_hidden);",
+                @"INSERT INTO applications
+                    (id, title, description, contacts, purpose_id, owner_id, is_hidden)
+                  VALUES
+                    (@id, @title, @desc, @cont, @pid, @uid, @hidden);",
                 conn))
             {
-                cmd.Parameters.AddWithValue("id", 1001);
-                cmd.Parameters.AddWithValue("title", "App1");
-                cmd.Parameters.AddWithValue("desc", "Desc1");
-                cmd.Parameters.AddWithValue("cont", "Cont1");
+                cmd.Parameters.AddWithValue("id", TestAppId1);
+                cmd.Parameters.AddWithValue("title", "AppVisible");
+                cmd.Parameters.AddWithValue("desc", "Desc");
+                cmd.Parameters.AddWithValue("cont", "Cont");
                 cmd.Parameters.AddWithValue("pid", purposeId);
                 cmd.Parameters.AddWithValue("uid", TestUserId1);
-                cmd.Parameters.AddWithValue("is_hidden", false);
-                cmd.ExecuteNonQuery();
-            }
-            // Insert application for user2
-            using (var cmd = new NpgsqlCommand(
-                "INSERT INTO applications (id, title, description, contacts, purpose_id, owner_id, is_hidden) " +
-                "VALUES (@id, @title, @desc, @cont, @pid, @uid, @is_hidden);",
-                conn))
-            {
-                cmd.Parameters.AddWithValue("id", 1002);
-                cmd.Parameters.AddWithValue("title", "App2");
-                cmd.Parameters.AddWithValue("desc", "Desc2");
-                cmd.Parameters.AddWithValue("cont", "Cont2");
-                cmd.Parameters.AddWithValue("pid", purposeId);
-                cmd.Parameters.AddWithValue("uid", TestUserId2);
-                cmd.Parameters.AddWithValue("is_hidden", false);
+                cmd.Parameters.AddWithValue("hidden", false);
                 cmd.ExecuteNonQuery();
             }
 
             // Act
-            var appsUser1 = DatabaseController.GetAllApplicationsByUserId(TestUserId1);
-            var appsUser2 = DatabaseController.GetAllApplicationsByUserId(TestUserId2);
+            DatabaseController.ChangeApplictionVisibilityById(TestAppId1, isHidden: true);
 
             // Assert
-            Assert.IsNotNull(appsUser1);
-            Assert.AreEqual(1, appsUser1.Count);
-            Assert.AreEqual(1001, appsUser1.First().Id);
-            Assert.AreEqual(TestUserId1, appsUser1.First().OwnerId);
+            using (var cmd = new NpgsqlCommand(
+                "SELECT is_hidden FROM applications WHERE id = @id;",
+                conn))
+            {
+                cmd.Parameters.AddWithValue("id", TestAppId1);
+                bool isHidden = (bool)cmd.ExecuteScalar();
+                Assert.IsTrue(isHidden, "Application should be hidden after ChangeApplictionVisibilityById");
+            }
+        }
 
-            Assert.IsNotNull(appsUser2);
-            Assert.AreEqual(1, appsUser2.Count);
-            Assert.AreEqual(1002, appsUser2.First().Id);
-            Assert.AreEqual(TestUserId2, appsUser2.First().OwnerId);
+        [Test]
+        public void ChangeVisibility_ShouldSetHiddenFalse_WhenInitiallyTrue()
+        {
+            using var conn = new NpgsqlConnection(connectionString);
+            conn.Open();
+
+            // Insert application initially hidden
+            using (var cmd = new NpgsqlCommand(
+                @"INSERT INTO applications
+                    (id, title, description, contacts, purpose_id, owner_id, is_hidden)
+                  VALUES
+                    (@id, @title, @desc, @cont, @pid, @uid, @hidden);",
+                conn))
+            {
+                cmd.Parameters.AddWithValue("id", TestAppId2);
+                cmd.Parameters.AddWithValue("title", "AppHidden");
+                cmd.Parameters.AddWithValue("desc", "Desc");
+                cmd.Parameters.AddWithValue("cont", "Cont");
+                cmd.Parameters.AddWithValue("pid", purposeId);
+                cmd.Parameters.AddWithValue("uid", TestUserId1);
+                cmd.Parameters.AddWithValue("hidden", true);
+                cmd.ExecuteNonQuery();
+            }
+
+            // Act
+            DatabaseController.ChangeApplictionVisibilityById(TestAppId2, isHidden: false);
+
+            // Assert
+            using (var cmd = new NpgsqlCommand(
+                "SELECT is_hidden FROM applications WHERE id = @id;",
+                conn))
+            {
+                cmd.Parameters.AddWithValue("id", TestAppId2);
+                bool isHidden = (bool)cmd.ExecuteScalar();
+                Assert.IsFalse(isHidden, "Application should be visible after ChangeApplictionVisibilityById");
+            }
+        }
+
+        [Test]
+        public void ChangeVisibility_InvalidId_ShouldNotThrow()
+        {
+            // Act & Assert
+            Assert.DoesNotThrow(() =>
+                DatabaseController.ChangeApplictionVisibilityById(-1, isHidden: true)
+            );
         }
     }
 }

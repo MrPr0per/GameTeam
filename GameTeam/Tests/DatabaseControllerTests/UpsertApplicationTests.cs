@@ -108,7 +108,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
         [Test]
         public void Test_UpsertApplication_BasicFields()
         {
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, null, null, TestAppOwnerId);
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, false,  TestAppOwnerId, TestAppDescription, TestAppContacts, null, null);
 
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
@@ -145,7 +145,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
         public void Test_UpsertApplication_WithGames()
         {
             var games = new List<Game> { new Game(TestGameId, TestGameName) };
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, games, null, TestAppOwnerId);
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, false, TestAppOwnerId, TestAppDescription, TestAppContacts, games, null);
 
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
@@ -163,7 +163,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
         public void Test_UpsertApplication_WithAvailabilities()
         {
             var avs = new List<Availability> { new Availability(TestAvailabilityId, TestDayOfWeek, TestStartTime, TestEndTime) };
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, null, avs, TestAppOwnerId);
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, false, TestAppOwnerId, TestAppDescription, TestAppContacts, null, avs);
 
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
@@ -180,8 +180,8 @@ namespace GameTeam.Tests.DatabaseControllerTests
         [Test]
         public void Test_UpsertApplication_UpdateProfileFields()
         {
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, null, null, TestAppOwnerId);
-            DatabaseController.UpsertApplication(TestAppId, UpdatedPurpose, UpdatedAppTitle, UpdatedAppDescription, UpdatedAppContacts, null, null, TestAppOwnerId);
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, false, TestAppOwnerId, TestAppDescription, TestAppContacts, null, null);
+            DatabaseController.UpsertApplication(TestAppId, UpdatedPurpose, UpdatedAppTitle, false, TestAppOwnerId, UpdatedAppDescription, UpdatedAppContacts, null, null);
 
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
@@ -218,11 +218,11 @@ namespace GameTeam.Tests.DatabaseControllerTests
         {
             var initialGames = new List<Game> { new Game(TestGameId, TestGameName) };
             var initialAvs = new List<Availability> { new Availability(TestAvailabilityId, TestDayOfWeek, TestStartTime, TestEndTime) };
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, initialGames, initialAvs, TestAppOwnerId);
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, false, TestAppOwnerId, TestAppDescription, TestAppContacts, initialGames, initialAvs);
 
             var newGames = new List<Game> { new Game(TestGameId2, TestGameName2) };
             var newAvs = new List<Availability> { new Availability(TestAvailabilityId2, Availability.DayOfWeekEnum.Monday, TestStartTime2, TestEndTime2) };
-            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, TestAppDescription, TestAppContacts, newGames, newAvs, TestAppOwnerId);
+            DatabaseController.UpsertApplication(TestAppId, TestPurpose, TestAppTitle, false, TestAppOwnerId, TestAppDescription, TestAppContacts, newGames, newAvs);
 
             using var conn = new NpgsqlConnection(connectionString);
             conn.Open();
