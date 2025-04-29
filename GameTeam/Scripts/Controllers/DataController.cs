@@ -186,7 +186,7 @@ namespace GameTeam.Scripts.Controllers
                 games = data.Games.Select(x => DatabaseController.GetOrCreateGame(x)).ToList();
             else
                 games = null;
-
+            
             if (!(data.Availabilities is null))
                 availabilities = data.Availabilities.Select(x => DatabaseController.GetOrCreateAvailability(x.DayOfWeek, x.StartTime, x.EndTime)).ToList();
             else
@@ -195,7 +195,7 @@ namespace GameTeam.Scripts.Controllers
             try
             {
                 //TODO надо добавить поддержку is_hidden
-                DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, false, int.Parse(userId), data.Description,
+                DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, true, int.Parse(userId), data.Description,
                 data.Contacts, games, availabilities);
             }
             catch (Exception ex)
