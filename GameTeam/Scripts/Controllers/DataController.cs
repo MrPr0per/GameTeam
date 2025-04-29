@@ -243,7 +243,7 @@ namespace GameTeam.Scripts.Controllers
 
                 DatabaseController.ChangeApplictionVisibilityById(id, true);
 
-                return Ok(new { Message = "Application upserted" });
+                return Ok(new { Message = "Application hidden" });
 
             }
             catch
@@ -268,7 +268,7 @@ namespace GameTeam.Scripts.Controllers
 
                 DatabaseController.ChangeApplictionVisibilityById(id, false);
 
-                return Ok(new { Message = "Application upserted" });
+                return Ok(new { Message = "Application shown" });
             }
             catch
             {
