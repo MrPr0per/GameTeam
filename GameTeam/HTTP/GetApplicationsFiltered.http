@@ -1,4 +1,4 @@
-GET https://localhost/data/applications/0/100
+POST https://localhost/data/applications/0/100
 Content-Type: application/json
 
 {

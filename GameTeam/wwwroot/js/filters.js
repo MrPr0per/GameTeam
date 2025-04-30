@@ -1,13 +1,21 @@
+const currentFilter = {
+    games: [], // Массив выбранных игр
+    purpose: null, // ID выбранной цели
+};
+
+export function getCurrentFilter() {
+    return currentFilter;
+}
+
+export let applyFiltersButton;
+
 export async function initFilters() {
     try {
         // Загрузка шаблона фильтров из Filters.html
         const filterTemplate = await loadFilterTemplate();
 
-
         const filterContainer = document.querySelector('.filter-container');
         const selectedFiltersContainer = document.querySelector('.selected-filters');
-        let selectedGames = []; // Массив выбранных игр
-        let selectedPurpose = null; // ID выбранной цели
 
         // TODO: Заменить статические данные на загрузку с API
         const games = [
@@ -68,7 +76,7 @@ export async function initFilters() {
         const gameSearch = gamesFilter.querySelector('.game-search');
         const purposeFilter = filterDropdownElement.querySelector('.purpose-filter');
         const clearFiltersButton = filterDropdownElement.querySelector('.clear-filters-button');
-        const applyFiltersButton = filterDropdownElement.querySelector('.apply-filters-button');
+        applyFiltersButton = filterDropdownElement.querySelector('.apply-filters-button');
         const paginationContainer = gamesFilter.querySelector('.pagination');
 
         const gamesPerPage = 15; // Количество игр на странице
@@ -110,7 +118,7 @@ export async function initFilters() {
             paginatedGames.forEach(game => {
                 const option = document.createElement('div');
                 option.className = 'filter-option';
-                const isChecked = selectedGames.includes(game) ? 'checked' : '';
+                const isChecked = currentFilter.games.includes(game) ? 'checked' : '';
                 const highlightedGame = highlightSearch(game, gameSearch.value);
                 option.innerHTML = `
                     <input type="checkbox" id="game-${game}" value="${game}" ${isChecked}>
@@ -201,7 +209,7 @@ export async function initFilters() {
                     if (radio.checked) {
                         e.preventDefault();
                         radio.checked = false;
-                        selectedPurpose = null;
+                        currentFilter.purpose = null;
                         updateSelectedFilters();
                         dispatchFilterChangeEvent();
                     }
@@ -238,9 +246,9 @@ export async function initFilters() {
         function handleGameFilterChange(e) {
             const game = e.target.value;
             if (e.target.checked) {
-                selectedGames.push(game);
+                currentFilter.games.push(game);
             } else {
-                selectedGames = selectedGames.filter(g => g !== game);
+                currentFilter.games = currentFilter.games.filter(g => g !== game);
             }
             updateSelectedFilters();
             dispatchFilterChangeEvent();
@@ -248,15 +256,15 @@ export async function initFilters() {
 
         // Обрабатывает выбор цели в фильтре
         function handlePurposeFilterChange(e) {
-            selectedPurpose = e.target.value;
+            currentFilter.purpose = e.target.value;
             updateSelectedFilters();
             dispatchFilterChangeEvent();
         }
 
         // Сбрасывает все выбранные фильтры
         function clearAllFilters() {
-            selectedGames = [];
-            selectedPurpose = null;
+            currentFilter.games = [];
+            currentFilter.purpose = null;
             gamesFilter.querySelectorAll('input').forEach(input => input.checked = false);
             purposeFilter.querySelectorAll('input').forEach(input => input.checked = false);
             filteredGames = games;
@@ -276,13 +284,13 @@ export async function initFilters() {
         // Обновляет отображение выбранных фильтров
         function updateSelectedFilters() {
             selectedFiltersContainer.innerHTML = '';
-            selectedGames.forEach(game => {
+            currentFilter.games.forEach(game => {
                 const tag = createFilterTag(game, 'game', game);
                 selectedFiltersContainer.appendChild(tag);
             });
-            if (selectedPurpose) {
-                const purposeText = purposes.find(p => p.id == selectedPurpose).text;
-                const tag = createFilterTag(purposeText, 'purpose', selectedPurpose);
+            if (currentFilter.purpose) {
+                const purposeText = purposes.find(p => p.id === currentFilter.purpose).text;
+                const tag = createFilterTag(purposeText, 'purpose', currentFilter.purpose);
                 selectedFiltersContainer.appendChild(tag);
             }
             setupRemoveFilterHandlers();
@@ -308,11 +316,11 @@ export async function initFilters() {
                     const value = button.dataset.value;
 
                     if (type === 'game') {
-                        selectedGames = selectedGames.filter(g => g !== value);
+                        currentFilter.games = currentFilter.games.filter(g => g !== value);
                         const checkbox = gamesFilter.querySelector(`input[value="${value}"]`);
                         if (checkbox) checkbox.checked = false;
                     } else if (type === 'purpose') {
-                        selectedPurpose = null;
+                        currentFilter.purpose = null;
                         purposeFilter.querySelector(`input[value="${value}"]`).checked = false;
                     }
 
@@ -325,14 +333,14 @@ export async function initFilters() {
         // Отправляет событие об изменении фильтров
         function dispatchFilterChangeEvent() {
             const event = new CustomEvent('filterChanged', {
-                detail: {games: selectedGames, purpose: selectedPurpose},
+                detail: {games: currentFilter.games, purpose: currentFilter.purpose},
             });
             document.dispatchEvent(event);
         }
 
         // тестим тестим в консоли
         function logFilters() {
-            console.log('Текущие фильтры:', {games: selectedGames, purpose: selectedPurpose});
+            console.log('Текущие фильтры:', {games: currentFilter.games, purpose: currentFilter.purpose});
         }
 
         // TODO: Добавить отправку выбранных фильтров на сервер

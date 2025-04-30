@@ -1,4 +1,4 @@
-import {initFilters} from './filters.js';
+import {initFilters, getCurrentFilter, applyFiltersButton} from './filters.js';
 
 const state = {
     offset: 0,
@@ -13,15 +13,13 @@ const state = {
 let dom = null;
 
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     dom = loadDomElements();
-    initFilters();
+    await initFilters();
     loadAndRenderQuestionnaires();
     loadAndRenderUserName();
-    dom.loadMoreButton.addEventListener('click', function () {
-        if (state.loading || state.endReached) return;
-        loadAndRenderQuestionnaires();
-    });
+    dom.loadMoreButton.addEventListener('click', loadAndRenderQuestionnaires);
+    applyFiltersButton.addEventListener('click', applyFilters);
 });
 
 function loadDomElements() {
@@ -33,7 +31,26 @@ function loadDomElements() {
     };
 }
 
+function applyFilters() {
+    state.offset = 0;
+    state.endReached = false;
+    clearQuestionnaires();
+    loadAndRenderQuestionnaires();
+}
+
+function clearQuestionnaires() {
+    // Удаляем все дочерние элементы контейнера
+    while (dom.questionnairesContainer.firstChild) {
+        dom.questionnairesContainer.removeChild(dom.questionnairesContainer.firstChild);
+    }
+    // Восстанавливаем кнопку "Загрузить ещё", если она была удалена
+    dom.loadMoreButton.style.display = 'block';
+    dom.loadMoreButton.disabled = false;
+}
+
 function loadAndRenderQuestionnaires() {
+    if (state.loading || state.endReached) return;
+
     state.loading = true;
 
     if (dom.loadMoreButton) {
@@ -41,13 +58,23 @@ function loadAndRenderQuestionnaires() {
         dom.loadMoreButton.disabled = true;
     }
 
-    fetch(`/data/applications/${state.offset}/${state.offset + state.limit}`)
+    const currentFilter = getCurrentFilter();
+    fetch(`/data/applications/${state.offset}/${state.offset + state.limit}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            purposeName: getPurposeText(currentFilter.purpose),
+            games: currentFilter.games,
+        }),
+    })
         .then(response => response.json())
         .then(data => {
             if (!Array.isArray(data) || data.length === 0) {
                 state.endReached = true;
                 if (dom.loadMoreButton) {
-                    dom.loadMoreButton.remove();
+                    dom.loadMoreButton.style.display = 'none';
                 }
                 return;
             }
@@ -86,7 +113,7 @@ function loadAndRenderQuestionnaires() {
             state.offset += data.length;
 
             if (data.length < state.limit && dom.loadMoreButton) {
-                dom.loadMoreButton.remove();
+                dom.loadMoreButton.style.display = 'none';
                 state.endReached = true;
             }
         })

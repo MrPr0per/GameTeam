@@ -33,7 +33,8 @@ namespace GameTeam.Scripts.Controllers
             if (profile is null)
             {
                 Response.StatusCode = 400;
-                return ""; }
+                return "";
+            }
 
             var userData = DatabaseController.GetUserData(int.Parse(HttpContext.Session.GetString("UserId")));
 
@@ -83,15 +84,16 @@ namespace GameTeam.Scripts.Controllers
                     games = null;
 
                 if (!(request.Availabilities is null))
-                    availabilities = request.Availabilities.Select(x => DatabaseController.GetOrCreateAvailability(x.DayOfWeek, x.StartTime, x.EndTime)).ToList();
+                    availabilities = request.Availabilities.Select(x =>
+                        DatabaseController.GetOrCreateAvailability(x.DayOfWeek, x.StartTime, x.EndTime)).ToList();
                 else
                     availabilities = null;
 
                 DatabaseController.UpsertUserProfile(
-                int.Parse(userId),
-                request.AboutDescription,
-                games,
-                availabilities);
+                    int.Parse(userId),
+                    request.AboutDescription,
+                    games,
+                    availabilities);
 
                 return Ok(new { Success = true });
             }
@@ -128,7 +130,7 @@ namespace GameTeam.Scripts.Controllers
             return JsonSerializer.Serialize(games);
         }
 
-        [HttpGet("applications/{from}/{to}")]
+        [HttpPost("applications/{from}/{to}")]
         public string GetAllApplications(int from, int to, [FromBody] FilterData? filters)
         {
             var applicationsJson = HttpContext.Session.GetString("applications");
@@ -193,17 +195,19 @@ namespace GameTeam.Scripts.Controllers
                 games = data.Games.Select(x => DatabaseController.GetOrCreateGame(x)).ToList();
             else
                 games = null;
-            
+
             if (!(data.Availabilities is null))
-                availabilities = data.Availabilities.Select(x => DatabaseController.GetOrCreateAvailability(x.DayOfWeek, x.StartTime, x.EndTime)).ToList();
+                availabilities = data.Availabilities.Select(x =>
+                    DatabaseController.GetOrCreateAvailability(x.DayOfWeek, x.StartTime, x.EndTime)).ToList();
             else
                 availabilities = null;
 
             try
             {
                 //TODO надо добавить поддержку is_hidden
-                DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, true, int.Parse(userId), data.Description,
-                data.Contacts, games, availabilities);
+                DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, true, int.Parse(userId),
+                    data.Description,
+                    data.Contacts, games, availabilities);
             }
             catch (Exception ex)
             {
@@ -251,7 +255,6 @@ namespace GameTeam.Scripts.Controllers
                 DatabaseController.ChangeApplictionVisibilityById(id, true);
 
                 return Ok(new { Message = "Application hidden" });
-
             }
             catch
             {
@@ -284,7 +287,7 @@ namespace GameTeam.Scripts.Controllers
         }
     }
 
-    public class FilterData 
+    public class FilterData
     {
         public string? PurposeName { get; set; }
         public List<string>? Games { get; set; }
@@ -332,8 +335,6 @@ namespace GameTeam.Scripts.Controllers
 
     public class UpsertUserProfileRequest
     {
-
-
         public string? AboutDescription { get; set; }
 
         public string? Skills { get; set; }
@@ -355,7 +356,8 @@ namespace GameTeam.Scripts.Controllers
         public string PurposeName { get; }
 
         [JsonConstructor]
-        public ApplicationWithPurpose(int id, string title, string description, string contacts, string purposeName, List<AvailabilityWithoutId> availabilities, List<string> games)
+        public ApplicationWithPurpose(int id, string title, string description, string contacts, string purposeName,
+            List<AvailabilityWithoutId> availabilities, List<string> games)
         {
             Id = id;
             Title = title;
@@ -369,7 +371,6 @@ namespace GameTeam.Scripts.Controllers
 
     public class AvailabilityWithoutId
     {
-
         public Availability.DayOfWeekEnum DayOfWeek { get; }
 
         public OffsetTime StartTime { get; }
