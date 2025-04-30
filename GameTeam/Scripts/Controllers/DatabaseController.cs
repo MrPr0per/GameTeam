@@ -36,13 +36,7 @@ namespace GameTeam.Scripts.Controllers
             AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         }
 
-
-
-
-
-
-
-
+        
         /// <summary>
         /// Регистрация нового пользователя
         /// </summary>
@@ -549,7 +543,7 @@ namespace GameTeam.Scripts.Controllers
 
                 // Получаем название цели (purpose) вместе с анкетой
                 using (var cmd = new NpgsqlCommand(@"
-            SELECT a.id, a.title, a.description, a.contacts, a.purpose_id, a.owner_id
+            SELECT a.id, a.title, a.description, a.contacts, a.purpose_id, a.owner_id, a.is_hidden
             FROM applications a
             WHERE a.owner_id = @userId
             ORDER BY a.id", conn))
@@ -565,7 +559,8 @@ namespace GameTeam.Scripts.Controllers
                             reader.IsDBNull(2) ? null : reader.GetString(2), // description
                             reader.IsDBNull(3) ? null : reader.GetString(3),  // contacts
                             reader.GetInt32(4),      // purpose (ранее было purpose_id)
-                            reader.GetInt32(5)));     // owner_id
+                            reader.GetInt32(5), // owner_id
+                            reader.GetBoolean(6)));     
                     }
                 }
 
@@ -585,7 +580,7 @@ namespace GameTeam.Scripts.Controllers
         }
 
         /// <summary>
-        /// Получение всех анкет из базы данных
+        /// Получение всех не скрытых анкет из базы данных
         /// </summary>
         /// <returns>Список объектов Application</returns>
         /// <exception cref="Exception">Ошибки выполнения запроса</exception>
@@ -600,14 +595,15 @@ namespace GameTeam.Scripts.Controllers
                 using var cmd = new NpgsqlCommand();
                 cmd.Connection = conn;
                 cmd.CommandText = @"
-					select * from applications";
+					select * from applications
+					where is_hidden = false";
 
                 using var reader = cmd.ExecuteReader();
                 while (reader.Read())
                 {
                     applications.Add(new Application(reader.GetInt32(0), reader.GetString(1),
                         reader.GetString(2), reader.GetString(3),
-                        reader.GetInt32(4), reader.GetInt32(5)));
+                        reader.GetInt32(4), reader.GetInt32(5), reader.GetBoolean(6)));
                 }
 
                 return applications;
@@ -617,6 +613,35 @@ namespace GameTeam.Scripts.Controllers
                 throw new Exception($"Ошибка GetAllApplications: {e}");
             }
         }
+
+
+        public static List<Game> GetAllGames()
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            try
+            {
+                var games = new List<Game>();
+
+                conn.Open();
+                using var cmd = new NpgsqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = @"
+					select * from games";
+
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    games.Add(new Game(reader.GetInt32(0), reader.GetString(1)));
+                }
+
+                return games;
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Ошибка GetAllGames: {e}");
+            }
+        }
+
 
         /// <summary>
         /// Создание или обновление профиля пользователя
@@ -774,11 +799,12 @@ namespace GameTeam.Scripts.Controllers
         /// <param name="applicationId">ID анкеты</param>
         /// <param name="purposeName">Название цели</param>
         /// <param name="title">Заголовок</param>
+        /// <param name="isHidden">Скрыта ли анкета</param>
         /// <param name="description">Описание</param>
         /// <param name="contacts">Контакты</param>
         /// <param name="games">Список игр</param>
         /// <param name="availabilities">Список доступностей</param>
-        /// <param name="owner_id">Id владельца</param>
+        /// <param name="ownerId">Id владельца</param>
         /// <remarks>
         /// Выполняет в транзакции:
         /// 1. Обновление основной информации
@@ -786,8 +812,8 @@ namespace GameTeam.Scripts.Controllers
         /// 3. Обработку доступностей
         /// </remarks>
         /// <exception cref="Exception">Ошибки выполнения транзакции</exception>
-        public static void UpsertApplication(int applicationId, string purposeName, string title, string? description = null,
-            string? contacts = null, List<Game>? games = null, List<Availability>? availabilities = null, int? owner_id = null)
+        public static void UpsertApplication(int applicationId, string purposeName, string title, bool isHidden, int ownerId, string? description = null,
+            string? contacts = null, List<Game>? games = null, List<Availability>? availabilities = null)
         {
             using var conn = new NpgsqlConnection(ConnectionString);
             conn.Open();
@@ -795,29 +821,18 @@ namespace GameTeam.Scripts.Controllers
             using var transaction = conn.BeginTransaction();
             try
             {
-                var purposeId = 0;
-
+                var purposeId = GetPurposeIdByName(purposeName);
+                
                 using (var cmd = new NpgsqlCommand(@"
-                        SELECT id FROM purposes WHERE purpose = @purpose;
-                    ", conn, transaction))
-                {
-                    cmd.Parameters.AddWithValue("purpose", purposeName);
-                    var result = cmd.ExecuteScalar();
-
-                    if (result != null)
-                        purposeId = Convert.ToInt32(result);
-                    else
-                        throw new Exception($"Цель с именем '{purposeName}' не найдена в таблице purposes.");
-                }
-
-                using (var cmd = new NpgsqlCommand(@"
-                    INSERT INTO applications (id, title, description, contacts, purpose_id, owner_id)
-                    VALUES (@application_id, @title, @description, @contacts, @purpose_id, @owner_id)
+                    INSERT INTO applications (id, title, description, contacts, purpose_id, owner_id, is_hidden)
+                    VALUES (@application_id, @title, @description, @contacts, @purpose_id, @owner_id, @is_hidden)
                     ON CONFLICT (id) DO UPDATE
                         SET title = EXCLUDED.title,
                             description = EXCLUDED.description,
                             purpose_id = EXCLUDED.purpose_id,
-                            contacts = EXCLUDED.contacts;
+                            contacts = EXCLUDED.contacts,
+                            is_hidden = EXCLUDED.is_hidden,
+                            owner_id = EXCLUDED.owner_id;
                 ", conn, transaction))
                 {
                     cmd.Parameters.AddWithValue("application_id", applicationId);
@@ -825,7 +840,8 @@ namespace GameTeam.Scripts.Controllers
                     cmd.Parameters.AddWithValue("description", description ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("contacts", contacts ?? (object)DBNull.Value);
                     cmd.Parameters.AddWithValue("purpose_id", purposeId);
-                    cmd.Parameters.AddWithValue("owner_id", owner_id);
+                    cmd.Parameters.AddWithValue("owner_id", ownerId);
+                    cmd.Parameters.AddWithValue("is_hidden", isHidden);
                     cmd.ExecuteNonQuery();
                 }
 
@@ -1056,6 +1072,139 @@ namespace GameTeam.Scripts.Controllers
             {
                 throw new Exception($"Ошибка при получении владельца анкеты: {ex.Message}", ex);
             }
+        }
+
+        /// <summary>
+        /// Смена видимости анкеты
+        /// </summary>
+        /// <param name="applicationId">ID анкеты</param>
+        /// <param name="isHidden">Скрыта ли анкета</param>
+        public static void ChangeApplictionVisibilityById(int applicationId, bool isHidden)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+
+            try
+            {
+                conn.Open();
+
+                using var cmd = new NpgsqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = @"update applications set is_hidden = @isHidden where id = @applicationId";
+
+                cmd.Parameters.AddWithValue("applicationId", applicationId);
+                cmd.Parameters.AddWithValue("isHidden", isHidden);
+                
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при изменении видимости анкеты: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Получение id цели по имени
+        /// </summary>
+        /// <param name="purposeName">Название цели</param>
+        public static int GetPurposeIdByName(string purposeName)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            conn.Open();
+
+            using (var cmd = new NpgsqlCommand(@"
+                        SELECT id FROM purposes WHERE purpose = @purpose;
+                    ", conn))
+            {
+                cmd.Parameters.AddWithValue("purpose", purposeName);
+                var result = cmd.ExecuteScalar();
+
+                var purposeId = 0;
+                if (result != null)
+                    purposeId = Convert.ToInt32(result);
+                else
+                    throw new Exception($"Цель с именем '{purposeName}' не найдена в таблице purposes.");
+
+                return purposeId;
+            }
+        }
+
+        /// <summary>
+        /// Получает отфильтрованные анкеты по цели и играм
+        /// </summary>
+        /// <param name="purposeName">Название цели</param>
+        /// <param name="games">Список игр</param>
+        /// <returns>Список объектов Application</returns>
+        public static List<Application> GetFiltredApplications(string? purposeName = null, List<Game>? games = null)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            conn.Open();
+
+            // Собираем динамический SQL и параметры
+            var sql = new StringBuilder(@"
+                SELECT a.id, a.title, a.description, a.contacts, a.purpose_id, a.owner_id, a.is_hidden
+                FROM applications a
+            ");
+            var filters = new List<string>();
+            using var cmd = new NpgsqlCommand { Connection = conn };
+
+            // Фильтрация по цели
+            if (!string.IsNullOrEmpty(purposeName))
+            {
+                var purposeId = GetPurposeIdByName(purposeName);
+                filters.Add("a.purpose_id = @purposeId");
+                cmd.Parameters.AddWithValue("purposeId", purposeId);
+            }
+
+            // Фильтрация по списку игр
+            if (games != null && games.Any())
+            {
+                // JOIN с applications_to_games
+                sql.AppendLine("JOIN applications_to_games ag ON ag.app_id = a.id");
+                filters.Add("ag.game_id = ANY(@gameIds)");
+                // Передаём массив идентификаторов игр
+                var gameIds = games.Select(g => g.Id).ToArray();
+                var param = new NpgsqlParameter("gameIds", NpgsqlDbType.Array | NpgsqlDbType.Integer)
+                {
+                    Value = gameIds
+                };
+                cmd.Parameters.Add(param);
+            }
+
+            // Всегда исключаем скрытые анкеты
+            filters.Add("a.is_hidden = false");
+
+            if (filters.Any())
+            {
+                sql.Append(" WHERE ");
+                sql.Append(string.Join(" AND ", filters));
+            }
+
+            // Если делали JOIN по играм, имеет смысл сгруппировать, чтобы не дублировать анкеты
+            if (games != null && games.Any())
+            {
+                sql.AppendLine(" GROUP BY a.id, a.title, a.description, a.contacts, a.purpose_id, a.owner_id, a.is_hidden");
+            }
+
+            cmd.CommandText = sql.ToString();
+
+            var result = new List<Application>();
+            using (var reader = cmd.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    result.Add(new Application(
+                        reader.GetInt32(0),
+                        reader.GetString(1),
+                        reader.IsDBNull(2) ? null : reader.GetString(2),
+                        reader.IsDBNull(3) ? null : reader.GetString(3),
+                        reader.GetInt32(4),
+                        reader.GetInt32(5),
+                        reader.GetBoolean(6)
+                    ));
+                }
+            }
+            
+            return result;
         }
     }
 }

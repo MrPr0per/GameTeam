@@ -1,0 +1,10 @@
+GET https://localhost/data/applications/0/100
+Content-Type: application/json
+
+{
+  "purposeName" : "test",
+  "games": [
+      "Counter strike 2",
+      "Dota 2"
+  ]
+}

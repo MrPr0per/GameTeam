@@ -1,10 +1,14 @@
 ﻿using GameTeam.Classes.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NodaTime;
 using System.ComponentModel.DataAnnotations;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks.Dataflow;
+using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -29,7 +33,7 @@ namespace GameTeam.Scripts.Controllers
             if (profile is null)
             {
                 Response.StatusCode = 400;
-                return "";            }
+                return ""; }
 
             var userData = DatabaseController.GetUserData(int.Parse(HttpContext.Session.GetString("UserId")));
 
@@ -101,7 +105,6 @@ namespace GameTeam.Scripts.Controllers
             }
         }
 
-
         [HttpGet("selfapplications")]
         public string GetSelfApplicationsByUserId()
         {
@@ -117,14 +120,32 @@ namespace GameTeam.Scripts.Controllers
             return JsonSerializer.Serialize(applications);
         }
 
+        [HttpGet("games")]
+        public string GetAllApplications()
+        {
+            var games = DatabaseController.GetAllGames();
+
+            return JsonSerializer.Serialize(games);
+        }
+
         [HttpGet("applications/{from}/{to}")]
-        public string GetAllApplications(int from, int to)
+        public string GetAllApplications(int from, int to, [FromBody] FilterData? filters)
         {
             var applicationsJson = HttpContext.Session.GetString("applications");
 
-            if (string.IsNullOrEmpty(applicationsJson))
+            if (string.IsNullOrEmpty(applicationsJson) || filters == null)
             {
                 var applicationsData = DatabaseController.GetAllApplications();
+                HttpContext.Session.SetString("Filters", "");
+                HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
+                return JsonSerializer.Serialize(applicationsData.Skip(from).Take(to - from + 1).ToArray());
+            }
+
+            if (filters != null && HttpContext.Session.GetString("Filters") != filters.ToString())
+            {
+                HttpContext.Session.SetString("Filters", filters.ToString());
+                var filterGames = filters.Games.Select(x => DatabaseController.GetOrCreateGame(x)).ToList();
+                var applicationsData = DatabaseController.GetFiltredApplications(filters.PurposeName, filterGames);
                 HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
                 return JsonSerializer.Serialize(applicationsData.Skip(from).Take(to - from + 1).ToArray());
             }
@@ -172,7 +193,7 @@ namespace GameTeam.Scripts.Controllers
                 games = data.Games.Select(x => DatabaseController.GetOrCreateGame(x)).ToList();
             else
                 games = null;
-
+            
             if (!(data.Availabilities is null))
                 availabilities = data.Availabilities.Select(x => DatabaseController.GetOrCreateAvailability(x.DayOfWeek, x.StartTime, x.EndTime)).ToList();
             else
@@ -180,8 +201,9 @@ namespace GameTeam.Scripts.Controllers
 
             try
             {
-                DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, data.Description, 
-                                                     data.Contacts, games, availabilities, int.Parse(userId));
+                //TODO надо добавить поддержку is_hidden
+                DatabaseController.UpsertApplication(data.Id, data.PurposeName, data.Title, true, int.Parse(userId), data.Description,
+                data.Contacts, games, availabilities);
             }
             catch (Exception ex)
             {
@@ -197,8 +219,12 @@ namespace GameTeam.Scripts.Controllers
         public IActionResult DeleteApplicationById(int id)
         {
             var ownerId = DatabaseController.GetUserIdByApplicationId(id);
+            var userId = HttpContext.Session.GetString("UserId");
 
-            if (ownerId.ToString() != HttpContext.Session.GetString("UserId"))
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            if (ownerId != int.Parse(userId))
                 return Unauthorized(new { Message = "Попытка удалить не свою анкету" });
 
             var success = DatabaseController.DeleteApplication(id);
@@ -208,8 +234,66 @@ namespace GameTeam.Scripts.Controllers
 
             return BadRequest(new { Message = "Не удалилось" });
         }
+
+        [HttpPost("hide/{id}")]
+        public IActionResult Hide(int id)
+        {
+            try
+            {
+                var userAppId = DatabaseController.GetUserIdByApplicationId(id);
+                var userId = HttpContext.Session.GetString("UserId");
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
+
+                if (userAppId != int.Parse(userId))
+                    return Unauthorized(new { Message = "Вы не владелец анкеты" });
+
+                DatabaseController.ChangeApplictionVisibilityById(id, true);
+
+                return Ok(new { Message = "Application hidden" });
+
+            }
+            catch
+            {
+                return BadRequest(new { Message = "Что-то в бд не так" });
+            }
+        }
+
+        [HttpPost("show/{id}")]
+        public IActionResult Show(int id)
+        {
+            try
+            {
+                var userAppId = DatabaseController.GetUserIdByApplicationId(id);
+                var userId = HttpContext.Session.GetString("UserId");
+
+                if (string.IsNullOrEmpty(userId))
+                    return Unauthorized();
+
+                if (userAppId != int.Parse(userId))
+                    return Unauthorized(new { Message = "Вы не владелец анкеты" });
+
+                DatabaseController.ChangeApplictionVisibilityById(id, false);
+
+                return Ok(new { Message = "Application shown" });
+            }
+            catch
+            {
+                return BadRequest(new { Message = "Что-то в бд не так" });
+            }
+        }
     }
 
+    public class FilterData 
+    {
+        public string? PurposeName { get; set; }
+        public List<string>? Games { get; set; }
+
+        public override string ToString()
+        {
+            return PurposeName + " " + string.Join(' ', Games);
+        }
+    }
 
     public class UserProfileWithData
     {
