@@ -614,6 +614,35 @@ namespace GameTeam.Scripts.Controllers
             }
         }
 
+
+        public static List<Game> GetAllGames()
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            try
+            {
+                var games = new List<Game>();
+
+                conn.Open();
+                using var cmd = new NpgsqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = @"
+					select * from games";
+
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    games.Add(new Game(reader.GetInt32(0), reader.GetString(1)));
+                }
+
+                return games;
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Ошибка GetAllGames: {e}");
+            }
+        }
+
+
         /// <summary>
         /// Создание или обновление профиля пользователя
         /// </summary>

@@ -105,7 +105,6 @@ namespace GameTeam.Scripts.Controllers
             }
         }
 
-
         [HttpGet("selfapplications")]
         public string GetSelfApplicationsByUserId()
         {
@@ -119,6 +118,14 @@ namespace GameTeam.Scripts.Controllers
             var applications = DatabaseController.GetAllApplicationsByUserId(int.Parse(userId));
 
             return JsonSerializer.Serialize(applications);
+        }
+
+        [HttpGet("games")]
+        public string GetAllApplications()
+        {
+            var games = DatabaseController.GetAllGames();
+
+            return JsonSerializer.Serialize(games);
         }
 
         [HttpGet("applications/{from}/{to}")]
