@@ -1,3 +1,5 @@
+import {initFilters} from './filters.js';
+
 const state = {
     offset: 0,
     get limit() {
@@ -13,6 +15,7 @@ let dom = null;
 
 document.addEventListener('DOMContentLoaded', function () {
     dom = loadDomElements();
+    initFilters();
     loadAndRenderQuestionnaires();
     loadAndRenderUserName();
     dom.loadMoreButton.addEventListener('click', function () {
@@ -102,7 +105,7 @@ function loadAndRenderQuestionnaires() {
 function loadAndRenderUserName() {
     fetch('/data/profile')
         .then(response => {
-            isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
+            state.isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
             const userNameElements = document.querySelectorAll('.user-name');
 
             if (dom.myQuestionnairesLink) {

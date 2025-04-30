@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', async function () {
+export async function initFilters() {
     try {
         // Загрузка шаблона фильтров из Filters.html
         const filterTemplate = await loadFilterTemplate();
@@ -341,4 +341,4 @@ document.addEventListener('DOMContentLoaded', async function () {
     } catch (error) {
         console.error('Ошибка инициализации фильтров:', error);
     }
-});
+}
