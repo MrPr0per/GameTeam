@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         const clearFiltersButton = filterDropdownElement.querySelector('.clear-filters-button');
         const applyFiltersButton = filterDropdownElement.querySelector('.apply-filters-button');
         const paginationContainer = gamesFilter.querySelector('.pagination');
-        const loadingOverlay = gamesFilter.querySelector('.loading-overlay');
 
         const gamesPerPage = 15; // Количество игр на странице
         let currentPage = 1; // Текущая страница

@@ -1,186 +1,195 @@
+const state = {
+    offset: 0,
+    get limit() {
+        return 11;
+    },
+    loading: false,
+    endReached: false,
+    isAuthenticated: false,
+};
+
+let dom = null;
+
+
 document.addEventListener('DOMContentLoaded', function () {
-    const questionnairesContainer = document.querySelector('.questionnaires-container');
-    const modalTemplate = document.getElementById('modal-template');
-    const loadMoreButton = document.getElementById('load-more-button');
-    const loadMoreContainer = document.querySelector('.load-more-container');
-    const myQuestionnairesLink = document.querySelector('.my-q');
-    let isAuthenticated = false;
-
-    let offset = 0;
-    const limit = 11;
-    let loading = false;
-    let endReached = false;
-
-    loadQuestionnaires();
+    dom = loadDomElements();
+    loadAndRenderQuestionnaires();
     loadAndRenderUserName();
-
-    loadMoreButton.addEventListener('click', function () {
-        if (loading || endReached) return;
-        loadQuestionnaires();
+    dom.loadMoreButton.addEventListener('click', function () {
+        if (state.loading || state.endReached) return;
+        loadAndRenderQuestionnaires();
     });
+});
 
-    function loadQuestionnaires() {
-        loading = true;
+function loadDomElements() {
+    return {
+        questionnairesContainer: document.querySelector('.questionnaires-container'),
+        modalTemplate: document.getElementById('modal-template'),
+        loadMoreButton: document.getElementById('load-more-button'),
+        myQuestionnairesLink: document.querySelector('.my-q'),
+    };
+}
 
-        if (loadMoreButton) {
-            loadMoreButton.textContent = 'Загрузка...';
-            loadMoreButton.disabled = true;
-        }
+function loadAndRenderQuestionnaires() {
+    state.loading = true;
 
-        fetch(`/data/applications/${offset}/${offset + limit}`)
-            .then(response => response.json())
-            .then(data => {
-                if (!Array.isArray(data) || data.length === 0) {
-                    endReached = true;
-                    if (loadMoreButton) {
-                        loadMoreButton.remove();
-                    }
-                    return;
-                }
-
-                const questionnaires = data.map(item => ({
-                    title: item.Title,
-                    description: item.Description,
-                    games: item.Games.map(g => g.Name),
-                    purpose: getPurposeText(item.PurposeId),
-                    availability: formatAvailabilities(item.Availabilities),
-                    contacts: item.Contacts
-                }));
-
-                questionnaires.forEach(q => {
-                    const questionnaireDiv = document.createElement('div');
-                    questionnaireDiv.className = 'questionnaire';
-
-                    const title = document.createElement('h2');
-                    title.textContent = q.title;
-
-                    const description = document.createElement('p');
-                    description.textContent = q.description;
-
-                    const button = document.createElement('button');
-                    button.className = 'filled-button';
-                    button.textContent = 'Подробнее';
-                    button.addEventListener('click', () => openModal(q));
-
-                    questionnaireDiv.appendChild(title);
-                    questionnaireDiv.appendChild(description);
-                    questionnaireDiv.appendChild(button);
-
-                    questionnairesContainer.appendChild(questionnaireDiv);
-                });
-
-                offset += data.length;
-
-                if (data.length < limit && loadMoreButton) {
-                    loadMoreButton.remove();
-                    endReached = true;
-                }
-            })
-            .catch(error => {
-                console.error("Ошибка при загрузке анкет:", error);
-            })
-            .finally(() => {
-                loading = false;
-                if (!endReached && loadMoreButton) {
-                    loadMoreButton.textContent = 'Загрузить ещё';
-                    loadMoreButton.disabled = false;
-                }
-            });
+    if (dom.loadMoreButton) {
+        dom.loadMoreButton.textContent = 'Загрузка...';
+        dom.loadMoreButton.disabled = true;
     }
 
-    function loadAndRenderUserName() {
-        fetch('/data/profile')
-            .then(response => {
-                isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
-                const userNameElements = document.querySelectorAll('.user-name');
+    fetch(`/data/applications/${state.offset}/${state.offset + state.limit}`)
+        .then(response => response.json())
+        .then(data => {
+            if (!Array.isArray(data) || data.length === 0) {
+                state.endReached = true;
+                if (dom.loadMoreButton) {
+                    dom.loadMoreButton.remove();
+                }
+                return;
+            }
 
-                if (myQuestionnairesLink) {
-                    myQuestionnairesLink.style.display = isAuthenticated ? 'flex' : 'none';
-                }
+            const questionnaires = data.map(item => ({
+                title: item.Title,
+                description: item.Description,
+                games: item.Games.map(g => g.Name),
+                purpose: getPurposeText(item.PurposeId),
+                availability: formatAvailabilities(item.Availabilities),
+                contacts: item.Contacts,
+            }));
 
-                const profileElement = document.querySelectorAll('.auth-status.user-name');
-                if (!isAuthenticated) {
-                    profileElement.forEach(el => el.href = '../pages/Register.html');
-                }
-                else {
-                    profileElement.forEach(el => el.href = '../pages/Profile.html');
-                }
+            questionnaires.forEach(q => {
+                const questionnaireDiv = document.createElement('div');
+                questionnaireDiv.className = 'questionnaire';
 
-                if (response.ok) {
-                    return response.json().then(json => {
-                        if (isAuthenticated && json && json['Username']) {
-                            userNameElements.forEach(el => el.textContent = json['Username']);
-                        } else {
-                            userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
-                        }
-                    });
-                } else {
-                    // Для статуса 401 или других ошибок устанавливаем "Вход не выполнен"
-                    userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
-                    if (myQuestionnairesLink) {
-                        myQuestionnairesLink.style.display = 'none';
-                    }
-                    return Promise.reject('Profile load error');
-                }
-            })
-            .catch(err => {
-                console.error('Ошибка при получении имени пользователя:', err);
-                document.querySelectorAll('.user-name').forEach(el => el.textContent = 'Вход не выполнен');
+                const title = document.createElement('h2');
+                title.textContent = q.title;
+
+                const description = document.createElement('p');
+                description.textContent = q.description;
+
+                const button = document.createElement('button');
+                button.className = 'filled-button';
+                button.textContent = 'Подробнее';
+                button.addEventListener('click', () => openModal(q));
+
+                questionnaireDiv.appendChild(title);
+                questionnaireDiv.appendChild(description);
+                questionnaireDiv.appendChild(button);
+
+                dom.questionnairesContainer.appendChild(questionnaireDiv);
             });
-    }
 
-    function openModal(questionnaire) {
-        const modalOverlay = modalTemplate.content.cloneNode(true).firstElementChild;
-        const modalContent = modalOverlay.querySelector('.modal-content');
+            state.offset += data.length;
 
-        modalContent.querySelector('h2').textContent = questionnaire.title;
-        modalContent.querySelector('.modal-description').textContent = questionnaire.description;
-        modalContent.querySelector('.modal-games').innerHTML = questionnaire.games.map(g => `<li>${g}</li>`).join('');
-        modalContent.querySelector('.modal-purpose').textContent = questionnaire.purpose;
-        modalContent.querySelector('.modal-availability').innerHTML = questionnaire.availability;
-        modalContent.querySelector('.modal-contacts').textContent = questionnaire.contacts;
-
-        modalContent.querySelector('.close-button').addEventListener('click', () => closeModal(modalOverlay));
-        modalOverlay.addEventListener('click', (e) => {
-            if (e.target === modalOverlay) {
-                closeModal(modalOverlay);
+            if (data.length < state.limit && dom.loadMoreButton) {
+                dom.loadMoreButton.remove();
+                state.endReached = true;
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке анкет:', error);
+        })
+        .finally(() => {
+            state.loading = false;
+            if (!state.endReached && dom.loadMoreButton) {
+                dom.loadMoreButton.textContent = 'Загрузить ещё';
+                dom.loadMoreButton.disabled = false;
             }
         });
+}
 
-        document.body.appendChild(modalOverlay);
-    }
+function loadAndRenderUserName() {
+    fetch('/data/profile')
+        .then(response => {
+            isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
+            const userNameElements = document.querySelectorAll('.user-name');
 
-    function closeModal(modalOverlay) {
-        modalOverlay.remove();
-    }
+            if (dom.myQuestionnairesLink) {
+                dom.myQuestionnairesLink.style.display = isAuthenticated ? 'flex' : 'none';
+            }
 
-    function getPurposeText(id) {
-        const purposes = {
-            1: 'Пофаниться',
-            2: 'Поиграть в соревновательные режимы',
-            3: 'Расслабиться',
-            4: 'Поиграть в сюжетную игру',
-            5: 'Для стриминга',
-            6: 'Для заработка',
-            7: 'Тренировка',
-            8: 'Турнир'
-        };
-        return purposes[id] || "Неизвестная цель";
-    }
+            const profileElement = document.querySelectorAll('.auth-status.user-name');
+            if (!isAuthenticated) {
+                profileElement.forEach(el => el.href = '../pages/Register.html');
+            } else {
+                profileElement.forEach(el => el.href = '../pages/Profile.html');
+            }
 
-    function formatAvailabilities(availabilities) {
-        const days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
+            if (response.ok) {
+                return response.json().then(json => {
+                    if (isAuthenticated && json && json['Username']) {
+                        userNameElements.forEach(el => el.textContent = json['Username']);
+                    } else {
+                        userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
+                    }
+                });
+            } else {
+                // Для статуса 401 или других ошибок устанавливаем "Вход не выполнен"
+                userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
+                if (dom.myQuestionnairesLink) {
+                    dom.myQuestionnairesLink.style.display = 'none';
+                }
+                return Promise.reject('Profile load error');
+            }
+        })
+        .catch(err => {
+            console.error('Ошибка при получении имени пользователя:', err);
+            document.querySelectorAll('.user-name').forEach(el => el.textContent = 'Вход не выполнен');
+        });
+}
 
-        if (!availabilities || availabilities.length === 0) return "Не указано";
+function openModal(questionnaire) {
+    const modalOverlay = dom.modalTemplate.content.cloneNode(true).firstElementChild;
+    const modalContent = modalOverlay.querySelector('.modal-content');
 
-        return availabilities.map(a => {
-            const dayName = days[a.DayOfWeek] || "Неизвестный день";
-            const startHour = String(a.StartTime.Hour).padStart(2, '0');
-            const startMinute = String(a.StartTime.Minute).padStart(2, '0');
-            const endHour = String(a.EndTime.Hour).padStart(2, '0');
-            const endMinute = String(a.EndTime.Minute).padStart(2, '0');
+    modalContent.querySelector('h2').textContent = questionnaire.title;
+    modalContent.querySelector('.modal-description').textContent = questionnaire.description;
+    modalContent.querySelector('.modal-games').innerHTML = questionnaire.games.map(g => `<li>${g}</li>`).join('');
+    modalContent.querySelector('.modal-purpose').textContent = questionnaire.purpose;
+    modalContent.querySelector('.modal-availability').innerHTML = questionnaire.availability;
+    modalContent.querySelector('.modal-contacts').textContent = questionnaire.contacts;
 
-            return `${dayName}: ${startHour}:${startMinute} – ${endHour}:${endMinute}`;
-        }).join('<br>');
-    }
-});
+    modalContent.querySelector('.close-button').addEventListener('click', () => closeModal(modalOverlay));
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            closeModal(modalOverlay);
+        }
+    });
+
+    document.body.appendChild(modalOverlay);
+}
+
+function closeModal(modalOverlay) {
+    modalOverlay.remove();
+}
+
+function getPurposeText(id) {
+    const purposes = {
+        1: 'Пофаниться',
+        2: 'Поиграть в соревновательные режимы',
+        3: 'Расслабиться',
+        4: 'Поиграть в сюжетную игру',
+        5: 'Для стриминга',
+        6: 'Для заработка',
+        7: 'Тренировка',
+        8: 'Турнир',
+    };
+    return purposes[id] || 'Неизвестная цель';
+}
+
+function formatAvailabilities(availabilities) {
+    const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+
+    if (!availabilities || availabilities.length === 0) return 'Не указано';
+
+    return availabilities.map(a => {
+        const dayName = days[a.DayOfWeek] || 'Неизвестный день';
+        const startHour = String(a.StartTime.Hour).padStart(2, '0');
+        const startMinute = String(a.StartTime.Minute).padStart(2, '0');
+        const endHour = String(a.EndTime.Hour).padStart(2, '0');
+        const endMinute = String(a.EndTime.Minute).padStart(2, '0');
+
+        return `${dayName}: ${startHour}:${startMinute} – ${endHour}:${endMinute}`;
+    }).join('<br>');
+}
