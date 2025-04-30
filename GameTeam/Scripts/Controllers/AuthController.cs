@@ -3,6 +3,7 @@ using GameTeam.Scripts.Controllers;
 using GameTeam.Scripts;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using GameTeam.Classes.Exceptions;
 using Microsoft.IdentityModel.Tokens;
 
 [Route("api/[controller]")]
@@ -84,9 +85,17 @@ public class AuthController : ControllerBase
         {
             DatabaseController.Register(data.Username, data.Email, data.Password, salt);
         }
-        catch
+        catch (UsernameAlreadyExists e)
         {
-            return BadRequest(new { Message = "Имя пользователя занято" });
+            return Conflict(new { Message = "Имя пользователя уже занято" });
+        }
+        catch (EmailAlreadyExists e)
+        {
+            return Conflict(new { Message = "Email уже занят" });
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { Message = "Ошибка при регистрации" });
         }
 
         var userId = DatabaseController.GetIdByUsername(data.Username);

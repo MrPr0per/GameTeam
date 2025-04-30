@@ -4,6 +4,7 @@ using NodaTime;
 using NpgsqlTypes;
 using System.Security.Cryptography;
 using System.Text;
+using GameTeam.Classes.Exceptions;
 
 namespace GameTeam.Scripts.Controllers
 {
@@ -70,14 +71,13 @@ namespace GameTeam.Scripts.Controllers
             }
             catch (PostgresException ex) when (ex.SqlState == "23505")
             {
-                var errorField = ex.ConstraintName.Contains("username")
-                    ? "Имя пользователя"
-                    : "Email";
-                throw new Exception($"{errorField} уже занято");
+                throw ex.ConstraintName.Contains("username")
+                    ? new UsernameAlreadyExists()
+                    : new EmailAlreadyExists();
             }
             catch (Exception ex)
             {
-                throw new Exception($"Ошибка регистрации: {ex.Message}");
+                throw new RegistrationException($"Ошибка регистрации: {ex.Message}");
             }
         }
 
@@ -263,7 +263,8 @@ namespace GameTeam.Scripts.Controllers
             else
             {
                 // Если не найдена, вставляем новую запись и возвращаем её идентификатор
-                using var insertCmd = new NpgsqlCommand("INSERT INTO games (game_name) VALUES (@gameName) RETURNING game_id", conn);
+                using var insertCmd =
+                    new NpgsqlCommand("INSERT INTO games (game_name) VALUES (@gameName) RETURNING game_id", conn);
                 insertCmd.Parameters.AddWithValue("gameName", gameName);
                 var newId = Convert.ToInt32(insertCmd.ExecuteScalar());
                 return new Game(newId, gameName);
@@ -277,13 +278,15 @@ namespace GameTeam.Scripts.Controllers
         /// <param name="start">Время начала (OffsetTime).</param>
         /// <param name="end">Время окончания (OffsetTime).</param>
         /// <returns>Объект Availability с заполненным Id, DayOfWeek, StartTime и EndTime.</returns>
-        public static Availability GetOrCreateAvailability(Availability.DayOfWeekEnum dayOfWeek, OffsetTime start, OffsetTime end)
+        public static Availability GetOrCreateAvailability(Availability.DayOfWeekEnum dayOfWeek, OffsetTime start,
+            OffsetTime end)
         {
             using var conn = new NpgsqlConnection(ConnectionString);
             conn.Open();
             // Пытаемся найти запись в таблице availabilities по параметрам
             using var cmd = new NpgsqlCommand(
-                "SELECT id FROM availabilities WHERE day_of_week = @day_of_week AND start_time = @start_time AND end_time = @end_time", conn);
+                "SELECT id FROM availabilities WHERE day_of_week = @day_of_week AND start_time = @start_time AND end_time = @end_time",
+                conn);
 
             cmd.Parameters.Add(new NpgsqlParameter
             {
@@ -554,13 +557,13 @@ namespace GameTeam.Scripts.Controllers
                     while (reader.Read())
                     {
                         applications.Add(new Application(
-                            reader.GetInt32(0),       // id
-                            reader.GetString(1),      // title
+                            reader.GetInt32(0), // id
+                            reader.GetString(1), // title
                             reader.IsDBNull(2) ? null : reader.GetString(2), // description
-                            reader.IsDBNull(3) ? null : reader.GetString(3),  // contacts
-                            reader.GetInt32(4),      // purpose (ранее было purpose_id)
+                            reader.IsDBNull(3) ? null : reader.GetString(3), // contacts
+                            reader.GetInt32(4), // purpose (ранее было purpose_id)
                             reader.GetInt32(5), // owner_id
-                            reader.GetBoolean(6)));     
+                            reader.GetBoolean(6)));
                     }
                 }
 
@@ -812,7 +815,8 @@ namespace GameTeam.Scripts.Controllers
         /// 3. Обработку доступностей
         /// </remarks>
         /// <exception cref="Exception">Ошибки выполнения транзакции</exception>
-        public static void UpsertApplication(int applicationId, string purposeName, string title, bool isHidden, int ownerId, string? description = null,
+        public static void UpsertApplication(int applicationId, string purposeName, string title, bool isHidden,
+            int ownerId, string? description = null,
             string? contacts = null, List<Game>? games = null, List<Availability>? availabilities = null)
         {
             using var conn = new NpgsqlConnection(ConnectionString);
@@ -822,7 +826,7 @@ namespace GameTeam.Scripts.Controllers
             try
             {
                 var purposeId = GetPurposeIdByName(purposeName);
-                
+
                 using (var cmd = new NpgsqlCommand(@"
                     INSERT INTO applications (id, title, description, contacts, purpose_id, owner_id, is_hidden)
                     VALUES (@application_id, @title, @description, @contacts, @purpose_id, @owner_id, @is_hidden)
@@ -1093,7 +1097,7 @@ namespace GameTeam.Scripts.Controllers
 
                 cmd.Parameters.AddWithValue("applicationId", applicationId);
                 cmd.Parameters.AddWithValue("isHidden", isHidden);
-                
+
                 cmd.ExecuteNonQuery();
             }
             catch (Exception ex)
@@ -1182,7 +1186,8 @@ namespace GameTeam.Scripts.Controllers
             // Если делали JOIN по играм, имеет смысл сгруппировать, чтобы не дублировать анкеты
             if (games != null && games.Any())
             {
-                sql.AppendLine(" GROUP BY a.id, a.title, a.description, a.contacts, a.purpose_id, a.owner_id, a.is_hidden");
+                sql.AppendLine(
+                    " GROUP BY a.id, a.title, a.description, a.contacts, a.purpose_id, a.owner_id, a.is_hidden");
             }
 
             cmd.CommandText = sql.ToString();
@@ -1203,7 +1208,7 @@ namespace GameTeam.Scripts.Controllers
                     ));
                 }
             }
-            
+
             return result;
         }
     }
