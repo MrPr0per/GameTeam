@@ -10,7 +10,7 @@ let localQuestionnaire = { // локальные изменения, еще не
 	description: '',
 	games: [],
 	goal: '',
-	availabilities: [], 
+	availabilities: [],
 	contacts: '',
 };
 
@@ -44,7 +44,7 @@ function addEventListeners() {
 
 	// Включение режима редактирования
 	function enableEditMode() {
-		if (isEditing) return; 
+		if (isEditing) return;
 		isEditing = true;
 		serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
 		questionnaireContent.querySelectorAll('[contenteditable]').forEach(el => {
@@ -56,7 +56,7 @@ function addEventListeners() {
 	}
 
 	// Выключение режима редактирования
-	function disableEditMode(saveChanges = true) {
+	async function disableEditMode(saveChanges = true) {
 		isEditing = false;
 		if (saveChanges) {
 			localQuestionnaire.title = document.getElementById('questionnaire-title').innerText.trim();
@@ -64,8 +64,22 @@ function addEventListeners() {
 			localQuestionnaire.games = Array.from(gamesList.querySelectorAll('li')).map(
 				li => li.querySelector('span').textContent.trim()
 			);
-
+			// goal и availabilities обновляются через обработчики в displayQuestionnaire
 			localQuestionnaire.contacts = document.getElementById('questionnaire-contacts').innerText.trim();
+
+			// Отправляем обновленные данные на сервер, но не размещаем анкету
+			if (isFormValid()) {
+				const success = await postMyQuestionnaire();
+				if (success) {
+					serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
+				} else {
+					// Если сохранение не удалось, восстанавливаем предыдущее состояние
+					localQuestionnaire = JSON.parse(JSON.stringify(serverQuestionnaire));
+				}
+			} else {
+				warningMessage.textContent = 'Заполните все обязательные поля';
+				localQuestionnaire = JSON.parse(JSON.stringify(serverQuestionnaire));
+			}
 		} else {
 			localQuestionnaire = JSON.parse(JSON.stringify(serverQuestionnaire));
 		}
@@ -74,33 +88,36 @@ function addEventListeners() {
 		updateStatusAndButtons();
 	}
 
-
-	// "Разместить анкету" / "Скрыть анкету"
-	placeButton.addEventListener('click', function () {
-		if (isEditing) return;
-		if (isPlaced) {
-			hideMyQuestionnaire().then((success) => {
-				if (!success) return;
-				isPlaced = false;
-				updateStatusAndButtons();
-			});
-		} else if (isFormValid()) {
-			postMyQuestionnaire().then((success) => {
-				if (success) {
-					isPlaced = true;
-					updateStatusAndButtons();
-				}
-			});
-		} else {
-			warningMessage.textContent = 'Заполните все обязательные поля';
-		}
-	});
-
 	// "Редактировать анкету"
 	editButton.addEventListener('click', function () {
 		enableEditMode();
 	});
 
+	// "Разместить анкету" / "Скрыть анкету"
+	placeButton.addEventListener('click', function () {
+		if (isEditing) return;
+		// скрыть
+			if (isPlaced) {
+					hideMyQuestionnaire().then(success => {
+							if (!success) return;
+							isPlaced = false;
+							updateStatusAndButtons();
+						});
+				}
+		// разместить (show)
+			else {
+				if (!isFormValid()) {
+						warningMessage.textContent = 'Заполните все обязательные поля';
+						return;
+					}
+				// вместо postMyQuestionnaire() шлём только show
+					hideMyQuestionnaire().then(success => {
+							if (!success) return;
+							isPlaced = true;
+							updateStatusAndButtons();
+						});
+			}
+	});
 
 	// "Очистить"
 	clearButton.addEventListener('click', function () {
@@ -173,6 +190,7 @@ function displayQuestionnaire(updateGamesOnly = false) {
 
 		// Обработка времени
 		const timeContainer = document.getElementById('questionnaire-time');
+		timeContainer.innerHTML = ''; // Очищаем контейнер перед рендерингом
 		if (isEditing) {
 			let timeHtml = '';
 			daysOfWeek.forEach((day, index) => {
@@ -198,13 +216,17 @@ function displayQuestionnaire(updateGamesOnly = false) {
 						localQuestionnaire.availabilities.push(availability);
 					}
 					availability[type] = value;
+					// Удаляем пустые записи (оба поля пустые)
+					localQuestionnaire.availabilities = localQuestionnaire.availabilities.filter(
+						a => a.start || a.end
+					);
 				});
 			});
 		} else {
 			let timeHtml = '';
 			daysOfWeek.forEach((day, index) => {
 				const availability = localQuestionnaire.availabilities.find(a => a.day === index);
-				const timeStr = availability && availability.start && availability.end ? `${availability.start}-${availability.end}` : '-';
+				const timeStr = availability && availability.start && availability.end ? `${availability.start} - ${availability.end}` : '—';
 				timeHtml += `<div class="time-row"><span>${day}:</span> ${timeStr}</div>`;
 			});
 			timeContainer.innerHTML = timeHtml;
@@ -303,11 +325,11 @@ function updateStatusAndButtons() {
 	}
 }
 
-// todo: убрать дублирование с профилем
+// Загрузка анкеты с сервера
 async function loadMyQuestionnaire() {
-	const response = await fetch('data/selfapplications', { method: 'GET' });
+	const response = await fetch('/data/selfapplications', { method: 'GET' });
 
-	if (response.status != 200) {
+	if (response.status !== 200) {
 		serverQuestionnaire = {
 			id: -1,
 			title: '',
@@ -320,7 +342,8 @@ async function loadMyQuestionnaire() {
 	} else {
 		const application = await response.json();
 		if (application[0]) {
-			serverQuestionnaire = transformQuestionnaire(application[0]); //Пока что загружаем первую анкету
+			serverQuestionnaire = transformQuestionnaire(application[0]);
+			isPlaced = !application[0].IsHidden;
 		} else {
 			serverQuestionnaire = {
 				id: -1,
@@ -335,30 +358,6 @@ async function loadMyQuestionnaire() {
 	}
 
 	localQuestionnaire = JSON.parse(JSON.stringify(serverQuestionnaire));
-
-	// todo: пока делаем вид, что с сервака всегда прилетает пустота
-
-	// await fetch('/data/questionnaire')
-	// 	.then(r => {
-	// 		if (r.ok) {
-	// 			return r.json();
-	// 		} else if (r.status === 401) {
-	// 			window.location.href = '/register';
-	// 		} else {
-	// 			showServerError('Ошибка при загрузке анкеты с сервера', r);
-	// 		}
-	// 	})
-	// 	.then(jsonOrNoneIfError => {
-	// 		if (jsonOrNoneIfError === undefined) return;
-	// 		try {
-	// 			serverQuestionnaire = parseQuestionaire(jsonOrNoneIfError);
-	// 			localQuestionnaire = structuredClone(serverQuestionnaire);
-	// 		} catch (e) {
-	// 			showServerError('Ошибка при обработке анкеты',
-	// 				'(Данные прилетели не в том формате, в котором ожидалось)',
-	// 				jsonOrNoneIfError);
-	// 		}
-	// 	});
 }
 
 function loadAndRenderUserName() {
@@ -391,65 +390,41 @@ async function getJsonForPostQuestionnaire() {
 	} else {
 		applicationId = serverQuestionnaire.id;
 	}
+	const availabilities = localQuestionnaire.availabilities
+		.filter(a => a.start && a.end) // Убедимся, что отправляем только полные записи
+		.map(a => ({
+			dayOfWeek: a.day,
+			startTime: a.start ? `${a.start}:00+00:00` : '',
+			endTime: a.end ? `${a.end}:00+00:00` : ''
+		}));
 	return {
 		id: applicationId,
 		title: localQuestionnaire.title,
 		description: localQuestionnaire.description,
 		contacts: localQuestionnaire.contacts,
-		purposeName: localQuestionnaire.goal, // Используем goal как purposeName
-		availabilities: localQuestionnaire.availabilities
-			.map(a => ({
-				dayOfWeek: a.day,
-				startTime: a.start ? `${a.start}:00+03:00` : '',
-				endTime: a.end ? `${a.end}:00+03:00` : ''
-			}))
-			.filter(a => a.startTime && a.endTime),
+		purposeName: localQuestionnaire.goal,
+		availabilities: availabilities,
 		games: localQuestionnaire.games,
 	};
-	// // нужный формат
-	// let test {
-	// 	"id": -1,
-	// 	"title": "Заявка на поиск командыыы",
-	// 	"description": "Ищу команду для турниров по Dota 2",
-	// 	"contacts": "player@example.com",
-	// 	"purposeName": "test",
-	// 	"availabilities": [
-	// 	{
-	// 		"dayOfWeek": 0,
-	// 		"startTime": "18:00:00+03:00",
-	// 		"endTime": "22:00:00+03:00"
-	// 	},
-	// 	{
-	// 		"dayOfWeek": 5,
-	// 		"startTime": "18:00:00+03:00",
-	// 		"endTime": "22:00:00+03:00"
-	// 	}
-	// ],
-	// 	"games": [
-	// 	"Dota 2", "Valorant"
-	// ]
-	// }
-	//
-	// // сейчас:
-	// let localQuestionnaire = { // локальные изменения, еще не запощенные
-	// 	title: '',
-	// 	description: '',
-	// 	games: [],
-	// 	goal: '',
-	// 	time: '',
-	// 	contacts: '',
-	// };
 }
 
+
 async function postMyQuestionnaire() {
+	const jsonData = await getJsonForPostQuestionnaire();
+	console.log('Sending to server:', jsonData); // Для отладки
 	const response = await fetch('/data/application', {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
 		},
-		body: JSON.stringify(await getJsonForPostQuestionnaire()),
+		body: JSON.stringify(jsonData),
 	});
-	if (response.ok) return true;
+	if (response.ok) {
+		// Обновляем serverQuestionnaire после успешного POST
+		serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
+		serverQuestionnaire.id = jsonData.id;
+		return true;
+	}
 	showServerError('Ошибка при отправке анкеты', response);
 	return false;
 }
@@ -478,34 +453,65 @@ function transformQuestionnaire(questionnaireData) {
 	// Получаем цель
 	const goal = goalMap[questionnaireData.PurposeId] || '';
 
+	// Обрабатываем доступности
 	let availabilities = [];
-	if (Array.isArray(questionnaireData.Availabilities) && questionnaireData.Availabilities.length > 0) {
-		availabilities = questionnaireData.Availabilities.map(avail => ({
-			day: avail.day_of_week,
-			start: avail.start_time ? avail.start_time.slice(0, 5) : '',
-			end: avail.end_time ? avail.end_time.slice(0, 5) : ''
-		}));
+	if (Array.isArray(questionnaireData.Availabilities)) {
+		availabilities = questionnaireData.Availabilities.map(avail => {
+			// Форматируем время в HH:MM
+			const startHour = avail.StartTime.Hour.toString().padStart(2, '0');
+			const startMinute = avail.StartTime.Minute.toString().padStart(2, '0');
+			const endHour = avail.EndTime.Hour.toString().padStart(2, '0');
+			const endMinute = avail.EndTime.Minute.toString().padStart(2, '0');
+			return {
+				day: avail.DayOfWeek,
+				start: `${startHour}:${startMinute}`,
+				end: `${endHour}:${endMinute}`
+			};
+		});
 	}
 
 	// Возвращаем преобразованный объект
 	return {
 		id: questionnaireData.Id,
-		title: questionnaireData.Title,
-		description: questionnaireData.Description,
+		title: questionnaireData.Title || '',
+		description: questionnaireData.Description || '',
 		games: games,
 		goal: goal,
 		availabilities: availabilities,
-		contacts: questionnaireData.Contacts
+		contacts: questionnaireData.Contacts || ''
 	};
 }
 
+// Функция для скрытия или показа анкеты
 async function hideMyQuestionnaire() {
-	// todo
-	return true; // Заглушка
+	if (!serverQuestionnaire || serverQuestionnaire.id === -1) {
+		showServerError('Анкета не найдена');
+		return false;
+	}
+
+	const action = isPlaced ? 'hide' : 'show';
+	const url = `/data/${action}/${serverQuestionnaire.id}`;
+
+	try {
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		});
+
+		if (response.ok) {
+			return true;
+		} else {
+			showServerError(`Ошибка при ${action === 'hide' ? 'скрытии' : 'показе'} анкеты`, response);
+			return false;
+		}
+	} catch (error) {
+		showServerError(`Ошибка при ${action === 'hide' ? 'скрытии' : 'показе'} анкеты`, error);
+		return false;
+	}
 }
 
-
-// todo: убрать дублирование
 function showServerError(message, ...debugInfo) {
 	if (debugMode) {
 		console.log(message, debugInfo);

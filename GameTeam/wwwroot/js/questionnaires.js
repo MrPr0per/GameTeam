@@ -156,15 +156,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function getPurposeText(id) {
         const purposes = {
-            1: "Поиск команды",
-            2: "Поиск игроков",
-            3: "Совместная игра"
+            1: 'Пофаниться',
+            2: 'Поиграть в соревновательные режимы',
+            3: 'Расслабиться',
+            4: 'Поиграть в сюжетную игру',
+            5: 'Для стриминга',
+            6: 'Для заработка',
+            7: 'Тренировка',
+            8: 'Турнир'
         };
         return purposes[id] || "Неизвестная цель";
     }
 
     function formatAvailabilities(availabilities) {
-        const days = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
+        const days = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
 
         if (!availabilities || availabilities.length === 0) return "Не указано";
 
