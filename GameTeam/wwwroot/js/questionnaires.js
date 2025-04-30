@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let isAuthenticated = false;
 
     let offset = 0;
-    const limit = 5;
+    const limit = 11;
     let loading = false;
     let endReached = false;
 
