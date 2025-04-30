@@ -11,50 +11,49 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // TODO: Заменить статические данные на загрузку с API
         const games = [
-            "КВН",
-            "Шашки",
-            "Сумо",
-            "Супер-корова",
-            "Танчики",
-            "Башенки",
-            "Нарды",
-            "Counter-Strike 2",
-            "Dota 2",
-            "Дурак онлайн",
-            "Counter strike 2",
-            "Rainbow six siege",
-            "asdfasdfasdg",
-            "aaaaaaa",
-            "Русская рулетка",
-            "Valorant",
-            "Триатлон",
-            "agasdg",
-            "Королевская битва",
-            "clash royale",
-            "салочки",
-            "Counter strike",
-            "counter strike",
-            "dota 2",
-            "52$ В ДЕНЬ",
-            "123123 123",
-            "skylab24.net",
-            "h",
-            "efg",
-            "eg",
-            "jn",
-            "Войнушки"
+            'КВН',
+            'Шашки',
+            'Сумо',
+            'Супер-корова',
+            'Танчики',
+            'Башенки',
+            'Нарды',
+            'Counter-Strike 2',
+            'Dota 2',
+            'Дурак онлайн',
+            'Counter strike 2',
+            'Rainbow six siege',
+            'asdfasdfasdg',
+            'aaaaaaa',
+            'Русская рулетка',
+            'Valorant',
+            'Триатлон',
+            'agasdg',
+            'Королевская битва',
+            'clash royale',
+            'салочки',
+            'Counter strike',
+            'counter strike',
+            'dota 2',
+            '52$ В ДЕНЬ',
+            '123123 123',
+            'skylab24.net',
+            'h',
+            'efg',
+            'eg',
+            'jn',
+            'Войнушки',
         ];
 
         // TODO: Заменить статические данные на загрузку с API
         const purposes = [
-            { id: 1, text: 'Цель 1' },
-            { id: 2, text: 'Цель 2' },
-            { id: 3, text: 'Цель 3' },
-            { id: 4, text: 'Цель 4' },
-            { id: 5, text: 'Цель 5' },
-            { id: 6, text: 'Цель 6' },
-            { id: 7, text: 'Цель 7' },
-            { id: 8, text: 'Цель 8' }
+            {id: 2, text: 'Пофаниться'},
+            {id: 3, text: 'Поиграть в соревновательные режимы'},
+            {id: 4, text: 'Расслабиться'},
+            {id: 5, text: 'Поиграть в сюжетную игру'},
+            {id: 6, text: 'Для стриминга'},
+            {id: 7, text: 'Тренировка'},
+            {id: 8, text: 'Турнир'},
         ];
 
         // Вставка шаблона фильтров в DOM
@@ -102,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             renderPagination(filteredGames);
         }
 
-        // Отрисовывает список игр для текущей страницы 
+        // Отрисовывает список игр для текущей страницы
         function renderGamesList(gamesToRender, page) {
             const start = (page - 1) * gamesPerPage;
             const end = start + gamesPerPage;
@@ -145,13 +144,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 prevButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (currentPage > 1) {
-                        showLoading();
-                        setTimeout(() => {
-                            currentPage--;
-                            renderGamesList(filteredGames, currentPage);
-                            renderPagination(filteredGames);
-                            hideLoading();
-                        }, 500);
+                        currentPage--;
+                        renderGamesList(filteredGames, currentPage);
+                        renderPagination(filteredGames);
                     }
                 });
                 paginationContainer.appendChild(prevButton);
@@ -166,13 +161,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 nextButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (currentPage < totalPages) {
-                        showLoading();
-                        setTimeout(() => {
-                            currentPage++;
-                            renderGamesList(filteredGames, currentPage);
-                            renderPagination(filteredGames);
-                            hideLoading();
-                        }, 500);
+                        currentPage++;
+                        renderGamesList(filteredGames, currentPage);
+                        renderPagination(filteredGames);
                     }
                 });
                 paginationContainer.appendChild(nextButton);
@@ -201,12 +192,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             clearFiltersButton.addEventListener('click', clearAllFilters);
             applyFiltersButton.addEventListener('click', applyFilters);
 
-           
-            let timeout;
-            gameSearch.addEventListener('input', () => {
-                clearTimeout(timeout);
-                timeout = setTimeout(handleGameSearch, 300);
-            });
+
+            gameSearch.addEventListener('input', handleGameSearch);
 
             // Снятие выбора цели при повторном клике на метку
             purposeFilter.querySelectorAll('label').forEach(label => {
@@ -230,12 +217,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             const searchText = gameSearch.value.toLowerCase();
             filteredGames = games.filter(game => game.toLowerCase().includes(searchText));
             currentPage = 1;
-            showLoading();
-            setTimeout(() => {
-                renderGamesList(filteredGames, currentPage);
-                renderPagination(filteredGames);
-                hideLoading();
-            }, 500);
+            renderGamesList(filteredGames, currentPage);
+            renderPagination(filteredGames);
         }
 
         // Переключает видимость выпадающего меню фильтров
@@ -279,12 +262,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             purposeFilter.querySelectorAll('input').forEach(input => input.checked = false);
             filteredGames = games;
             currentPage = 1;
-            showLoading();
-            setTimeout(() => {
-                renderGamesList(filteredGames, currentPage);
-                renderPagination(filteredGames);
-                hideLoading();
-            }, 500);
+            renderGamesList(filteredGames, currentPage);
+            renderPagination(filteredGames);
             updateSelectedFilters();
             dispatchFilterChangeEvent();
         }
@@ -295,17 +274,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             filterToggle.classList.remove('active');
         }
 
-        // Показывает "загрузка.."
-        function showLoading() {
-            loadingOverlay.classList.add('active');
-        }
-
-        // Скрывает "загрузка.."
-        function hideLoading() {
-            loadingOverlay.classList.remove('active');
-        }
-
-        // Обновляет отображение выбранных фильтров 
+        // Обновляет отображение выбранных фильтров
         function updateSelectedFilters() {
             selectedFiltersContainer.innerHTML = '';
             selectedGames.forEach(game => {
@@ -357,14 +326,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Отправляет событие об изменении фильтров
         function dispatchFilterChangeEvent() {
             const event = new CustomEvent('filterChanged', {
-                detail: { games: selectedGames, purpose: selectedPurpose }
+                detail: {games: selectedGames, purpose: selectedPurpose},
             });
             document.dispatchEvent(event);
         }
 
         // тестим тестим в консоли
         function logFilters() {
-            console.log('Текущие фильтры:', { games: selectedGames, purpose: selectedPurpose });
+            console.log('Текущие фильтры:', {games: selectedGames, purpose: selectedPurpose});
         }
 
         // TODO: Добавить отправку выбранных фильтров на сервер
