@@ -96,7 +96,7 @@ function loadAndRenderQuestionnaires() {
                 title.textContent = q.title;
 
                 const description = document.createElement('p');
-                description.textContent = q.availability;
+                description.innerHTML = q.availability;
 
 
 
@@ -213,15 +213,29 @@ function getPurposeText(id) {
 function formatAvailabilities(availabilities) {
     const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
 
-    if (!availabilities || availabilities.length === 0) return 'Не указано';
+    if (!availabilities || availabilities.length === 0) {
+        return 'Пользователь не указал время — похоже, готов играть круглосуточно :))';
+    }
 
-    return availabilities.map(a => {
-        const dayName = days[a.DayOfWeek] || 'Неизвестный день';
-        const startHour = String(a.StartTime.Hour).padStart(2, '0');
-        const startMinute = String(a.StartTime.Minute).padStart(2, '0');
-        const endHour = String(a.EndTime.Hour).padStart(2, '0');
-        const endMinute = String(a.EndTime.Minute).padStart(2, '0');
+    const daySchedules = Array(7).fill(null).map(() => []);
 
-        return `${dayName}: ${startHour}:${startMinute} – ${endHour}:${endMinute}`;
-    }).join('\n');
+    availabilities.forEach(a => {
+        if (a.DayOfWeek >= 0 && a.DayOfWeek < 7) {
+            const startHour = String(a.StartTime.Hour).padStart(2, '0');
+            const startMinute = String(a.StartTime.Minute).padStart(2, '0');
+            const endHour = String(a.EndTime.Hour).padStart(2, '0');
+            const endMinute = String(a.EndTime.Minute).padStart(2, '0');
+            daySchedules[a.DayOfWeek].push(`${startHour}:${startMinute} – ${endHour}:${endMinute}`);
+        }
+    });
+
+    return days
+        .map((day, index) => {
+            if (daySchedules[index].length > 0) {
+                return `${day}: ${daySchedules[index].join(', ')}`;
+            }
+            return null;
+        })
+        .filter(line => line !== null)
+        .join('<br>'); 
 }
