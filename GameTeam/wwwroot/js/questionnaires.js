@@ -136,11 +136,11 @@ function loadAndRenderUserName() {
             const userNameElements = document.querySelectorAll('.user-name');
 
             if (dom.myQuestionnairesLink) {
-                dom.myQuestionnairesLink.style.display = isAuthenticated ? 'flex' : 'none';
+                dom.myQuestionnairesLink.style.display = state.isAuthenticated ? 'flex' : 'none';
             }
 
             const profileElement = document.querySelectorAll('.auth-status.user-name');
-            if (!isAuthenticated) {
+            if (!state.isAuthenticated) {
                 profileElement.forEach(el => el.href = '../pages/Register.html');
             } else {
                 profileElement.forEach(el => el.href = '../pages/Profile.html');
@@ -148,7 +148,7 @@ function loadAndRenderUserName() {
 
             if (response.ok) {
                 return response.json().then(json => {
-                    if (isAuthenticated && json && json['Username']) {
+                    if (state.isAuthenticated && json && json['Username']) {
                         userNameElements.forEach(el => el.textContent = json['Username']);
                     } else {
                         userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
