@@ -96,7 +96,9 @@ function loadAndRenderQuestionnaires() {
                 title.textContent = q.title;
 
                 const description = document.createElement('p');
-                description.textContent = q.description;
+                description.textContent = q.availability;
+
+
 
                 const button = document.createElement('button');
                 button.className = 'filled-button';
@@ -196,12 +198,12 @@ function closeModal(modalOverlay) {
 
 function getPurposeText(id) {
     const purposes = {
-        1: 'Пофаниться',
-        2: 'Поиграть в соревновательные режимы',
-        3: 'Расслабиться',
-        4: 'Поиграть в сюжетную игру',
-        5: 'Для стриминга',
-        6: 'Для заработка',
+        2: 'Пофаниться',
+        3: 'Посоревноваться',
+        4: 'Расслабиться',
+        5: 'Поиграть в сюжетную игру',
+        6: 'Для стриминга',
+        1: 'Для заработка',
         7: 'Тренировка',
         8: 'Турнир',
     };
@@ -221,5 +223,5 @@ function formatAvailabilities(availabilities) {
         const endMinute = String(a.EndTime.Minute).padStart(2, '0');
 
         return `${dayName}: ${startHour}:${startMinute} – ${endHour}:${endMinute}`;
-    }).join('<br>');
+    }).join('\n');
 }
