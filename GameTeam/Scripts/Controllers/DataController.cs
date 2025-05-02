@@ -147,9 +147,17 @@ namespace GameTeam.Scripts.Controllers
             {
                 HttpContext.Session.SetString("Filters", filters.ToString());
                 var filterGames = filters.Games.Select(x => DatabaseController.GetOrCreateGame(x)).ToList();
-                var applicationsData = DatabaseController.GetFiltredApplications(filters.PurposeName, filterGames);
-                HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
-                return JsonSerializer.Serialize(applicationsData.Skip(from).Take(to - from + 1).ToArray());
+                try
+                {
+                    var applicationsData = DatabaseController.GetFiltredApplications(filters.PurposeName, filterGames);
+                    HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
+                    return JsonSerializer.Serialize(applicationsData.Skip(from).Take(to - from + 1).ToArray());
+                }
+                catch
+                {
+                    Response.StatusCode = 400;
+                    return "Неверные фильтры";
+                }
             }
 
             var applications = JsonSerializer.Deserialize<Application[]>(applicationsJson);
