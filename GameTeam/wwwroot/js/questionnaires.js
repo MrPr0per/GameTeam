@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 function loadDomElements() {
     return {
         questionnairesContainer: document.querySelector('.questionnaires-container'),
-        modalTemplate: document.getElementById('modal-template'),
         loadMoreButton: document.getElementById('load-more-button'),
         myQuestionnairesLink: document.querySelector('.my-q'),
     };
@@ -85,29 +84,167 @@ function loadAndRenderQuestionnaires() {
                 games: item.Games.map(g => g.Name),
                 purpose: getPurposeText(item.PurposeId),
                 availability: formatAvailabilities(item.Availabilities),
-                contacts: item.Contacts,
             }));
 
             questionnaires.forEach(q => {
                 const questionnaireDiv = document.createElement('div');
                 questionnaireDiv.className = 'questionnaire';
 
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'questionnaire-content';
+
                 const title = document.createElement('h2');
                 title.textContent = q.title;
+                contentDiv.appendChild(title);
 
-                const description = document.createElement('p');
-                description.innerHTML = q.availability;
+                const descriptionSection = document.createElement('div');
+                descriptionSection.className = 'questionnaire-section description-section';
+                const descriptionP = document.createElement('p');
+                descriptionP.textContent = q.description;
+                descriptionSection.appendChild(descriptionP);
+                contentDiv.appendChild(descriptionSection);
 
+                const gamesSection = document.createElement('div');
+                gamesSection.className = 'questionnaire-section';
+                const gamesLabel = document.createElement('label');
+                gamesLabel.textContent = 'Игры:';
+                const gamesUl = document.createElement('ul');
+                gamesUl.className = 'games-list';
+                q.games.forEach(game => {
+                    const li = document.createElement('li');
+                    li.className = 'game-item';
+                    li.innerHTML = `<span class="game-name">${game}</span>`;
+                    gamesUl.appendChild(li);
+                });
+                gamesSection.appendChild(gamesLabel);
+                gamesSection.appendChild(gamesUl);
+                contentDiv.appendChild(gamesSection);
 
+                const purposeSection = document.createElement('div');
+                purposeSection.className = 'questionnaire-section';
+                const purposeLabel = document.createElement('label');
+                purposeLabel.textContent = 'Цель:';
+                const purposeP = document.createElement('p');
+                purposeP.textContent = q.purpose;
+                purposeSection.appendChild(purposeLabel);
+                purposeSection.appendChild(purposeP);
+                contentDiv.appendChild(purposeSection);
 
-                const button = document.createElement('button');
-                button.className = 'filled-button';
-                button.textContent = 'Подробнее';
-                button.addEventListener('click', () => openModal(q));
+                const availabilitySection = document.createElement('div');
+                availabilitySection.className = 'questionnaire-section';
+                availabilitySection.id = 'questionnaire-time';
+                const availabilityLabel = document.createElement('label');
+                availabilityLabel.textContent = 'Время:';
+                const availabilityDiv = document.createElement('div');
+                availabilityDiv.className = 'availability';
+                availabilityDiv.innerHTML = q.availability;
+                availabilitySection.appendChild(availabilityLabel);
+                availabilitySection.appendChild(availabilityDiv);
+                contentDiv.appendChild(availabilitySection);
 
-                questionnaireDiv.appendChild(title);
-                questionnaireDiv.appendChild(description);
-                questionnaireDiv.appendChild(button);
+                const bottomSection = document.createElement('div');
+                bottomSection.className = 'bottom-section';
+                const joinButton = document.createElement('button');
+                joinButton.className = 'filled-button';
+                joinButton.textContent = 'Вступить';
+                bottomSection.appendChild(joinButton);
+                contentDiv.appendChild(bottomSection);
+
+                questionnaireDiv.appendChild(contentDiv);
+
+                dom.questionnairesContainer.appendChild(questionnaireDiv);
+            });
+
+            state.offset += data.length;
+
+            if (data.length < state.limit && dom.loadMoreButton) {
+                dom.loadMoreButton.style.display = 'none';
+                state.endReached = true;
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!Array.isArray(data) || data.length === 0) {
+                state.endReached = true;
+                if (dom.loadMoreButton) {
+                    dom.loadMoreButton.style.display = 'none';
+                }
+                return;
+            }
+
+            const questionnaires = data.map(item => ({
+                title: item.Title,
+                description: item.Description,
+                games: item.Games.map(g => g.Name),
+                purpose: getPurposeText(item.PurposeId),
+                availability: formatAvailabilities(item.Availabilities),
+            }));
+
+            questionnaires.forEach(q => {
+                const questionnaireDiv = document.createElement('div');
+                questionnaireDiv.className = 'questionnaire';
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'questionnaire-content';
+
+                const title = document.createElement('h2');
+                title.textContent = q.title;
+                contentDiv.appendChild(title);
+
+                const descriptionSection = document.createElement('div');
+                descriptionSection.className = 'questionnaire-section description-section';
+                const descriptionP = document.createElement('p');
+                descriptionP.textContent = q.description;
+                descriptionSection.appendChild(descriptionP);
+                contentDiv.appendChild(descriptionSection);
+
+                const gamesSection = document.createElement('div');
+                gamesSection.className = 'questionnaire-section';
+                const gamesLabel = document.createElement('label');
+                gamesLabel.textContent = 'Игры:';
+                const gamesUl = document.createElement('ul');
+                gamesUl.className = 'games-list';
+                q.games.forEach(game => {
+                    const li = document.createElement('li');
+                    li.className = 'game-item';
+                    li.innerHTML = `<span class="game-name">${game}</span>`;
+                    gamesUl.appendChild(li);
+                });
+                gamesSection.appendChild(gamesLabel);
+                gamesSection.appendChild(gamesUl);
+                contentDiv.appendChild(gamesSection);
+
+                const purposeSection = document.createElement('div');
+                purposeSection.className = 'questionnaire-section';
+                const purposeLabel = document.createElement('label');
+                purposeLabel.textContent = 'Цель:';
+                const purposeP = document.createElement('p');
+                purposeP.textContent = q.purpose;
+                purposeSection.appendChild(purposeLabel);
+                purposeSection.appendChild(purposeP);
+                contentDiv.appendChild(purposeSection);
+
+                const availabilitySection = document.createElement('div');
+                availabilitySection.className = 'questionnaire-section';
+                availabilitySection.id = 'questionnaire-time';
+                const availabilityLabel = document.createElement('label');
+                availabilityLabel.textContent = 'Время:';
+                const availabilityDiv = document.createElement('div');
+                availabilityDiv.className = 'availability';
+                availabilityDiv.innerHTML = q.availability;
+                availabilitySection.appendChild(availabilityLabel);
+                availabilitySection.appendChild(availabilityDiv);
+                contentDiv.appendChild(availabilitySection);
+
+                const bottomSection = document.createElement('div');
+                bottomSection.className = 'bottom-section';
+                const joinButton = document.createElement('button');
+                joinButton.className = 'filled-button';
+                joinButton.textContent = 'Вступить';
+                bottomSection.appendChild(joinButton);
+                contentDiv.appendChild(bottomSection);
+
+                questionnaireDiv.appendChild(contentDiv);
 
                 dom.questionnairesContainer.appendChild(questionnaireDiv);
             });
@@ -157,7 +294,6 @@ function loadAndRenderUserName() {
                     }
                 });
             } else {
-                // Для статуса 401 или других ошибок устанавливаем "Вход не выполнен"
                 userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
                 if (dom.myQuestionnairesLink) {
                     dom.myQuestionnairesLink.style.display = 'none';
@@ -169,31 +305,6 @@ function loadAndRenderUserName() {
             console.error('Ошибка при получении имени пользователя:', err);
             document.querySelectorAll('.user-name').forEach(el => el.textContent = 'Вход не выполнен');
         });
-}
-
-function openModal(questionnaire) {
-    const modalOverlay = dom.modalTemplate.content.cloneNode(true).firstElementChild;
-    const modalContent = modalOverlay.querySelector('.modal-content');
-
-    modalContent.querySelector('h2').textContent = questionnaire.title;
-    modalContent.querySelector('.modal-description').textContent = questionnaire.description;
-    modalContent.querySelector('.modal-games').innerHTML = questionnaire.games.map(g => `<li>${g}</li>`).join('');
-    modalContent.querySelector('.modal-purpose').textContent = questionnaire.purpose;
-    modalContent.querySelector('.modal-availability').innerHTML = questionnaire.availability;
-    modalContent.querySelector('.modal-contacts').textContent = questionnaire.contacts;
-
-    modalContent.querySelector('.close-button').addEventListener('click', () => closeModal(modalOverlay));
-    modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) {
-            closeModal(modalOverlay);
-        }
-    });
-
-    document.body.appendChild(modalOverlay);
-}
-
-function closeModal(modalOverlay) {
-    modalOverlay.remove();
 }
 
 function getPurposeText(id) {
@@ -211,10 +322,10 @@ function getPurposeText(id) {
 }
 
 function formatAvailabilities(availabilities) {
-    const days = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+    const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
     if (!availabilities || availabilities.length === 0) {
-        return 'Пользователь не указал время — похоже, готов играть круглосуточно :))';
+        return '<div class="time-row no-time">Пользователь не указал время — похоже, готов играть круглосуточно :))</div>';
     }
 
     const daySchedules = Array(7).fill(null).map(() => []);
@@ -229,13 +340,14 @@ function formatAvailabilities(availabilities) {
         }
     });
 
-    return days
+    const availabilityLines = days
         .map((day, index) => {
             if (daySchedules[index].length > 0) {
-                return `${day}: ${daySchedules[index].join(', ')}`;
+                return `<div class="time-row">${day}: ${daySchedules[index].join(', ')}</div>`;
             }
             return null;
         })
-        .filter(line => line !== null)
-        .join('<br>'); 
+        .filter(line => line !== null);
+
+    return availabilityLines.join('');
 }
