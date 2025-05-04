@@ -128,9 +128,6 @@ header {
     text-decoration: none;
 }
 
-
-
-
 .questionnaires-container {
     display: flex;
     flex-direction: column;
@@ -140,116 +137,6 @@ header {
     max-width: 800px;
     width: 100%;
     box-sizing: border-box;
-}
-
-.questionnaire {
-    width: 100%;
-    max-width: 800px;
-    margin-top: 40px;
-}
-
-.questionnaire-content {
-    background-color: #EFF4FF;
-    border-radius: 20px;
-    padding: 20px;
-    width: 100%;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box;
-}
-
-.questionnaire-content h2 {
-    color: #000;
-    font-weight: bold;
-    margin: 0 0 15px 0;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    line-height: 1.2;
-    font-size: 25px;
-}
-
-.questionnaire-section {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin-bottom: 15px;
-}
-
-.questionnaire-section:first-child {
-    margin-top: 5px;
-}
-
-.questionnaire-section label {
-    font-weight: bold;
-    color: #333;
-    font-size: 16px;
-}
-
-.questionnaire-section> :not(label) {
-    padding-left: 10px;
-    font-size: 16px;
-    color: #333;
-    line-height: 1.5;
-    white-space: pre-wrap;
-}
-
-.questionnaire-section .games-list {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 8px;
-    list-style-type: none;
-}
-
-.game-item {
-    display: inline-flex;
-    align-items: center;
-}
-
-.game-name {
-    display: inline-block;
-    padding: 5px 20px 5px 10px;
-    background-color: #DDE7FF;
-    border-radius: 10px;
-    color: #000;
-    white-space: nowrap;
-    max-width: 90%;
-    font-size: 14px;
-}
-
-#questionnaire-time .availability {
-    display: grid;
-    grid-template-rows: repeat(4, auto);
-    grid-auto-flow: column;
-    column-gap: 20px;
-    row-gap: 5px;
-}
-
-.time-row {
-    font-size: 16px;
-}
-
-.time-row.no-time {
-    white-space: nowrap;
-    grid-column: 1;
-}
-
-.bottom-section {
-    display: flex;
-    justify-content: flex-end;
-    margin-right: 20px;
-}
-
-.filled-button {
-    padding: 10px 20px;
-    background-color: #2563EB;
-    color: white;
-    border: none;
-    border-radius: 15px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.filled-button:hover {
-    background-color: #1E4FC7;
 }
 
 .load-more-container {

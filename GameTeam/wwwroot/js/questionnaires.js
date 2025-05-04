@@ -1,9 +1,10 @@
-import {initFilters, getCurrentFilter, applyFiltersButton} from './filters.js';
+import { initFilters, getCurrentFilter, applyFiltersButton } from './filters.js';
+import { createQuestionnaire } from './questionnaire-template.js';
 
 const state = {
     offset: 0,
     get limit() {
-        return 11;
+        return 5;
     },
     loading: false,
     endReached: false,
@@ -11,7 +12,6 @@ const state = {
 };
 
 let dom = null;
-
 
 document.addEventListener('DOMContentLoaded', async function () {
     dom = loadDomElements();
@@ -38,16 +38,14 @@ function applyFilters() {
 }
 
 function clearQuestionnaires() {
-    // Удаляем все дочерние элементы контейнера
     while (dom.questionnairesContainer.firstChild) {
         dom.questionnairesContainer.removeChild(dom.questionnairesContainer.firstChild);
     }
-    // Восстанавливаем кнопку "Загрузить ещё", если она была удалена
     dom.loadMoreButton.style.display = 'block';
     dom.loadMoreButton.disabled = false;
 }
 
-function loadAndRenderQuestionnaires() {
+async function loadAndRenderQuestionnaires() {
     if (state.loading || state.endReached) return;
 
     state.loading = true;
@@ -58,214 +56,62 @@ function loadAndRenderQuestionnaires() {
     }
 
     const currentFilter = getCurrentFilter();
-    fetch(`/data/applications/${state.offset}/${state.offset + state.limit}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            purposeName: getPurposeText(currentFilter.purpose),
-            games: currentFilter.games,
-        }),
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (!Array.isArray(data) || data.length === 0) {
-                state.endReached = true;
-                if (dom.loadMoreButton) {
-                    dom.loadMoreButton.style.display = 'none';
-                }
-                return;
-            }
-
-            const questionnaires = data.map(item => ({
-                title: item.Title,
-                description: item.Description,
-                games: item.Games.map(g => g.Name),
-                purpose: getPurposeText(item.PurposeId),
-                availability: formatAvailabilities(item.Availabilities),
-            }));
-
-            questionnaires.forEach(q => {
-                const questionnaireDiv = document.createElement('div');
-                questionnaireDiv.className = 'questionnaire';
-
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'questionnaire-content';
-
-                const title = document.createElement('h2');
-                title.textContent = q.title;
-                contentDiv.appendChild(title);
-
-                const descriptionSection = document.createElement('div');
-                descriptionSection.className = 'questionnaire-section description-section';
-                const descriptionP = document.createElement('p');
-                descriptionP.textContent = q.description;
-                descriptionSection.appendChild(descriptionP);
-                contentDiv.appendChild(descriptionSection);
-
-                const gamesSection = document.createElement('div');
-                gamesSection.className = 'questionnaire-section';
-                const gamesLabel = document.createElement('label');
-                gamesLabel.textContent = 'Игры:';
-                const gamesUl = document.createElement('ul');
-                gamesUl.className = 'games-list';
-                q.games.forEach(game => {
-                    const li = document.createElement('li');
-                    li.className = 'game-item';
-                    li.innerHTML = `<span class="game-name">${game}</span>`;
-                    gamesUl.appendChild(li);
-                });
-                gamesSection.appendChild(gamesLabel);
-                gamesSection.appendChild(gamesUl);
-                contentDiv.appendChild(gamesSection);
-
-                const purposeSection = document.createElement('div');
-                purposeSection.className = 'questionnaire-section';
-                const purposeLabel = document.createElement('label');
-                purposeLabel.textContent = 'Цель:';
-                const purposeP = document.createElement('p');
-                purposeP.textContent = q.purpose;
-                purposeSection.appendChild(purposeLabel);
-                purposeSection.appendChild(purposeP);
-                contentDiv.appendChild(purposeSection);
-
-                const availabilitySection = document.createElement('div');
-                availabilitySection.className = 'questionnaire-section';
-                availabilitySection.id = 'questionnaire-time';
-                const availabilityLabel = document.createElement('label');
-                availabilityLabel.textContent = 'Время:';
-                const availabilityDiv = document.createElement('div');
-                availabilityDiv.className = 'availability';
-                availabilityDiv.innerHTML = q.availability;
-                availabilitySection.appendChild(availabilityLabel);
-                availabilitySection.appendChild(availabilityDiv);
-                contentDiv.appendChild(availabilitySection);
-
-                const bottomSection = document.createElement('div');
-                bottomSection.className = 'bottom-section';
-                const joinButton = document.createElement('button');
-                joinButton.className = 'filled-button';
-                joinButton.textContent = 'Вступить';
-                bottomSection.appendChild(joinButton);
-                contentDiv.appendChild(bottomSection);
-
-                questionnaireDiv.appendChild(contentDiv);
-
-                dom.questionnairesContainer.appendChild(questionnaireDiv);
-            });
-
-            state.offset += data.length;
-
-            if (data.length < state.limit && dom.loadMoreButton) {
-                dom.loadMoreButton.style.display = 'none';
-                state.endReached = true;
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (!Array.isArray(data) || data.length === 0) {
-                state.endReached = true;
-                if (dom.loadMoreButton) {
-                    dom.loadMoreButton.style.display = 'none';
-                }
-                return;
-            }
-
-            const questionnaires = data.map(item => ({
-                title: item.Title,
-                description: item.Description,
-                games: item.Games.map(g => g.Name),
-                purpose: getPurposeText(item.PurposeId),
-                availability: formatAvailabilities(item.Availabilities),
-            }));
-
-            questionnaires.forEach(q => {
-                const questionnaireDiv = document.createElement('div');
-                questionnaireDiv.className = 'questionnaire';
-
-                const contentDiv = document.createElement('div');
-                contentDiv.className = 'questionnaire-content';
-
-                const title = document.createElement('h2');
-                title.textContent = q.title;
-                contentDiv.appendChild(title);
-
-                const descriptionSection = document.createElement('div');
-                descriptionSection.className = 'questionnaire-section description-section';
-                const descriptionP = document.createElement('p');
-                descriptionP.textContent = q.description;
-                descriptionSection.appendChild(descriptionP);
-                contentDiv.appendChild(descriptionSection);
-
-                const gamesSection = document.createElement('div');
-                gamesSection.className = 'questionnaire-section';
-                const gamesLabel = document.createElement('label');
-                gamesLabel.textContent = 'Игры:';
-                const gamesUl = document.createElement('ul');
-                gamesUl.className = 'games-list';
-                q.games.forEach(game => {
-                    const li = document.createElement('li');
-                    li.className = 'game-item';
-                    li.innerHTML = `<span class="game-name">${game}</span>`;
-                    gamesUl.appendChild(li);
-                });
-                gamesSection.appendChild(gamesLabel);
-                gamesSection.appendChild(gamesUl);
-                contentDiv.appendChild(gamesSection);
-
-                const purposeSection = document.createElement('div');
-                purposeSection.className = 'questionnaire-section';
-                const purposeLabel = document.createElement('label');
-                purposeLabel.textContent = 'Цель:';
-                const purposeP = document.createElement('p');
-                purposeP.textContent = q.purpose;
-                purposeSection.appendChild(purposeLabel);
-                purposeSection.appendChild(purposeP);
-                contentDiv.appendChild(purposeSection);
-
-                const availabilitySection = document.createElement('div');
-                availabilitySection.className = 'questionnaire-section';
-                availabilitySection.id = 'questionnaire-time';
-                const availabilityLabel = document.createElement('label');
-                availabilityLabel.textContent = 'Время:';
-                const availabilityDiv = document.createElement('div');
-                availabilityDiv.className = 'availability';
-                availabilityDiv.innerHTML = q.availability;
-                availabilitySection.appendChild(availabilityLabel);
-                availabilitySection.appendChild(availabilityDiv);
-                contentDiv.appendChild(availabilitySection);
-
-                const bottomSection = document.createElement('div');
-                bottomSection.className = 'bottom-section';
-                const joinButton = document.createElement('button');
-                joinButton.className = 'filled-button';
-                joinButton.textContent = 'Вступить';
-                bottomSection.appendChild(joinButton);
-                contentDiv.appendChild(bottomSection);
-
-                questionnaireDiv.appendChild(contentDiv);
-
-                dom.questionnairesContainer.appendChild(questionnaireDiv);
-            });
-
-            state.offset += data.length;
-
-            if (data.length < state.limit && dom.loadMoreButton) {
-                dom.loadMoreButton.style.display = 'none';
-                state.endReached = true;
-            }
-        })
-        .catch(error => {
-            console.error('Ошибка при загрузке анкет:', error);
-        })
-        .finally(() => {
-            state.loading = false;
-            if (!state.endReached && dom.loadMoreButton) {
-                dom.loadMoreButton.textContent = 'Загрузить ещё';
-                dom.loadMoreButton.disabled = false;
-            }
+    try {
+        const response = await fetch(`/data/applications/${state.offset}/${state.offset + state.limit}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                purposeName: getPurposeText(currentFilter.purpose),
+                games: currentFilter.games,
+            }),
         });
+        const data = await response.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+            state.endReached = true;
+            if (dom.loadMoreButton) {
+                dom.loadMoreButton.style.display = 'none';
+            }
+            return;
+        }
+
+        const questionnaires = data.map(item => ({
+            title: item.Title,
+            description: item.Description,
+            games: item.Games.map(g => g.Name),
+            purpose: getPurposeText(item.PurposeId),
+            availability: formatAvailabilities(item.Availabilities),
+        }));
+
+        for (const q of questionnaires) {
+            const questionnaire = await createQuestionnaire(q);
+            // Добавляем кнопку "Вступить"
+            const bottomSection = questionnaire.querySelector('.bottom-section');
+            const joinButton = document.createElement('button');
+            joinButton.className = 'filled-button';
+            joinButton.textContent = 'Вступить';
+            bottomSection.appendChild(joinButton);
+
+            dom.questionnairesContainer.appendChild(questionnaire);
+        }
+
+        state.offset += data.length;
+
+        if (data.length < state.limit && dom.loadMoreButton) {
+            dom.loadMoreButton.style.display = 'none';
+            state.endReached = true;
+        }
+    } catch (error) {
+        console.error('Ошибка при загрузке анкет:', error);
+    } finally {
+        state.loading = false;
+        if (!state.endReached && dom.loadMoreButton) {
+            dom.loadMoreButton.textContent = 'Загрузить ещё';
+            dom.loadMoreButton.disabled = false;
+        }
+    }
 }
 
 function loadAndRenderUserName() {
