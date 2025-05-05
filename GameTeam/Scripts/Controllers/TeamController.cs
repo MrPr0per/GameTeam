@@ -22,7 +22,7 @@ namespace GameTeam.Scripts.Controllers
             if (ownerId is null)
                 return BadRequest(new { Message = "Нет анкеты или владельца" });
 
-            TeamManager.JoinTeam(ownerId.Value, int.Parse(userId), id);
+            //TeamManager.JoinTeam(ownerId.Value, int.Parse(userId), id);
 
             return Ok(new { Message = "Application shown" });
         }
@@ -37,7 +37,7 @@ namespace GameTeam.Scripts.Controllers
 
             try
             {
-                TeamManager.DeleteFromPending(int.Parse(selfId), userId, applicationId);
+                //TeamManager.DeleteFromPending(int.Parse(selfId), userId, applicationId);
             }
             catch
             {
@@ -57,7 +57,7 @@ namespace GameTeam.Scripts.Controllers
             if (string.IsNullOrEmpty(selfId))
                 return Unauthorized(new { Message = "Войдите в аккаунт" });
 
-            TeamManager.DeleteFromPending(int.Parse(selfId), userId, applicationId);
+            //TeamManager.DeleteFromPending(int.Parse(selfId), userId, applicationId);
 
             return Ok(new { Message = "Заявка отклонена" });
         }

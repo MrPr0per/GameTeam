@@ -1211,5 +1211,135 @@ namespace GameTeam.Scripts.Controllers
 
             return result;
         }
+        
+        /// <summary>
+        /// Возвращает всех членов команды/анкеты
+        /// </summary>
+        /// <param name="applicationId">ID анкеты</param>
+        public static List<UserData> GetAllTeamMembers(int applicationId)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+
+            try
+            {
+                var userDatas = new List<UserData>();
+                conn.Open();
+
+                using var cmd = new NpgsqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = @"select id, username, email from participants
+                                    join users_data on participants.user_id = users_data.id
+                                    where application_id = @applicationId;";
+
+                cmd.Parameters.AddWithValue("applicationId", applicationId);
+
+                using var reader = cmd.ExecuteReader();
+                
+                while (reader.Read())
+                {
+                    userDatas.Add(new UserData(reader.GetInt32(0), reader.GetString(2), reader.GetString(1)));
+                }
+
+                return userDatas;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при получении всех участников анкеты: {ex.Message}", ex);
+            }
+        }
+        
+        /// <summary>
+        /// Возвращает список анкет, в которых состоит пользователь
+        /// </summary>
+        /// <param name="userId">ID пользователя</param>
+        public static List<Application> GetAllUserMemberApplications(int userId)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+
+            try
+            {
+                var userDatas = new List<Application>();
+                conn.Open();
+
+                using var cmd = new NpgsqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = @"select id, title, description, contacts, owner_id, purpose_id, is_hidden from participants
+                                    join applications on participants.application_id = applications.id
+                                    where user_id = @userId;";
+
+                cmd.Parameters.AddWithValue("userId", userId);
+
+                using var reader = cmd.ExecuteReader();
+                
+                while (reader.Read())
+                {
+                    userDatas.Add(new Application(reader.GetInt32(0), reader.GetString(1), reader.GetString(2), reader.GetString(3),
+                        reader.GetInt32(5), reader.GetInt32(4), reader.GetBoolean(6)));
+                }
+
+                return userDatas;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при получении всех анкет, в которых состоит пользователь: {ex.Message}", ex);
+            }
+        }
+        
+        /// <summary>
+        /// Добавление пользователя в анкету
+        /// </summary>
+        /// <param name="applicationId">ID анкеты</param>
+        /// <param name="newMemberId">ID нового пользователя</param>
+        public static void AddMemberToApplication(int applicationId, int newMemberId)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+
+            try
+            {
+                conn.Open();
+
+                using var cmd = new NpgsqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = @"insert into participants (application_id, user_id)
+                                        values (@applicationId, @userId)";
+
+                cmd.Parameters.AddWithValue("applicationId", applicationId);
+                cmd.Parameters.AddWithValue("userId", newMemberId);
+
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при изменении видимости анкеты: {ex.Message}", ex);
+            }
+        }
+        
+        /// <summary>
+        /// Удаление пользоваетля из анкеты
+        /// </summary>
+        /// <param name="applicationId">ID анкеты</param>
+        /// <param name="memberId">ID пользователя</param>
+        public static void DeleteMemberFromApplication(int applicationId, int memberId)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+
+            try
+            {
+                conn.Open();
+
+                using var cmd = new NpgsqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = @"delete from participants where user_id = @userId;";
+
+                cmd.Parameters.AddWithValue("applicationId", applicationId);
+                cmd.Parameters.AddWithValue("userId", memberId);
+
+                cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Ошибка при удалении пользователя из анкеты: {ex.Message}", ex);
+            }
+        }
     }
 }
