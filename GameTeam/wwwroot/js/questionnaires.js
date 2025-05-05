@@ -164,7 +164,7 @@ function getPurposeText(id) {
         7: 'Тренировка',
         8: 'Турнир',
     };
-    return purposes[id] || 'Неизвестная цель';
+    return purposes[id];
 }
 
 function formatAvailabilities(availabilities) {
