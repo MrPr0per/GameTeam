@@ -107,7 +107,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
         public void When_ParticipantsExist_ReturnsAllTeamMembers()
         {
             // Act
-            List<UserData> members = DatabaseController.GetAllTeamMembers(TestApplicationId);
+            List<UserData> members = DatabaseController.GetAllApplicationMembers(TestApplicationId);
 
             // Assert
             Assert.IsNotNull(members);
@@ -135,7 +135,7 @@ namespace GameTeam.Tests.DatabaseControllerTests
             }
 
             // Act
-            List<UserData> members = DatabaseController.GetAllTeamMembers(TestApplicationId);
+            List<UserData> members = DatabaseController.GetAllApplicationMembers(TestApplicationId);
 
             // Assert
             Assert.IsNotNull(members);

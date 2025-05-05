@@ -1216,7 +1216,7 @@ namespace GameTeam.Scripts.Controllers
         /// Возвращает всех членов команды/анкеты
         /// </summary>
         /// <param name="applicationId">ID анкеты</param>
-        public static List<UserData> GetAllTeamMembers(int applicationId)
+        public static List<UserData> GetAllApplicationMembers(int applicationId)
         {
             using var conn = new NpgsqlConnection(ConnectionString);
 
