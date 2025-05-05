@@ -27,30 +27,37 @@ namespace GameTeam.Scripts.Controllers
             return Ok(new { Message = "Application shown" });
         }
 
-        [HttpPost("approve/{id}")]
-        public IActionResult Approve(int id)
+        [HttpPost("approve/{userId}/{applicationId}")]
+        public IActionResult Approve(int userId, int applicationId)
         {
-            var userId = HttpContext.Session.GetString("UserId");
+            var selfId = HttpContext.Session.GetString("UserId");
 
-            if (string.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty(selfId))
                 return Unauthorized(new { Message = "Войдите в аккаунт" });
 
-            //Запрос в бд, чтобы добавить в команду
+            try
+            {
+                TeamManager.DeleteFromPending(int.Parse(selfId), userId, applicationId);
+            }
+            catch
+            {
+                return BadRequest(new { Message = "Нет такой заявки" });
+            }
 
-            TeamManager.DeleteFromPending(int.Parse(userId), id);
+            //Запрос в бд, чтобы добавить в команду
 
             return Ok(new { Message = "Игрок добавлен" });
         }
 
-        [HttpPost("deny/{id}")]
-        public IActionResult Deny(int id)
+        [HttpPost("deny/{userId}/{applicationId}")]
+        public IActionResult Deny(int userId, int applicationId)
         {
-            var userId = HttpContext.Session.GetString("UserId");
+            var selfId = HttpContext.Session.GetString("UserId");
 
-            if (string.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty(selfId))
                 return Unauthorized(new { Message = "Войдите в аккаунт" });
 
-            TeamManager.DeleteFromPending(int.Parse(userId), id);
+            TeamManager.DeleteFromPending(int.Parse(selfId), userId, applicationId);
 
             return Ok(new { Message = "Заявка отклонена" });
         }

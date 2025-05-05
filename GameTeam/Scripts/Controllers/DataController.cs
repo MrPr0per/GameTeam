@@ -108,7 +108,7 @@ namespace GameTeam.Scripts.Controllers
         }
 
         [HttpGet("selfapplications")]
-        public string GetSelfApplicationsByUserId()
+        public string GetSelfApplications()
         {
             var userId = HttpContext.Session.GetString("UserId");
             if (string.IsNullOrEmpty(userId))
@@ -122,14 +122,23 @@ namespace GameTeam.Scripts.Controllers
             return JsonSerializer.Serialize(applications);
         }
 
-        [HttpGet("games")]
-        public string GetAllApplications()
+        [HttpGet("teamapplications")]
+        public string GetTeamApplications()
         {
-            var games = DatabaseController.GetAllGames();
+            var userId = HttpContext.Session.GetString("UserId");
+            if (string.IsNullOrEmpty(userId))
+            {
+                Response.StatusCode = 401;
+                return "";
+            }
 
-            return JsonSerializer.Serialize(games);
+            //Поменять 
+            var applications = DatabaseController.GetAllApplications().Take(3).ToArray();
+
+            return JsonSerializer.Serialize(applications);
         }
 
+        
         [HttpPost("applications/{from}/{to}")]
         public string GetAllApplications(int from, int to, [FromBody] FilterData? filters)
         {
@@ -294,7 +303,13 @@ namespace GameTeam.Scripts.Controllers
             }
         }
 
-        
+        [HttpGet("games")]
+        public string GetAllGames()
+        {
+            var games = DatabaseController.GetAllGames();
+
+            return JsonSerializer.Serialize(games);
+        }
     }
 
     public class FilterData
