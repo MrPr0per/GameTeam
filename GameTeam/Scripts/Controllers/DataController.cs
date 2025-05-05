@@ -140,7 +140,7 @@ namespace GameTeam.Scripts.Controllers
                 var applicationsData = DatabaseController.GetAllApplications();
                 HttpContext.Session.SetString("Filters", "");
                 HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
-                return JsonSerializer.Serialize(applicationsData.Skip(from).Take(to - from + 1).ToArray());
+                return JsonSerializer.Serialize(applicationsData.Select(x => new ApplicationWithoutContacts(x)).Skip(from).Take(to - from + 1).ToArray());
             }
 
             if (filters != null && HttpContext.Session.GetString("Filters") != filters.ToString())
@@ -151,7 +151,7 @@ namespace GameTeam.Scripts.Controllers
                 {
                     var applicationsData = DatabaseController.GetFiltredApplications(filters.PurposeName, filterGames);
                     HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
-                    return JsonSerializer.Serialize(applicationsData.Skip(from).Take(to - from + 1).ToArray());
+                    return JsonSerializer.Serialize(applicationsData.Select(x => new ApplicationWithoutContacts(x)).Skip(from).Take(to - from + 1).ToArray());
                 }
                 catch
                 {
@@ -161,7 +161,7 @@ namespace GameTeam.Scripts.Controllers
             }
 
             var applications = JsonSerializer.Deserialize<Application[]>(applicationsJson);
-            return JsonSerializer.Serialize(applications.Skip(from).Take(to - from + 1).ToArray());
+            return JsonSerializer.Serialize(applications.Select(x => new ApplicationWithoutContacts(x)).Skip(from).Take(to - from + 1).ToArray());
         }
 
         [HttpGet("application/{id}")]
@@ -293,6 +293,8 @@ namespace GameTeam.Scripts.Controllers
                 return BadRequest(new { Message = "Что-то в бд не так" });
             }
         }
+
+        
     }
 
     public class FilterData
@@ -352,6 +354,48 @@ namespace GameTeam.Scripts.Controllers
         public List<AvailabilityWithoutId>? Availabilities { get; set; }
     }
 
+    public class ApplicationWithoutContacts
+    {
+        public int Id { get; set; }
+
+        public string Title { get; set; }
+
+        public string Description { get; set; }
+
+        public List<Availability> Availabilities { get; set; }
+
+        public List<Game> Games { get; set; }
+
+        public int PurposeId { get; set; }
+
+        public int OwnerId { get; set; }
+
+        public bool IsHidden { get; set; }
+
+        public ApplicationWithoutContacts(int id, string title, string description, int purposeId, int ownerId, bool isHidden)
+        {
+            Id = id;
+            Title = title;
+            Description = description;
+            Availabilities = DatabaseController.GetAvailabilities(id, false);
+            Games = DatabaseController.GetGames(id, false);
+            PurposeId = purposeId;
+            OwnerId = ownerId;
+            IsHidden = isHidden;
+        }
+
+        public ApplicationWithoutContacts(Application app)
+        {
+            Id = app.Id;
+            Title = app.Title;
+            Description = app.Description;
+            Availabilities = app.Availabilities;
+            Games = app.Games;
+            PurposeId = app.PurposeId;
+            OwnerId = app.OwnerId;
+            IsHidden = app.IsHidden;
+        }
+    }
 
     public class ApplicationWithPurpose
     {
