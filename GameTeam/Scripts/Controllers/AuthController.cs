@@ -31,12 +31,14 @@ public class AuthController : ControllerBase
             return new string[] { };
         }
 
-        var userData = DatabaseController.GetPasswordAndSalt(userId.Value);
-        if (userData is null)
+        if (userId is null)
         {
             Response.StatusCode = 400;
             return new string[] { };
         }
+
+        var userData = DatabaseController.GetPasswordAndSalt(userId.Value);
+
         var challenge = HashOperator.GenerateSalt();
 
         HttpContext.Session.SetString("UserPassword", HashOperator.HashPassword(userData.Value.passwordHash, challenge));
