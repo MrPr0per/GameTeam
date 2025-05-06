@@ -6,6 +6,7 @@ import {buttonsActivator} from './buttonsActivator.js';
 
 const debugMode = true;
 let isAuthenticated = false;
+let hasNotifications = false; // Поддержка уведомлений
 
 let realProfileInfo = {
 	name: '',
@@ -16,7 +17,51 @@ let realProfileInfo = {
 };
 let displayedProfileInfo = structuredClone(realProfileInfo);
 
+// Динамическая загрузка компонентов
+function loadComponents() {
+	// Загрузка sidebar
+	fetch('../pages/Sidebar.html')
+		.then(response => response.text())
+		.then(html => {
+			document.getElementById('sidebar-placeholder').innerHTML = html;
+		})
+		.catch(err => {
+			console.error('Ошибка загрузки sidebar:', err);
+		});
+
+	// Загрузка header
+	fetch('../pages/Header.html')
+		.then(response => response.text())
+		.then(html => {
+			document.getElementById('header-placeholder').innerHTML = html;
+			// После загрузки header обновляем имя и уведомления
+			renderPersonalInfo();
+			updateNotificationBell();
+		})
+		.catch(err => {
+			console.error('Ошибка загрузки header:', err);
+		});
+}
+
+// Обновление иконки уведомлений
+function updateNotificationBell() {
+	const bellIcon = document.querySelector('.header-notification-bell');
+	if (bellIcon) {
+		if (hasNotifications) {
+			bellIcon.src = '../img/bell-active.svg';
+			bellIcon.classList.add('active');
+		} else {
+			bellIcon.src = '../img/bell.svg';
+			bellIcon.classList.remove('active');
+		}
+	}
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+	// Загружаем компоненты
+	loadComponents();
+
+	// Инициализация профиля
 	addEventListeners();
 	loadProfileInfo().then(() => {
 		document.getElementById('edit-button').disabled = false;
@@ -172,6 +217,9 @@ async function loadProfileInfo() {
 				try {
 					realProfileInfo = parseProfileInfo(jsonOrNoneIfError);
 					displayedProfileInfo = structuredClone(realProfileInfo);
+					// После загрузки профиля обновляем имя и уведомления
+					renderPersonalInfo();
+					updateNotificationBell();
 				} catch (e) {
 					showServerError('Ошибка при обработке данных профиля',
 						'(Данные прилетели не в том формате, в котором ожидалось)',

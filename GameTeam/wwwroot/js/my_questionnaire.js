@@ -1,4 +1,4 @@
-import {buttonsActivator} from './buttonsActivator.js';
+import { buttonsActivator } from './buttonsActivator.js';
 
 let debugMode = true;
 
@@ -6,9 +6,8 @@ const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 let isEditing = false;
 let isPlaced = false;
-// todo: сделать для этих объектов класс
-let serverQuestionnaire = null; // то, что сохранено на сервере
-let localQuestionnaire = { // локальные изменения, еще не запощенные
+let serverQuestionnaire = null;
+let localQuestionnaire = {
 	title: '',
 	description: '',
 	games: [],
@@ -17,16 +16,42 @@ let localQuestionnaire = { // локальные изменения, еще не
 	contacts: '',
 };
 
+function loadComponents() {
+	// Загрузка sidebar
+	fetch('../pages/Sidebar.html')
+		.then(response => response.text())
+		.then(html => {
+			document.getElementById('sidebar-placeholder').innerHTML = html;
+		})
+		.catch(err => {
+			console.error('Ошибка загрузки sidebar:', err);
+		});
+
+	// Загрузка header и его логики
+	fetch('../pages/Header.html')
+		.then(response => response.text())
+		.then(html => {
+			document.getElementById('header-placeholder').innerHTML = html;
+			const script = document.createElement('script');
+			script.src = '../js/header.js';
+			document.body.appendChild(script);
+		})
+		.catch(err => {
+			console.error('Ошибка загрузки header:', err);
+		});
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+	// Загружаем компоненты
+	loadComponents();
+
+	// Инициализация анкеты
 	addEventListeners();
-	// todo: пока считаем, что у одного пользователя одна анкета
 	loadMyQuestionnaire()
 		.then(() => {
-			// Изначальное отображение анкеты и статуса
 			displayQuestionnaire();
 			updateStatusAndButtons();
 		});
-	loadAndRenderUserName();
 });
 
 function addEventListeners() {
@@ -72,7 +97,6 @@ function addEventListeners() {
 				if (success) {
 					serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
 				} else {
-					// Если сохранение не удалось, восстанавливаем предыдущее состояние
 					localQuestionnaire = JSON.parse(JSON.stringify(serverQuestionnaire));
 				}
 			} else {
@@ -143,11 +167,9 @@ function addEventListeners() {
 	});
 }
 
-// Функция для отображения анкеты
 function displayQuestionnaire(updateGamesOnly = false) {
 	const questionnaireContent = document.querySelector('.questionnaire-content');
 
-	// Динамическое добавление поля "Контакты", если его еще нет
 	let contactsSection = questionnaireContent.querySelector('.contacts-section');
 	if (!contactsSection) {
 		contactsSection = document.createElement('div');
@@ -262,17 +284,14 @@ function displayQuestionnaire(updateGamesOnly = false) {
 	});
 }
 
-// Функция для проверки валидности формы
 function isFormValid() {
 	const title = localQuestionnaire.title.trim();
 	const games = localQuestionnaire.games;
 	const goal = localQuestionnaire.goal.trim();
 	const contacts = localQuestionnaire.contacts.trim();
-	// Время (availabilities) не является обязательным
 	return title !== '' && games.length > 0 && goal !== '' && contacts !== '';
 }
 
-// Функция для обновления статуса и кнопок
 function updateStatusAndButtons() {
 	const placeButton = document.getElementById('place-button');
 	const editButton = document.getElementById('edit-button');
@@ -282,14 +301,11 @@ function updateStatusAndButtons() {
 	const addGameSection = document.getElementById('add-game-section');
 	const warningMessage = document.getElementById('warning-message');
 
-	// Обновляем текст статуса
 	statusText.textContent = isPlaced ? 'Размещена' : 'Не размещена';
 	const formValid = isFormValid();
 
 	if (isEditing) {
-		// Скрываем кнопки "Разместить" и "Редактировать"
 		if (statusButtons) statusButtons.style.display = 'none';
-		// Показываем кнопки "Сохранить", "Отмена", "Очистить"
 		if (editButtons) editButtons.style.display = 'flex';
 		if (addGameSection) addGameSection.classList.add('active');
 		document.querySelectorAll('.required').forEach(star => {
@@ -297,9 +313,7 @@ function updateStatusAndButtons() {
 		});
 		if (warningMessage) warningMessage.textContent = formValid ? '' : 'Заполните все обязательные поля';
 	} else {
-		// Показываем кнопки "Разместить" и "Редактировать"
 		if (statusButtons) statusButtons.style.display = 'flex';
-		// Скрываем кнопки "Сохранить", "Отмена", "Очистить"
 		if (editButtons) editButtons.style.display = 'none';
 		if (addGameSection) addGameSection.classList.remove('active');
 		document.querySelectorAll('.required').forEach(star => {
@@ -325,7 +339,6 @@ function updateStatusAndButtons() {
 	}
 }
 
-// Загрузка анкеты с сервера
 async function loadMyQuestionnaire() {
 	const response = await fetch('/data/selfapplications', { method: 'GET' });
 
@@ -360,29 +373,6 @@ async function loadMyQuestionnaire() {
 	localQuestionnaire = JSON.parse(JSON.stringify(serverQuestionnaire));
 }
 
-
-function loadAndRenderUserName() {
-	fetch('/data/profile')
-		.then(r => {
-			if (r.ok) {
-				return r.json();
-			} else if (r.status === 401) {
-				window.location.href = '/register';
-			} else {
-				console.error('Ошибка при загрузке профиля', r);
-			}
-		})
-		.then(json => {
-			if (json !== undefined) {
-				const name = json['Username'];
-				document.querySelectorAll('.user-name').forEach(el => el.textContent = name);
-			}
-		})
-		.catch(err => {
-			console.error('Ошибка при получении имени пользователя:', err);
-		});
-}
-
 async function getJsonForPostQuestionnaire() {
 	let applicationId = -1;
 	if (serverQuestionnaire.id === -1) {
@@ -392,7 +382,7 @@ async function getJsonForPostQuestionnaire() {
 		applicationId = serverQuestionnaire.id;
 	}
 	const availabilities = localQuestionnaire.availabilities
-		.filter(a => a.start && a.end) // Убедимся, что отправляем только полные записи
+		.filter(a => a.start && a.end)
 		.map(a => ({
 			dayOfWeek: a.day,
 			startTime: a.start ? `${a.start}:00+00:00` : '',
@@ -409,10 +399,9 @@ async function getJsonForPostQuestionnaire() {
 	};
 }
 
-
 async function postMyQuestionnaire() {
 	const jsonData = await getJsonForPostQuestionnaire();
-	console.log('Sending to server:', jsonData); // Для отладки
+	console.log('Sending to server:', jsonData);
 	const response = await fetch('/data/application', {
 		method: 'POST',
 		headers: {
@@ -421,7 +410,6 @@ async function postMyQuestionnaire() {
 		body: JSON.stringify(jsonData),
 	});
 	if (response.ok) {
-		// Обновляем serverQuestionnaire после успешного POST
 		serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
 		serverQuestionnaire.id = jsonData.id;
 		return true;
@@ -431,7 +419,6 @@ async function postMyQuestionnaire() {
 }
 
 function transformQuestionnaire(questionnaireData) {
-	// Обрабатываем игры
 	let games = [];
 	if (Array.isArray(questionnaireData.Games)) {
 		games = questionnaireData.Games
@@ -439,7 +426,6 @@ function transformQuestionnaire(questionnaireData) {
 			.filter(name => name);
 	}
 
-	// Маппинг для целей
 	const goalMap = {
 		2: 'Пофаниться',
 		3: 'Посоревноваться',
@@ -451,14 +437,11 @@ function transformQuestionnaire(questionnaireData) {
 		8: 'Турнир',
 	};
 
-	// Получаем цель
 	const goal = goalMap[questionnaireData.PurposeId] || '';
 
-	// Обрабатываем доступности
 	let availabilities = [];
 	if (Array.isArray(questionnaireData.Availabilities)) {
 		availabilities = questionnaireData.Availabilities.map(avail => {
-			// Форматируем время в HH:MM
 			const startHour = avail.StartTime.Hour.toString().padStart(2, '0');
 			const startMinute = avail.StartTime.Minute.toString().padStart(2, '0');
 			const endHour = avail.EndTime.Hour.toString().padStart(2, '0');
@@ -471,7 +454,6 @@ function transformQuestionnaire(questionnaireData) {
 		});
 	}
 
-	// Возвращаем преобразованный объект
 	return {
 		id: questionnaireData.Id,
 		title: questionnaireData.Title || '',
@@ -483,7 +465,6 @@ function transformQuestionnaire(questionnaireData) {
 	};
 }
 
-// Функция для скрытия или показа анкеты
 async function hideMyQuestionnaire() {
 	if (!serverQuestionnaire || serverQuestionnaire.id === -1) {
 		showServerError('Анкета не найдена');
@@ -513,11 +494,10 @@ async function hideMyQuestionnaire() {
 	}
 }
 
-// todo: убрать дублирование
 function showServerError(message, ...debugInfo) {
 	if (debugMode) {
 		console.log(message, debugInfo);
 	} else {
-		console.log(message); // todo: сделать плашку об ошибке
+		console.log(message);
 	}
 }

@@ -20,69 +20,6 @@ body {
     overflow: hidden;
 }
 
-.sidebar {
-    width: 270px;
-    min-width: 270px;
-    max-width: 270px;
-    background-color: #EFF4FF;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    position: relative;
-    z-index: 2;
-    flex-shrink: 0;
-    height: 100vh;
-}
-
-.sidebar .logo {
-    font-size: 30px;
-    font-family: "Poppins", sans-serif;
-    font-weight: bold;
-    color: #2563EB;
-    margin: 20px auto;
-    position: sticky;
-    top: 0;
-    background-color: #EFF4FF;
-    z-index: 3;
-    width: 100%;
-    text-align: center;
-}
-
-.sidebar-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    padding: 60px 0;
-    width: 100%;
-    overflow-y: auto;
-    flex: 1;
-}
-
-.sidebar-nav a {
-    display: flex;
-    align-items: center;
-    padding: 0 40px;
-    text-decoration: none;
-    color: #656565;
-    font-size: 18px;
-    align-items: center;
-}
-
-.sidebar-nav a:hover {
-    color: #2563EB;
-}
-
-.nav-text {
-    white-space: nowrap;
-}
-
-.sidebar-nav .nav-icon {
-    width: 30px;
-    height: 30px;
-    margin-right: 15px;
-    flex-shrink: 0;
-}
-
 .content {
     flex: 1;
     display: flex;
@@ -92,50 +29,6 @@ body {
     padding-top: 25px;
     height: calc(100vh - 90px);
 }
-
-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 30px 40px;
-    border-bottom: 1px solid #eee;
-    background-color: white;
-    width: calc(100% - 270px);
-    position: fixed;
-    top: 0;
-    right: 0;
-    z-index: 100;
-    height: 90px;
-    box-sizing: border-box;
-}
-
-.auth-wrapper {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-}
-
-.header-profile-image {
-    width: 36px;
-    height: 36px;
-    background-color: #ccc;
-    border-radius: 50%;
-    margin-right: 10px;
-    background-image: url('../img/default-profile.jpg');
-    background-size: cover;
-    background-position: center;
-}
-
-.auth-status {
-    color: #666;
-    text-decoration: none;
-}
-
-.auth-status:hover {
-    color: #2563EB;
-    text-decoration: none;
-}
-
 
 .profile-container {
     width: 800px;
