@@ -2,7 +2,7 @@ import {buttonsActivator} from './buttonsActivator.js';
 
 let debugMode = true;
 
-const daysOfWeek = ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'];
+const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 let isEditing = false;
 let isPlaced = false;
@@ -39,9 +39,9 @@ function addEventListeners() {
 	const newGameInput = document.getElementById('new-game-input');
 	const editButtons = document.getElementById('edit-buttons');
 	const statusButtons = document.getElementById('status-buttons');
-	const questionnaireContent = document.getElementById('questionnaire-content');
+	const questionnaireContent = document.querySelector('.questionnaire-content');
 	const statusText = document.getElementById('status-text');
-	const gamesList = document.getElementById('questionnaire-games');
+	const gamesList = document.querySelector('.games-list');
 	const addGameSection = document.getElementById('add-game-section');
 	const warningMessage = document.getElementById('warning-message');
 
@@ -62,15 +62,11 @@ function addEventListeners() {
 	async function disableEditMode(saveChanges = true) {
 		isEditing = false;
 		if (saveChanges) {
-			localQuestionnaire.title = document.getElementById('questionnaire-title').innerText.trim();
-			localQuestionnaire.description = document.getElementById('questionnaire-description').innerText.trim();
-			localQuestionnaire.games = Array.from(gamesList.querySelectorAll('li')).map(
-				li => li.querySelector('span').textContent.trim()
-			);
-			// goal и availabilities обновляются через обработчики в displayQuestionnaire
-			localQuestionnaire.contacts = document.getElementById('questionnaire-contacts').innerText.trim();
+			localQuestionnaire.title = document.querySelector('.questionnaire-title').innerText.trim();
+			localQuestionnaire.description = document.querySelector('.questionnaire-description').innerText.trim();
+			localQuestionnaire.games = Array.from(gamesList.querySelectorAll('.game-name')).map(span => span.textContent.trim());
+			localQuestionnaire.contacts = document.querySelector('.questionnaire-contacts').innerText.trim();
 
-			// Отправляем обновленные данные на сервер, но не размещаем анкету
 			if (isFormValid()) {
 				const success = await postMyQuestionnaire();
 				if (success) {
@@ -92,34 +88,28 @@ function addEventListeners() {
 	}
 
 	// "Редактировать анкету"
-	editButton.addEventListener('click', function () {
-		enableEditMode();
-	});
+	editButton.addEventListener('click', enableEditMode);
 
 	// "Разместить анкету" / "Скрыть анкету"
 	placeButton.addEventListener('click', function () {
 		if (isEditing) return;
-		// скрыть
-			if (isPlaced) {
-					hideMyQuestionnaire().then(success => {
-							if (!success) return;
-							isPlaced = false;
-							updateStatusAndButtons();
-						});
-				}
-		// разместить (show)
-			else {
-				if (!isFormValid()) {
-						warningMessage.textContent = 'Заполните все обязательные поля';
-						return;
-					}
-				// вместо postMyQuestionnaire() шлём только show
-					hideMyQuestionnaire().then(success => {
-							if (!success) return;
-							isPlaced = true;
-							updateStatusAndButtons();
-						});
+		if (isPlaced) {
+			hideMyQuestionnaire().then(success => {
+				if (!success) return;
+				isPlaced = false;
+				updateStatusAndButtons();
+			});
+		} else {
+			if (!isFormValid()) {
+				warningMessage.textContent = 'Заполните все обязательные поля';
+				return;
 			}
+			hideMyQuestionnaire().then(success => {
+				if (!success) return;
+				isPlaced = true;
+				updateStatusAndButtons();
+			});
+		}
 	});
 
 	// "Очистить"
@@ -155,13 +145,29 @@ function addEventListeners() {
 
 // Функция для отображения анкеты
 function displayQuestionnaire(updateGamesOnly = false) {
-	if (!updateGamesOnly) {
-		document.getElementById('questionnaire-title').innerHTML = localQuestionnaire.title || '';
-		document.getElementById('questionnaire-description').innerHTML = localQuestionnaire.description || '';
-		document.getElementById('questionnaire-contacts').innerHTML = localQuestionnaire.contacts || '';
+	const questionnaireContent = document.querySelector('.questionnaire-content');
 
-		// Обработка цели
-		const goalContainer = document.getElementById('questionnaire-goal');
+	// Динамическое добавление поля "Контакты", если его еще нет
+	let contactsSection = questionnaireContent.querySelector('.contacts-section');
+	if (!contactsSection) {
+		contactsSection = document.createElement('div');
+		contactsSection.className = 'questionnaire-section contacts-section';
+		contactsSection.innerHTML = `
+            <label>Контакты:<span class="required" style="display: none;"></span></label>
+            <p class="questionnaire-contacts" contenteditable="false" data-placeholder="Введите ваши контакты (например, Telegram)"></p>
+        `;
+		questionnaireContent.insertBefore(contactsSection, questionnaireContent.querySelector('.bottom-section'));
+	}
+
+	if (!updateGamesOnly) {
+		const titleElement = questionnaireContent.querySelector('.questionnaire-title');
+		titleElement.innerHTML = localQuestionnaire.title || '';
+		const descriptionElement = questionnaireContent.querySelector('.questionnaire-description');
+		descriptionElement.innerHTML = localQuestionnaire.description || '';
+		const contactsElement = questionnaireContent.querySelector('.questionnaire-contacts');
+		contactsElement.innerHTML = localQuestionnaire.contacts || '';
+
+		const purposeContainer = questionnaireContent.querySelector('.questionnaire-purpose');
 		if (isEditing) {
 			const select = document.createElement('select');
 			select.id = 'goal-select';
@@ -182,18 +188,17 @@ function displayQuestionnaire(updateGamesOnly = false) {
 				if (option === localQuestionnaire.goal) opt.selected = true;
 				select.appendChild(opt);
 			});
-			goalContainer.innerHTML = '';
-			goalContainer.appendChild(select);
+			purposeContainer.innerHTML = '';
+			purposeContainer.appendChild(select);
 			select.addEventListener('change', function () {
 				localQuestionnaire.goal = this.value;
 			});
 		} else {
-			goalContainer.innerHTML = `<p>${localQuestionnaire.goal || ''}</p>`;
+			purposeContainer.innerHTML = `<p>${localQuestionnaire.goal || ''}</p>`;
 		}
 
-		// Обработка времени
-		const timeContainer = document.getElementById('questionnaire-time');
-		timeContainer.innerHTML = ''; // Очищаем контейнер перед рендерингом
+		const availabilityContainer = questionnaireContent.querySelector('.availability');
+		availabilityContainer.innerHTML = '';
 		if (isEditing) {
 			let timeHtml = '';
 			daysOfWeek.forEach((day, index) => {
@@ -207,8 +212,8 @@ function displayQuestionnaire(updateGamesOnly = false) {
                     </div>
                 `;
 			});
-			timeContainer.innerHTML = timeHtml;
-			timeContainer.querySelectorAll('.time-input').forEach(input => {
+			availabilityContainer.innerHTML = timeHtml;
+			availabilityContainer.querySelectorAll('.time-input').forEach(input => {
 				input.addEventListener('change', function () {
 					const day = parseInt(this.dataset.day);
 					const type = this.dataset.type;
@@ -219,10 +224,7 @@ function displayQuestionnaire(updateGamesOnly = false) {
 						localQuestionnaire.availabilities.push(availability);
 					}
 					availability[type] = value;
-					// Удаляем пустые записи (оба поля пустые)
-					localQuestionnaire.availabilities = localQuestionnaire.availabilities.filter(
-						a => a.start || a.end
-					);
+					localQuestionnaire.availabilities = localQuestionnaire.availabilities.filter(a => a.start || a.end);
 				});
 			});
 		} else {
@@ -232,23 +234,19 @@ function displayQuestionnaire(updateGamesOnly = false) {
 				const timeStr = availability && availability.start && availability.end ? `${availability.start} - ${availability.end}` : '—';
 				timeHtml += `<div class="time-row"><span>${day}:</span> ${timeStr}</div>`;
 			});
-			timeContainer.innerHTML = timeHtml;
+			availabilityContainer.innerHTML = timeHtml;
 		}
 	}
-	const gamesList = document.getElementById('questionnaire-games');
+	const gamesList = questionnaireContent.querySelector('.games-list');
 	gamesList.innerHTML = '';
 	localQuestionnaire.games.forEach((game, index) => {
 		const li = document.createElement('li');
 		li.className = 'game-item';
 		if (isEditing) li.classList.add('editing');
-
-		const contentDiv = document.createElement('div');
-		contentDiv.className = 'game-item-content';
-
-		const gameText = document.createElement('span');
-		gameText.textContent = game;
-		contentDiv.appendChild(gameText);
-
+		const gameName = document.createElement('span');
+		gameName.className = 'game-name';
+		gameName.textContent = game;
+		li.appendChild(gameName);
 		if (isEditing) {
 			const deleteButton = document.createElement('span');
 			deleteButton.className = 'delete-game';
@@ -258,9 +256,8 @@ function displayQuestionnaire(updateGamesOnly = false) {
 				displayQuestionnaire(true);
 				updateStatusAndButtons();
 			});
-			contentDiv.appendChild(deleteButton);
+			li.appendChild(deleteButton);
 		}
-		li.appendChild(contentDiv);
 		gamesList.appendChild(li);
 	});
 }
@@ -294,7 +291,7 @@ function updateStatusAndButtons() {
 		if (statusButtons) statusButtons.style.display = 'none';
 		// Показываем кнопки "Сохранить", "Отмена", "Очистить"
 		if (editButtons) editButtons.style.display = 'flex';
-		if (addGameSection) addGameSection.style.display = 'block';
+		if (addGameSection) addGameSection.classList.add('active');
 		document.querySelectorAll('.required').forEach(star => {
 			star.style.display = 'inline';
 		});
@@ -304,7 +301,7 @@ function updateStatusAndButtons() {
 		if (statusButtons) statusButtons.style.display = 'flex';
 		// Скрываем кнопки "Сохранить", "Отмена", "Очистить"
 		if (editButtons) editButtons.style.display = 'none';
-		if (addGameSection) addGameSection.style.display = 'none';
+		if (addGameSection) addGameSection.classList.remove('active');
 		document.querySelectorAll('.required').forEach(star => {
 			star.style.display = 'none';
 		});

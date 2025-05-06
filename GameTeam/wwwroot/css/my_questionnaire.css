@@ -39,7 +39,7 @@ body {
     font-family: "Poppins", sans-serif;
     font-weight: bold;
     color: #2563EB;
-    margin: 25px auto;
+    margin: 20px auto;
     position: sticky;
     top: 0;
     background-color: #EFF4FF;
@@ -88,6 +88,9 @@ body {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    margin-top: 90px;
+    padding-top: 25px;
+    height: calc(100vh - 90px);
 }
 
 header {
@@ -97,9 +100,12 @@ header {
     padding: 30px 40px;
     border-bottom: 1px solid #eee;
     background-color: white;
-    width: 100%;
-    flex-shrink: 0;
-    height: 95px;
+    width: calc(100% - 270px);
+    height: 90px;
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 10;
 }
 
 .auth-wrapper {
@@ -136,12 +142,12 @@ header {
     margin: 0 auto;
     max-width: 800px;
     width: 800px;
+    padding-top: 0;
 }
 
 .questionnaire-status {
     font-size: 16px;
     color: #333;
-    margin-bottom: 10px;
     align-self: flex-start;
 }
 
@@ -153,26 +159,30 @@ header {
     color: #2563EB;
 }
 
+.questionnaire {
+    width: 100%;
+    margin-top: 20px;
+
+}
+
 .questionnaire-content {
     background-color: #EFF4FF;
     border-radius: 20px;
-    padding: 20px;
+    padding: 20px 20px 5px;
     width: 100%;
-    max-height: 70vh;
-    overflow-y: auto;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
 }
 
 .questionnaire-content h2 {
     color: #000;
-    font-weight: normal;
-    margin: 0 0;
+    font-weight: bold;
+    margin: 0 0 15px 0;
     word-wrap: break-word;
     overflow-wrap: break-word;
     line-height: 1.2;
     font-size: 25px;
 }
-
 
 .questionnaire-section {
     display: flex;
@@ -185,10 +195,6 @@ header {
     margin-top: 5px;
 }
 
-.questionnaire-section.last-section {
-    margin-bottom: 5px;
-}
-
 .questionnaire-section label {
     font-weight: bold;
     color: #333;
@@ -196,106 +202,34 @@ header {
 }
 
 .questionnaire-section> :not(label) {
-    flex: 1;
     padding-left: 10px;
-}
-
-
-
-.questionnaire-section:first-of-type label {
-    font-size: 21px !important;
-}
-
-.questionnaire-section .required {
-    color: red;
-    font-weight: bold;
-    margin-left: 2px;
-}
-
-.questionnaire-section p,
-.questionnaire-section ul {
-    margin: 0;
+    font-size: 16px;
     color: #333;
     line-height: 1.5;
     white-space: pre-wrap;
-    font-size: 16px;
 }
 
-#questionnaire-goal p {
-    margin: 0;
-    font-size: 16px;
-}
-
-#questionnaire-goal select {
-    font-size: 16px;
-    padding: 5px;
-    border: 2px solid #2563EB;
-    border-radius: 5px;
-    width: 230px;
-    background-color: white;
-}
-
-.time-row {
+.questionnaire-section .games-list {
     display: flex;
-    align-items: center;
-    margin-bottom: 5px;
-    font-size: 16px;
-    gap: 5px;
-}
-
-.time-row span {
-    margin: 0 5px;
-}
-
-.time-input {
-    padding: 5px;
-    text-align: center;
-    border: 2px solid #2563EB;
-    border-radius: 5px;
-    font-size: 16px;
-}
-
-#questionnaire-time {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(4, auto);
-    grid-auto-flow: column;
-    column-gap: 10px;
-    row-gap: 5px;
-}
-
-#questionnaire-time .time-row {
-    margin-bottom: 0;
-}
-
-.games-container ul {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    padding-left: 0;
+    flex-wrap: wrap;
+    gap: 8px;
     list-style-type: none;
 }
 
 .game-item {
-    display: flex;
-    font-size: 16px;
-    position: relative;
-    word-break: break-word;
+    display: inline-flex;
+    align-items: center;
 }
 
-.game-item::before {
-    content: "•";
-    margin-right: 5px;
-    align-self: flex-start;
-}
-
-.game-item-content {
-    display: inline;
-}
-
-.game-item-content span:first-child {
-    word-break: break-word;
-    overflow-wrap: break-word;
+.game-name {
+    display: inline-block;
+    padding: 5px 20px 5px 10px;
+    background-color: #DDE7FF;
+    border-radius: 10px;
+    color: #000;
+    white-space: nowrap;
+    max-width: 90%;
+    font-size: 14px;
 }
 
 .game-item .delete-game {
@@ -304,13 +238,46 @@ header {
     cursor: pointer;
     font-size: 14px;
     margin-left: 5px;
-    white-space: nowrap;
 }
 
 .game-item.editing .delete-game {
     display: inline;
 }
 
+#add-game-section {
+    display: none;
+    margin-top: 10px;
+    padding-left: 10px;
+    align-items: center;
+    gap: 10px;
+}
+
+#add-game-section.active {
+    display: flex;
+}
+
+#questionnaire-time .availability {
+    display: grid;
+    grid-template-rows: repeat(4, auto);
+    grid-auto-flow: column;
+    column-gap: 20px;
+    row-gap: 5px;
+}
+
+
+.time-row {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.time-input {
+    padding: 5px;
+    border: 2px solid #2563EB;
+    border-radius: 5px;
+    font-size: 16px;
+}
 
 #new-game-input {
     padding: 5px;
@@ -346,10 +313,12 @@ header {
 
 .bottom-section {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    justify-content: flex-end;
+    margin-right: 20px;
     margin-top: 20px;
     width: 100%;
+    position: sticky;
+    bottom: 20px;
 }
 
 .status-buttons {
@@ -361,6 +330,7 @@ header {
 
 .place-button-wrapper {
     display: flex;
+    padding-left: 10px;
     flex-direction: column;
     align-items: flex-start;
 }
@@ -386,30 +356,17 @@ header {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    padding-right: 10px;
     width: 100%;
-}
 
-.outline-button {
-    padding: 5px 15px;
-    background-color: white;
-    color: #2563EB;
-    border: 1px solid #2563EB;
-    border-radius: 15px;
-    cursor: pointer;
-    font-size: 14px;
-}
-
-.outline-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 .filled-button {
-    padding: 5px 15px;
+    padding: 10px 20px;
     background-color: #2563EB;
     color: white;
     border: none;
-    border-radius: 15px;
+    border-radius: 30px;
     cursor: pointer;
     font-size: 14px;
 }
@@ -421,4 +378,25 @@ header {
 .filled-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.outline-button {
+    padding: 10px 20px;
+    background-color: white;
+    color: #2563EB;
+    border: 1px solid #2563EB;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.outline-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.questionnaire-scrollable {
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+    padding-right: 10px;
 }
