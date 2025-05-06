@@ -24,7 +24,7 @@ namespace GameTeam.Scripts.Controllers
 
             TeamManager.JoinTeam(ownerId.Value, int.Parse(userId), id);
 
-            return Ok(new { Message = "Application shown" });
+            return Ok(new { Message = "Вы успешно подали заявку на вступление" });
         }
 
         [HttpPost("approve/{userId}/{applicationId}")]
