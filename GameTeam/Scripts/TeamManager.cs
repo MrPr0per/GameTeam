@@ -2,18 +2,19 @@
 {
     public static class TeamManager
     {
-        private static Dictionary<int, HashSet<PendingRequest>> pending = new Dictionary<int, HashSet<PendingRequest>>();
+        private static Dictionary<int, Pendings> pending = new Dictionary<int, Pendings>();
 
         public static void JoinTeam(int owner, int member, int applicationId)
         {
-            HashSet<PendingRequest> ownerPendings;
+            Pendings ownerPendings;
             if (pending.TryGetValue(owner, out ownerPendings))
             {
-                ownerPendings.Add(new PendingRequest(member, applicationId));
+                ownerPendings.HasNew = true;
+                ownerPendings.Requests.Add(new PendingRequest(member, applicationId));
             }
             else
             {
-                pending[owner] = new HashSet<PendingRequest>() { new PendingRequest(member, applicationId) };
+                pending[owner] = new Pendings(true, new HashSet<PendingRequest>() { new PendingRequest(member, applicationId) });
             }
         }
 
@@ -21,7 +22,7 @@
         {
             try
             {
-                pending[owner].Remove(new PendingRequest(member, applicationId));
+                pending[owner].Requests.Remove(new PendingRequest(member, applicationId));
             }
             catch 
             {
@@ -29,12 +30,34 @@
             }
         }
 
-        public static HashSet<PendingRequest> GetPending(int owner)
+        public static Pendings GetPending(int owner)
         {
-            HashSet<PendingRequest> ownerPendings;
+            Pendings ownerPendings;
             if (pending.TryGetValue(owner, out ownerPendings))
+            {
                 return ownerPendings;
-            return new HashSet<PendingRequest>();
+            }
+            return new Pendings(false, new HashSet<PendingRequest>());
+        }
+
+        public static void ReadPendings(int owner)
+        {
+            if (pending.ContainsKey(owner))
+            {
+                pending[owner].HasNew = false;
+            }
+        }
+    }
+
+    public class Pendings
+    {
+        public bool HasNew { get; set; }
+        public HashSet<PendingRequest> Requests {  get; set; }
+
+        public Pendings(bool hasNew, HashSet<PendingRequest> requests)
+        { 
+            HasNew = hasNew; 
+            Requests = requests;
         }
     }
 

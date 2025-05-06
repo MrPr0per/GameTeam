@@ -117,7 +117,11 @@ namespace GameTeam.Scripts.Controllers
                 return "";
             }
 
-            var applications = DatabaseController.GetAllApplicationsByUserId(int.Parse(userId));
+            var applications = DatabaseController.GetAllApplicationsByUserId(int.Parse(userId))
+                                                 .Select(x => {
+                                                     var members = DatabaseController.GetAllApplicationMembers(x.Id);
+                                                     return new ApplicationWithMembers(x, members);
+                                                 }).ToList();
 
             return JsonSerializer.Serialize(applications);
         }

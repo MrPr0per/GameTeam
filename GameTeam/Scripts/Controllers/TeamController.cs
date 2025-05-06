@@ -94,6 +94,19 @@ namespace GameTeam.Scripts.Controllers
             return Ok(new { Message = "Вы вышли" });
         }
 
+        [HttpPost("read")]
+        public IActionResult Read()
+        {
+            var selfId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(selfId))
+                return Unauthorized(new { Message = "Войдите в аккаунт" });
+
+            TeamManager.ReadPendings(int.Parse(selfId));
+
+            return Ok(new { Message = "Вы вышли" });
+        }
+
         [HttpGet("pending")]
         public string GetPendings()
         {
