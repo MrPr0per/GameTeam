@@ -1,1 +1,1 @@
-GET http://localhost:5013/data/profile
+GET https://localhost/data/profile

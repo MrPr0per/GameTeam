@@ -32,6 +32,11 @@ public class AuthController : ControllerBase
         }
 
         var userData = DatabaseController.GetPasswordAndSalt(userId.Value);
+        if (userData is null)
+        {
+            Response.StatusCode = 400;
+            return new string[] { };
+        }
         var challenge = HashOperator.GenerateSalt();
 
         HttpContext.Session.SetString("UserPassword", HashOperator.HashPassword(userData.Value.passwordHash, challenge));

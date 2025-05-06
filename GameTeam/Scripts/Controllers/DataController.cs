@@ -132,8 +132,11 @@ namespace GameTeam.Scripts.Controllers
                 return "";
             }
 
-            //Поменять 
-            var applications = DatabaseController.GetAllApplications().Take(3).ToArray();
+            var applications = DatabaseController.GetAllUserMemberApplications(int.Parse(userId))
+                                                 .Select(x => {
+                                                   var members = DatabaseController.GetAllApplicationMembers(x.Id);
+                                                   return new ApplicationWithMembers(x, members);
+                                               }).ToList();
 
             return JsonSerializer.Serialize(applications);
         }
@@ -319,6 +322,42 @@ namespace GameTeam.Scripts.Controllers
         public override string ToString()
         {
             return PurposeName + " " + string.Join(' ', Games);
+        }
+    }
+
+    public class ApplicationWithMembers
+    {
+        public int Id { get; set; }
+
+        public string Title { get; set; }
+
+        public string Description { get; set; }
+
+        public string Contacts { get; set; }
+
+        public List<Availability> Availabilities { get; set; }
+
+        public List<Game> Games { get; set; }
+
+        public int PurposeId { get; set; }
+
+        public int OwnerId { get; set; }
+
+        public bool IsHidden { get; set; }
+        public List<UserData> Members {  get; set; } 
+
+        public ApplicationWithMembers(Application app, List<UserData> members)
+        {
+            Id = app.Id;
+            Title = app.Title;
+            Description = app.Description;
+            Contacts = app.Contacts;
+            Availabilities = app.Availabilities;
+            Games = app.Games;
+            PurposeId = app.PurposeId;
+            OwnerId = app.OwnerId;
+            IsHidden = app.IsHidden;
+            Members = members;
         }
     }
 

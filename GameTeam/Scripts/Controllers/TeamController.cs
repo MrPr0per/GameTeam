@@ -44,7 +44,7 @@ namespace GameTeam.Scripts.Controllers
                 return BadRequest(new { Message = "Нет такой заявки" });
             }
 
-            //Запрос в бд, чтобы добавить в команду
+            DatabaseController.AddMemberToApplication(applicationId, userId);
 
             return Ok(new { Message = "Игрок добавлен" });
         }
@@ -74,7 +74,7 @@ namespace GameTeam.Scripts.Controllers
 
             if (int.Parse(selfId) == ownerId)
             {
-                //Здесь убираем человека из команды
+                DatabaseController.DeleteMemberFromApplication(applicationId, userId);
                 return Ok(new { Message = "Вы кикнули человека" });
             }
 
@@ -89,8 +89,7 @@ namespace GameTeam.Scripts.Controllers
             if (string.IsNullOrEmpty(selfId))
                 return Unauthorized(new { Message = "Войдите в аккаунт" });
 
-
-            //Здесь удаляем себя из команды
+            DatabaseController.DeleteMemberFromApplication(applicationId, int.Parse(selfId));
 
             return Ok(new { Message = "Вы вышли" });
         }
