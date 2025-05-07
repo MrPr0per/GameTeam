@@ -62,7 +62,7 @@ export async function initFilters() {
             {id: 6, text: 'Для стриминга'},
             {id: 7, text: 'Тренировка'},
             {id: 8, text: 'Турнир'},
-            {id: 1, text: 'Для заработка'}
+            {id: 1, text: 'Для заработка'},
         ];
 
         // Вставка шаблона фильтров в DOM
@@ -290,7 +290,8 @@ export async function initFilters() {
                 selectedFiltersContainer.appendChild(tag);
             });
             if (currentFilter.purpose) {
-                const purposeText = purposes.find(p => p.id === currentFilter.purpose).text;
+                const purposeIntId = Number(currentFilter.purpose);
+                const purposeText = purposes.find(p => p.id === purposeIntId).text;
                 const tag = createFilterTag(purposeText, 'purpose', currentFilter.purpose);
                 selectedFiltersContainer.appendChild(tag);
             }

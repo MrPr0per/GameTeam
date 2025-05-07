@@ -1,6 +1,6 @@
-import { initFilters, getCurrentFilter, applyFiltersButton } from '../js/filters.js';
-import { createQuestionnaire } from '../js/questionnaire-template.js';
-import { loadHeader } from '../js/header.js';
+import {initFilters, getCurrentFilter, applyFiltersButton} from '../js/filters.js';
+import {createQuestionnaire} from '../js/questionnaire-template.js';
+import {loadHeader} from '../js/header.js';
 
 const state = {
     offset: 0,
@@ -65,15 +65,18 @@ async function loadAndRenderQuestionnaires() {
 
     const currentFilter = getCurrentFilter();
     try {
+        const payload = {
+            games: currentFilter.games,
+        };
+        if (currentFilter.purpose !== null) {
+            payload.purposeName = getPurposeText(currentFilter.purpose);
+        }
         const response = await fetch(`/data/applications/${state.offset}/${state.offset + state.limit}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                purposeName: getPurposeText(currentFilter.purpose),
-                games: currentFilter.games,
-            }),
+            body: JSON.stringify(payload),
         });
         const data = await response.json();
 
