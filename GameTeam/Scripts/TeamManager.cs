@@ -6,6 +6,7 @@
 
         public static void JoinTeam(int owner, int member, int applicationId)
         {
+            if (owner == member) return;
             Pendings ownerPendings;
             if (pending.TryGetValue(owner, out ownerPendings))
             {
@@ -20,6 +21,7 @@
 
         public static void DeleteFromPending(int owner, int member, int applicationId)
         {
+            if (owner == member) return;
             try
             {
                 pending[owner].Requests.Remove(new PendingRequest(member, applicationId));
@@ -52,7 +54,7 @@
     public class Pendings
     {
         public bool HasNew { get; set; }
-        public HashSet<PendingRequest> Requests {  get; set; }
+        public HashSet<PendingRequest> Requests { get; set; }
 
         public Pendings(bool hasNew, HashSet<PendingRequest> requests)
         { 
@@ -70,6 +72,19 @@
         {
             UserId = userId;
             ApplicationId = applicationId;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is not PendingRequest other)
+                return false;
+
+            return UserId == other.UserId && ApplicationId == other.ApplicationId;
+        }
+
+        public override int GetHashCode()
+        {
+            return UserId * 996617 + ApplicationId;
         }
     }
 }
