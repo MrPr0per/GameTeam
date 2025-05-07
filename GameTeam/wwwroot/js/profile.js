@@ -1,60 +1,26 @@
-// todo: сдизайнить, сверстать редактирование времени
-// todo: ошибки:
-// todo: 	придумать, куда впихнуть плашку с ошибкой (при фетче, при парсинге, при отправке данных)
-
-import {buttonsActivator} from './buttonsActivator.js';
+import { buttonsActivator } from '../js/buttonsActivator.js';
+import { loadHeader } from '../js/header.js';
 
 const debugMode = true;
-let isAuthenticated = false;
-let hasNotifications = false; // Поддержка уведомлений
 
 let realProfileInfo = {
 	name: '',
 	email: '',
 	description: '',
-	availabilitiesByDay: Array.from({length: 7}, () => []),
+	availabilitiesByDay: Array.from({ length: 7 }, () => []),
 	games: [],
 };
 let displayedProfileInfo = structuredClone(realProfileInfo);
 
-// Динамическая загрузка компонентов
-function loadComponents() {
-	// Загрузка sidebar
-	fetch('../pages/Sidebar.html')
-		.then(response => response.text())
-		.then(html => {
-			document.getElementById('sidebar-placeholder').innerHTML = html;
-		})
-		.catch(err => {
-			console.error('Ошибка загрузки sidebar:', err);
-		});
-
-	// Загрузка header
-	fetch('../pages/Header.html')
-		.then(response => response.text())
-		.then(html => {
-			document.getElementById('header-placeholder').innerHTML = html;
-			// После загрузки header обновляем имя и уведомления
-			renderPersonalInfo();
-			updateNotificationBell();
-		})
-		.catch(err => {
-			console.error('Ошибка загрузки header:', err);
-		});
+async function loadSidebar() {
+	const response = await fetch('../pages/Sidebar.html');
+	const sidebarHtml = await response.text();
+	document.getElementById('sidebar-placeholder').innerHTML = sidebarHtml;
 }
 
-// Обновление иконки уведомлений
-function updateNotificationBell() {
-	const bellIcon = document.querySelector('.header-notification-bell');
-	if (bellIcon) {
-		if (hasNotifications) {
-			bellIcon.src = '../img/bell-active.svg';
-			bellIcon.classList.add('active');
-		} else {
-			bellIcon.src = '../img/bell.svg';
-			bellIcon.classList.remove('active');
-		}
-	}
+async function loadComponents() {
+	await loadSidebar();
+	await loadHeader();
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -248,6 +214,7 @@ async function saveChanges() {
 
 	if (deepEqual(realProfileInfo, displayedProfileInfo)) {
 		return true; // если ничего не изменилось, то и отправлять ничего не надо
+		return true;
 	}
 
 	try {
@@ -259,7 +226,7 @@ async function saveChanges() {
 		};
 		const r = await fetch('/data/upsert', {
 			method: 'POST',
-			headers: {'Content-Type': 'application/json'},
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(postJson),
 		});
 

@@ -1,5 +1,6 @@
-import { initFilters, getCurrentFilter, applyFiltersButton } from './filters.js';
-import { createQuestionnaire } from './questionnaire-template.js';
+import { initFilters, getCurrentFilter, applyFiltersButton } from '../js/filters.js';
+import { createQuestionnaire } from '../js/questionnaire-template.js';
+import { loadHeader } from '../js/header.js';
 
 const state = {
     offset: 0,
@@ -8,13 +9,13 @@ const state = {
     },
     loading: false,
     endReached: false,
-    isAuthenticated: false,
 };
 
 let dom = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
     await loadSidebar();
+    await loadHeader(); // Подгружаем header после sidebar
 
     dom = loadDomElements();
     await initFilters();
@@ -34,7 +35,6 @@ function loadDomElements() {
     return {
         questionnairesContainer: document.querySelector('.questionnaires-container'),
         loadMoreButton: document.getElementById('load-more-button'),
-        myQuestionnairesLink: document.querySelector('.my-q'),
     };
 }
 

@@ -1,5 +1,5 @@
 // Глобальный объект для хранения состояния
-const state = {
+const stateHeader = {
     isAuthenticated: false
 };
 
@@ -8,13 +8,17 @@ let hasNotifications = true;
 async function loadHeader() {
     const response = await fetch('../pages/Header.html');
     const headerHtml = await response.text();
-    const layout = document.querySelector('.layout');
-    layout.insertAdjacentHTML('beforeend', headerHtml);
+    const layout = document.querySelector('.layout') || document.getElementById('header-placeholder');
+    if (layout) {
+        layout.insertAdjacentHTML('beforeend', headerHtml);
+    } else {
+        console.error('Контейнер для header не найден');
+        return;
+    }
 
-    // Проверяем, находимся ли на странице анкет
+    // Проверяем, находимся ли на странице анкет (для фильтров)
     const isQuestionnairesPage = window.location.pathname.includes('/questionnaires');
     if (isQuestionnairesPage) {
-        // Подгружаем фильтры
         const filterContainer = document.createElement('div');
         filterContainer.className = 'filter-container';
         filterContainer.innerHTML = `
@@ -26,7 +30,9 @@ async function loadHeader() {
             <div class="selected-filters"></div>
         `;
         const header = document.querySelector('header');
-        header.insertBefore(filterContainer, header.querySelector('.auth-wrapper'));
+        if (header && header.querySelector('.auth-wrapper')) {
+            header.insertBefore(filterContainer, header.querySelector('.auth-wrapper'));
+        }
     }
 
     // Загружаем имя пользователя и статус аутентификации
@@ -38,18 +44,18 @@ async function loadHeader() {
 async function loadAndRenderUserName() {
     try {
         const response = await fetch('/data/profile');
-        state.isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
+        stateHeader.isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
         const userNameElements = document.querySelectorAll('.user-name');
         const profileElements = document.querySelectorAll('.auth-status.user-name');
 
-        // Обновляем видимость ссылки "Мои анкеты" (если есть)
+        // Обновляем видимость ссылки "Мои анкеты"
         const myQuestionnairesLink = document.querySelector('.my-q');
         if (myQuestionnairesLink) {
-            myQuestionnairesLink.style.display = state.isAuthenticated ? 'flex' : 'none';
+            myQuestionnairesLink.style.display = stateHeader.isAuthenticated ? 'flex' : 'none';
         }
 
         // Обновляем ссылку профиля
-        if (!state.isAuthenticated) {
+        if (!stateHeader.isAuthenticated) {
             profileElements.forEach(el => el.href = '../pages/Register.html');
         } else {
             profileElements.forEach(el => el.href = '../pages/Profile.html');
@@ -57,7 +63,7 @@ async function loadAndRenderUserName() {
 
         if (response.ok) {
             const json = await response.json();
-            if (state.isAuthenticated && json && json['Username']) {
+            if (stateHeader.isAuthenticated && json && json['Username']) {
                 userNameElements.forEach(el => el.textContent = json['Username']);
             } else {
                 userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
@@ -78,8 +84,7 @@ async function loadAndRenderUserName() {
 function updateNotificationBell() {
     const bellIcon = document.querySelector('.header-notification-bell');
     if (bellIcon) {
-        if (!state.isAuthenticated) {
-            // Скрываем колокольчик, если вход не выполнен
+        if (!stateHeader.isAuthenticated) {
             bellIcon.style.display = 'none';
         } else {
             // Показываем и обновляем колокольчик, если вход выполнен
@@ -95,4 +100,4 @@ function updateNotificationBell() {
     }
 }
 
-loadHeader();
+export { loadHeader };

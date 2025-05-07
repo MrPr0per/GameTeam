@@ -1,4 +1,5 @@
-import { buttonsActivator } from './buttonsActivator.js';
+import { buttonsActivator } from '../js/buttonsActivator.js';
+import { loadHeader } from '../js/header.js';
 
 let debugMode = true;
 
@@ -16,29 +17,15 @@ let localQuestionnaire = {
 	contacts: '',
 };
 
-function loadComponents() {
-	// Загрузка sidebar
-	fetch('../pages/Sidebar.html')
-		.then(response => response.text())
-		.then(html => {
-			document.getElementById('sidebar-placeholder').innerHTML = html;
-		})
-		.catch(err => {
-			console.error('Ошибка загрузки sidebar:', err);
-		});
+async function loadSidebar() {
+	const response = await fetch('../pages/Sidebar.html');
+	const sidebarHtml = await response.text();
+	document.getElementById('sidebar-placeholder').innerHTML = sidebarHtml;
+}
 
-	// Загрузка header и его логики
-	fetch('../pages/Header.html')
-		.then(response => response.text())
-		.then(html => {
-			document.getElementById('header-placeholder').innerHTML = html;
-			const script = document.createElement('script');
-			script.src = '../js/header.js';
-			document.body.appendChild(script);
-		})
-		.catch(err => {
-			console.error('Ошибка загрузки header:', err);
-		});
+async function loadComponents() {
+	await loadSidebar();
+	await loadHeader();
 }
 
 document.addEventListener('DOMContentLoaded', function () {
