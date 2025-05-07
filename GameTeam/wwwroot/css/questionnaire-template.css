@@ -76,7 +76,7 @@
     grid-template-rows: repeat(4, auto);
     grid-auto-flow: column;
     column-gap: 20px;
-    row-gap: 5px;
+    row-gap: 3px;
 }
 
 .time-row {
