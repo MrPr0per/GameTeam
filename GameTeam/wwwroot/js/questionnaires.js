@@ -9,13 +9,14 @@ const state = {
     },
     loading: false,
     endReached: false,
+    isAuthenticated: false,
 };
 
 let dom = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
     await loadSidebar();
-    await loadHeader(); // Подгружаем header после sidebar
+    await loadHeader();
 
     dom = loadDomElements();
     await initFilters();
@@ -78,6 +79,7 @@ async function loadAndRenderQuestionnaires() {
             },
             body: JSON.stringify(payload),
         });
+        state.isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
         const data = await response.json();
 
         if (!Array.isArray(data) || data.length === 0) {
@@ -89,6 +91,7 @@ async function loadAndRenderQuestionnaires() {
         }
 
         const questionnaires = data.map(item => ({
+            id: item.Id,
             title: item.Title,
             description: item.Description,
             games: item.Games.map(g => g.Name),
@@ -99,10 +102,42 @@ async function loadAndRenderQuestionnaires() {
         for (const q of questionnaires) {
             const questionnaire = await createQuestionnaire(q);
             const bottomSection = questionnaire.querySelector('.bottom-section');
-            const joinButton = document.createElement('button');
-            joinButton.className = 'filled-button';
-            joinButton.textContent = 'Вступить';
-            bottomSection.appendChild(joinButton);
+
+            if (state.isAuthenticated) {
+                const joinButton = document.createElement('button');
+                joinButton.className = 'filled-button';
+                joinButton.textContent = 'Вступить';
+                joinButton.addEventListener('click', async () => {
+                    try {
+                        const response = await fetch(`/team/join/${q.id}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                        });
+                        if (response.ok) {
+                            showSuccessMessage('Заявка отправлена! 🥳🥳🥳');
+                            // Заменяем кнопку на надпись
+                            bottomSection.innerHTML = '';
+                            const pendingMessage = document.createElement('div');
+                            pendingMessage.className = 'pending-message';
+                            pendingMessage.textContent = 'Ваша заявка в команду на рассмотрении — держим кулачки!';
+                            bottomSection.appendChild(pendingMessage);
+                        } else {
+                            showErrorMessage('Не удалось отправить заявку.');
+                        }
+                    } catch (error) {
+                        console.error('Ошибка при отправке заявки:', error);
+                        showErrorMessage('Ошибка при отправке заявки.');
+                    }
+                });
+                bottomSection.appendChild(joinButton);
+            } else {
+                const loginPrompt = document.createElement('div');
+                loginPrompt.className = 'login-prompt';
+                loginPrompt.textContent = 'Войдите, чтобы присоединиться';
+                bottomSection.appendChild(loginPrompt);
+            }
 
             dom.questionnairesContainer.appendChild(questionnaire);
         }
@@ -167,4 +202,26 @@ function formatAvailabilities(availabilities) {
         .filter(line => line !== null);
 
     return availabilityLines.join('');
+}
+
+function showSuccessMessage(message) {
+    const content = document.querySelector('.content');
+    const notification = document.createElement('div');
+    notification.className = 'notification success';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    if (content) {
+        const contentRect = content.getBoundingClientRect();
+        notification.style.top = `${ contentRect.top + window.scrollY } px`;
+    }
+    setTimeout(() => notification.remove(), 3000);
+}
+
+function showErrorMessage(message) {
+    const content = document.querySelector('.content');
+    const notification = document.createElement('div');
+    notification.className = 'notification error';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
 }
