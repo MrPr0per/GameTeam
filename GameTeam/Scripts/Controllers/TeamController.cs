@@ -127,6 +127,20 @@ namespace GameTeam.Scripts.Controllers
             return JsonSerializer.Serialize(pendings);
         }
 
-        
+        [HttpGet("requests")]
+        public string GetRequests()
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                Response.StatusCode = 401;
+                return "Войдите в аккаунт";
+            }
+
+            var requests = TeamManager.GetRequests(int.Parse(userId));
+
+            return JsonSerializer.Serialize(requests);
+        }
     }
 }
