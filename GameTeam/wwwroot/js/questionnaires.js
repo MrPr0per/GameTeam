@@ -1,6 +1,8 @@
 import {initFilters, getCurrentFilter, applyFiltersButton} from '../js/filters.js';
 import {createQuestionnaire} from '../js/questionnaire-template.js';
 import {loadHeader} from '../js/header.js';
+import {buttonsActivator} from './buttonsActivator.js';
+import {showServerError} from './errors.js'
 
 const state = {
     offset: 0,
@@ -15,13 +17,19 @@ let dom = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
     await loadSidebar();
-    await loadHeader(); // Подгружаем header после sidebar
+    await Promise.all([
+        loadHeader(),  // Подгружаем header после sidebar
 
-    dom = loadDomElements();
-    await initFilters();
-    loadAndRenderQuestionnaires();
-    dom.loadMoreButton.addEventListener('click', loadAndRenderQuestionnaires);
-    applyFiltersButton.addEventListener('click', applyFilters);
+        (async () => {
+            dom = loadDomElements();
+            await Promise.all([
+                loadAndRenderQuestionnaires(),
+                initFilters(),
+            ]);
+            dom.loadMoreButton.addEventListener('click', loadAndRenderQuestionnaires);
+            applyFiltersButton.addEventListener('click', applyFilters);
+        })(),
+    ]);
 });
 
 async function loadSidebar() {
@@ -89,6 +97,7 @@ async function loadAndRenderQuestionnaires() {
         }
 
         const questionnaires = data.map(item => ({
+            id: item.Id,
             title: item.Title,
             description: item.Description,
             games: item.Games.map(g => g.Name),
@@ -102,6 +111,7 @@ async function loadAndRenderQuestionnaires() {
             const joinButton = document.createElement('button');
             joinButton.className = 'filled-button';
             joinButton.textContent = 'Вступить';
+            joinButton.addEventListener('click', () => OnClickOnJoinButton(q, joinButton));
             bottomSection.appendChild(joinButton);
 
             dom.questionnairesContainer.appendChild(questionnaire);
@@ -121,6 +131,31 @@ async function loadAndRenderQuestionnaires() {
             dom.loadMoreButton.textContent = 'Загрузить ещё';
             dom.loadMoreButton.disabled = false;
         }
+    }
+}
+
+async function OnClickOnJoinButton(questionnaire, joinButton) {
+    // отправляем запрос и ждем ответа
+    // делаем кнопку загрузочной, пока отправляется
+    // todo: (потом переделать на оптимистичный рендеринг с плашкой об ошибке при ошибке)
+    // при успехе деактивируем кнопку
+    // при неуспехе отображаем ошибку и возвращаем кнопку назад
+
+    buttonsActivator.setPending(joinButton);
+
+    try {
+        const response = await fetch(`/team/join/${questionnaire.id}`, {method: 'POST'});
+        buttonsActivator.resetPending(joinButton);
+        if (!response.ok) {
+            showServerError(`Ошибка при попытке вступить в команду "${questionnaire.title}"`, response);
+        } else {
+            joinButton.disabled = true;
+            joinButton.textContent = 'Заявка отправлена!';
+        }
+
+    } catch (error) {
+        buttonsActivator.resetPending(joinButton);
+        showServerError(`Ошибка при попытке вступить в команду "${questionnaire.title}"`, error);
     }
 }
 
