@@ -16,6 +16,7 @@ header {
 .auth-wrapper {
     display: flex;
     align-items: center;
+    margin-left: 20px;
 }
 
 .header-profile-image {

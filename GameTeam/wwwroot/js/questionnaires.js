@@ -14,13 +14,21 @@ const state = {
 let dom = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
+    await loadSidebar();
+
     dom = loadDomElements();
     await initFilters();
     loadAndRenderQuestionnaires();
-    loadAndRenderUserName();
     dom.loadMoreButton.addEventListener('click', loadAndRenderQuestionnaires);
     applyFiltersButton.addEventListener('click', applyFilters);
 });
+
+async function loadSidebar() {
+    const response = await fetch('../pages/Sidebar.html');
+    const sidebarHtml = await response.text();
+    const layout = document.querySelector('.layout');
+    layout.insertAdjacentHTML('afterbegin', sidebarHtml);
+}
 
 function loadDomElements() {
     return {
@@ -87,7 +95,6 @@ async function loadAndRenderQuestionnaires() {
 
         for (const q of questionnaires) {
             const questionnaire = await createQuestionnaire(q);
-            // Добавляем кнопку "Вступить"
             const bottomSection = questionnaire.querySelector('.bottom-section');
             const joinButton = document.createElement('button');
             joinButton.className = 'filled-button';
@@ -112,45 +119,6 @@ async function loadAndRenderQuestionnaires() {
             dom.loadMoreButton.disabled = false;
         }
     }
-}
-
-function loadAndRenderUserName() {
-    fetch('/data/profile')
-        .then(response => {
-            state.isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
-            const userNameElements = document.querySelectorAll('.user-name');
-
-            if (dom.myQuestionnairesLink) {
-                dom.myQuestionnairesLink.style.display = state.isAuthenticated ? 'flex' : 'none';
-            }
-
-            const profileElement = document.querySelectorAll('.auth-status.user-name');
-            if (!state.isAuthenticated) {
-                profileElement.forEach(el => el.href = '../pages/Register.html');
-            } else {
-                profileElement.forEach(el => el.href = '../pages/Profile.html');
-            }
-
-            if (response.ok) {
-                return response.json().then(json => {
-                    if (state.isAuthenticated && json && json['Username']) {
-                        userNameElements.forEach(el => el.textContent = json['Username']);
-                    } else {
-                        userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
-                    }
-                });
-            } else {
-                userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
-                if (dom.myQuestionnairesLink) {
-                    dom.myQuestionnairesLink.style.display = 'none';
-                }
-                return Promise.reject('Profile load error');
-            }
-        })
-        .catch(err => {
-            console.error('Ошибка при получении имени пользователя:', err);
-            document.querySelectorAll('.user-name').forEach(el => el.textContent = 'Вход не выполнен');
-        });
 }
 
 function getPurposeText(id) {

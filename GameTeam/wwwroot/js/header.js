@@ -1,40 +1,98 @@
-let hasNotifications = false; 
+// Глобальный объект для хранения состояния
+const state = {
+    isAuthenticated: false
+};
 
-function loadAndRenderUserName() {
-    fetch('/data/profile')
-        .then(r => {
-            if (r.ok) {
-                return r.json();
-            } else if (r.status === 401) {
-                window.location.href = '/register';
+let hasNotifications = true;
+
+async function loadHeader() {
+    const response = await fetch('../pages/Header.html');
+    const headerHtml = await response.text();
+    const layout = document.querySelector('.layout');
+    layout.insertAdjacentHTML('beforeend', headerHtml);
+
+    // Проверяем, находимся ли на странице анкет
+    const isQuestionnairesPage = window.location.pathname.includes('/questionnaires');
+    if (isQuestionnairesPage) {
+        // Подгружаем фильтры
+        const filterContainer = document.createElement('div');
+        filterContainer.className = 'filter-container';
+        filterContainer.innerHTML = `
+            <div class="filter-toggle">Фильтры
+                <svg class="chevron" viewBox="0 0 24 24">
+                    <path d="M7 10l5 5 5-5z" />
+                </svg>
+            </div>
+            <div class="selected-filters"></div>
+        `;
+        const header = document.querySelector('header');
+        header.insertBefore(filterContainer, header.querySelector('.auth-wrapper'));
+    }
+
+    // Загружаем имя пользователя и статус аутентификации
+    await loadAndRenderUserName();
+    // Обновляем колокольчик после получения статуса аутентификации
+    updateNotificationBell();
+}
+
+async function loadAndRenderUserName() {
+    try {
+        const response = await fetch('/data/profile');
+        state.isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
+        const userNameElements = document.querySelectorAll('.user-name');
+        const profileElements = document.querySelectorAll('.auth-status.user-name');
+
+        // Обновляем видимость ссылки "Мои анкеты" (если есть)
+        const myQuestionnairesLink = document.querySelector('.my-q');
+        if (myQuestionnairesLink) {
+            myQuestionnairesLink.style.display = state.isAuthenticated ? 'flex' : 'none';
+        }
+
+        // Обновляем ссылку профиля
+        if (!state.isAuthenticated) {
+            profileElements.forEach(el => el.href = '../pages/Register.html');
+        } else {
+            profileElements.forEach(el => el.href = '../pages/Profile.html');
+        }
+
+        if (response.ok) {
+            const json = await response.json();
+            if (state.isAuthenticated && json && json['Username']) {
+                userNameElements.forEach(el => el.textContent = json['Username']);
             } else {
-                console.error('Ошибка при загрузке профиля', r);
+                userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
             }
-        })
-        .then(json => {
-            if (json !== undefined) {
-                const name = json['Username'];
-                document.querySelectorAll('.user-name').forEach(el => el.textContent = name);
+        } else {
+            userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
+            if (myQuestionnairesLink) {
+                myQuestionnairesLink.style.display = 'none';
             }
-        })
-        .catch(err => {
-            console.error('Ошибка при получении имени пользователя:', err);
-        });
+            throw new Error('Profile load error');
+        }
+    } catch (err) {
+        console.error('Ошибка при получении имени пользователя:', err);
+        document.querySelectorAll('.user-name').forEach(el => el.textContent = 'Вход не выполнен');
+    }
 }
 
 function updateNotificationBell() {
     const bellIcon = document.querySelector('.header-notification-bell');
     if (bellIcon) {
-        if (hasNotifications) {
-            bellIcon.src = '../img/bell-active.svg';
-            bellIcon.classList.add('active');
+        if (!state.isAuthenticated) {
+            // Скрываем колокольчик, если вход не выполнен
+            bellIcon.style.display = 'none';
         } else {
-            bellIcon.src = '../img/bell.svg';
-            bellIcon.classList.remove('active');
+            // Показываем и обновляем колокольчик, если вход выполнен
+            bellIcon.style.display = 'block';
+            if (hasNotifications) {
+                bellIcon.src = '../img/bell-active.svg';
+                bellIcon.classList.add('active');
+            } else {
+                bellIcon.src = '../img/bell.svg';
+                bellIcon.classList.remove('active');
+            }
         }
     }
 }
 
-// Выполняем функции сразу после загрузки скрипта
-loadAndRenderUserName();
-updateNotificationBell();
+loadHeader();
