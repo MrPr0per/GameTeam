@@ -1,8 +1,11 @@
-﻿namespace GameTeam.Scripts
+﻿using System.Security.Cryptography.Xml;
+
+namespace GameTeam.Scripts
 {
     public static class TeamManager
     {
         private static Dictionary<int, Pendings> pending = new Dictionary<int, Pendings>();
+        private static Dictionary<int, HashSet<int>> requests = new Dictionary<int, HashSet<int>>();
 
         public static void JoinTeam(int owner, int member, int applicationId)
         {
@@ -17,6 +20,16 @@
             {
                 pending[owner] = new Pendings(true, new HashSet<PendingRequest>() { new PendingRequest(member, applicationId) });
             }
+
+            HashSet<int> userRequests;
+            if (requests.TryGetValue(member, out userRequests))
+            { 
+                userRequests.Add(applicationId);
+            }
+            else
+            {
+                requests[member] = new HashSet<int>() { applicationId };
+            }
         }
 
         public static void DeleteFromPending(int owner, int member, int applicationId)
@@ -25,6 +38,7 @@
             try
             {
                 pending[owner].Requests.Remove(new PendingRequest(member, applicationId));
+                requests[member].Remove(applicationId);
             }
             catch 
             {
@@ -40,6 +54,16 @@
                 return ownerPendings;
             }
             return new Pendings(false, new HashSet<PendingRequest>());
+        }
+
+        public static HashSet<int> GetRequests(int userId)
+        {
+            HashSet<int> userRequests;
+            if (requests.TryGetValue(userId, out userRequests))
+            {
+                return userRequests;
+            }
+            return new HashSet<int>();
         }
 
         public static void ReadPendings(int owner)
