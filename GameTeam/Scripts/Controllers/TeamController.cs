@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using System.Text.Json;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -21,6 +22,9 @@ namespace GameTeam.Scripts.Controllers
             var ownerId = DatabaseController.GetUserIdByApplicationId(id);
             if (ownerId is null)
                 return BadRequest(new { Message = "Нет анкеты или владельца" });
+
+            if (ownerId == int.Parse(userId))
+                return BadRequest(new { Message = "Попытка вступить в свою анкету" });
 
             TeamManager.JoinTeam(ownerId.Value, int.Parse(userId), id);
 
