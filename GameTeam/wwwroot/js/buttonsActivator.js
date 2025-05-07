@@ -1,19 +1,26 @@
 export const buttonsActivator = {
-	originalTexts: new Map(),
+    originalTexts: new WeakMap(),
 
-	setPending(button) {
-		if (button.id) {
-			this.originalTexts.set(button.id, button.innerText);
-			button.innerText = 'Загрузка...';
-		}
-		button.disabled = true;
-	},
+    /**
+     * блокирует кнопку и меняет текст на "Загрузка..." (сохраняя оригинальный текст)
+     * @param {HTMLButtonElement} button - Кнопка, которую нужно перевести в состояние загрузки
+     */
+    setPending(button) {
 
-	resetPending(button) {
-		if (button.id && this.originalTexts.has(button.id)) {
-			button.innerText = this.originalTexts.get(button.id);
-			this.originalTexts.delete(button.id);
-		}
-		button.disabled = false;
-	},
+        this.originalTexts.set(button, button.innerText);
+        button.innerText = 'Загрузка...';
+        button.disabled = true;
+    },
+
+    /**
+     * разблокирует кнопку и восстанавливает оригинальный текст
+     * @param {HTMLButtonElement} button - Кнопка, которую нужно вернуть в обычное состояние
+     */
+    resetPending(button) {
+        if (this.originalTexts.has(button)) {
+            button.innerText = this.originalTexts.get(button);
+            this.originalTexts.delete(button);
+        }
+        button.disabled = false;
+    },
 };

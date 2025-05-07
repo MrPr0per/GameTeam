@@ -16,13 +16,19 @@ let dom = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
     await loadSidebar();
-    await loadHeader();
+    await Promise.all([
+        loadHeader(),  // Подгружаем header после sidebar
 
-    dom = loadDomElements();
-    await initFilters();
-    loadAndRenderQuestionnaires();
-    dom.loadMoreButton.addEventListener('click', loadAndRenderQuestionnaires);
-    applyFiltersButton.addEventListener('click', applyFilters);
+        (async () => {
+            dom = loadDomElements();
+            await Promise.all([
+                loadAndRenderQuestionnaires(),
+                initFilters(),
+            ]);
+            dom.loadMoreButton.addEventListener('click', loadAndRenderQuestionnaires);
+            applyFiltersButton.addEventListener('click', applyFilters);
+        })(),
+    ]);
 });
 
 async function loadSidebar() {
