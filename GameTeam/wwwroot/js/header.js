@@ -48,10 +48,14 @@ async function loadAndRenderUserName() {
         const userNameElements = document.querySelectorAll('.user-name');
         const profileElements = document.querySelectorAll('.auth-status.user-name');
 
-        // Обновляем видимость ссылки "Мои анкеты"
+        // Обновляем видимость ссылок "Мои анкеты" и "Мои команды"
         const myQuestionnairesLink = document.querySelector('.my-q');
+        const myTeamsLink = document.querySelector('.my-teams');
         if (myQuestionnairesLink) {
             myQuestionnairesLink.style.display = stateHeader.isAuthenticated ? 'flex' : 'none';
+        }
+        if (myTeamsLink) {
+            myTeamsLink.style.display = stateHeader.isAuthenticated ? 'flex' : 'none';
         }
 
         // Обновляем ссылку профиля
@@ -73,11 +77,22 @@ async function loadAndRenderUserName() {
             if (myQuestionnairesLink) {
                 myQuestionnairesLink.style.display = 'none';
             }
+            if (myTeamsLink) {
+                myTeamsLink.style.display = 'none';
+            }
             throw new Error('Profile load error');
         }
     } catch (err) {
         console.error('Ошибка при получении имени пользователя:', err);
         document.querySelectorAll('.user-name').forEach(el => el.textContent = 'Вход не выполнен');
+        const myQuestionnairesLink = document.querySelector('.my-q');
+        const myTeamsLink = document.querySelector('.my-teams');
+        if (myQuestionnairesLink) {
+            myQuestionnairesLink.style.display = 'none';
+        }
+        if (myTeamsLink) {
+            myTeamsLink.style.display = 'none';
+        }
     }
 }
 

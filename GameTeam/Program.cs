@@ -95,6 +95,15 @@ app.UseEndpoints(endpoints =>
         await context.Response.SendFileAsync(filePath);
     });
 
+    endpoints.MapGet("/My_teams", async context =>
+    {
+        var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        var filePath = Path.Combine(env.WebRootPath, "pages/My_teams.html");
+
+        context.Response.ContentType = "text/html";
+        await context.Response.SendFileAsync(filePath);
+    });
+
 });
 #pragma warning restore ASP0014 // Suggest using top level route registrations
 
