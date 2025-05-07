@@ -10,6 +10,8 @@ const state = {
     loading: false,
     endReached: false,
     isAuthenticated: false,
+    pendingRequestIds: [],
+    isPendingRequestsLoaded: false, 
 };
 
 let dom = null;
@@ -30,6 +32,29 @@ async function loadSidebar() {
     const sidebarHtml = await response.text();
     const layout = document.querySelector('.layout');
     layout.insertAdjacentHTML('afterbegin', sidebarHtml);
+}
+
+async function loadPendingRequests() {
+    if (!state.isAuthenticated || state.isPendingRequestsLoaded) return;
+    try {
+        const response = await fetch('/team/requests', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        if (response.ok) {
+            const data = await response.json();
+            state.pendingRequestIds = Array.isArray(data) ? data : [];
+            state.isPendingRequestsLoaded = true; // Помечаем, что запрос выполнен
+        } else {
+            console.error('Ошибка при загрузке заявок:', response.status);
+            state.pendingRequestIds = [];
+        }
+    } catch (error) {
+        console.error('Ошибка при загрузке заявок:', error);
+        state.pendingRequestIds = [];
+    }
 }
 
 function loadDomElements() {
@@ -82,6 +107,9 @@ async function loadAndRenderQuestionnaires() {
         state.isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
         const data = await response.json();
 
+        // Загружаем pendingRequestIds после получения isAuthenticated, если ещё не загружено
+        await loadPendingRequests();
+
         if (!Array.isArray(data) || data.length === 0) {
             state.endReached = true;
             if (dom.loadMoreButton) {
@@ -104,34 +132,41 @@ async function loadAndRenderQuestionnaires() {
             const bottomSection = questionnaire.querySelector('.bottom-section');
 
             if (state.isAuthenticated) {
-                const joinButton = document.createElement('button');
-                joinButton.className = 'filled-button';
-                joinButton.textContent = 'Вступить';
-                joinButton.addEventListener('click', async () => {
-                    try {
-                        const response = await fetch(`/team/join/${q.id}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                        });
-                        if (response.ok) {
-                            showSuccessMessage('Заявка отправлена! 🥳🥳🥳');
-                            // Заменяем кнопку на надпись
-                            bottomSection.innerHTML = '';
-                            const pendingMessage = document.createElement('div');
-                            pendingMessage.className = 'pending-message';
-                            pendingMessage.textContent = 'Ваша заявка в команду на рассмотрении — держим кулачки!';
-                            bottomSection.appendChild(pendingMessage);
-                        } else {
-                            showErrorMessage('Не удалось отправить заявку.');
+                if (state.pendingRequestIds.includes(q.id)) {
+                    const pendingMessage = document.createElement('div');
+                    pendingMessage.className = 'pending-message';
+                    pendingMessage.textContent = 'Ваша заявка в команду на рассмотрении — держим кулачки!';
+                    bottomSection.appendChild(pendingMessage);
+                } else {
+                    const joinButton = document.createElement('button');
+                    joinButton.className = 'filled-button';
+                    joinButton.textContent = 'Вступить';
+                    joinButton.addEventListener('click', async () => {
+                        try {
+                            const response = await fetch(`/team/join/${q.id}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                            });
+                            if (response.ok) {
+                                showSuccessMessage('Заявка отправлена! 🥳🥳🥳');
+                                bottomSection.innerHTML = '';
+                                const pendingMessage = document.createElement('div');
+                                pendingMessage.className = 'pending-message';
+                                pendingMessage.textContent = 'Ваша заявка в команду на рассмотрении — держим кулачки!';
+                                bottomSection.appendChild(pendingMessage);
+                                state.pendingRequestIds.push(q.id);
+                            } else {
+                                showErrorMessage('Не удалось отправить заявку.');
+                            }
+                        } catch (error) {
+                            console.error('Ошибка при отправке заявки:', error);
+                            showErrorMessage('Ошибка при отправке заявки.');
                         }
-                    } catch (error) {
-                        console.error('Ошибка при отправке заявки:', error);
-                        showErrorMessage('Ошибка при отправке заявки.');
-                    }
-                });
-                bottomSection.appendChild(joinButton);
+                    });
+                    bottomSection.appendChild(joinButton);
+                }
             } else {
                 const loginPrompt = document.createElement('div');
                 loginPrompt.className = 'login-prompt';
@@ -223,5 +258,9 @@ function showErrorMessage(message) {
     notification.className = 'notification error';
     notification.textContent = message;
     document.body.appendChild(notification);
+    if (content) {
+        const contentRect = content.getBoundingClientRect();
+        notification.style.top = `${contentRect.top + window.scrollY}px`;
+    }
     setTimeout(() => notification.remove(), 3000);
 }
