@@ -76,6 +76,23 @@ app.UseEndpoints(endpoints =>
         context.Response.ContentType = "text/html";
         await context.Response.SendFileAsync(filePath);
     });
+    
+    endpoints.MapGet("/Profile/{username}", async context =>
+    {
+        var username = context.Request.RouteValues["username"]?.ToString();
+    
+        if (string.IsNullOrEmpty(username))
+        {
+            context.Response.Redirect("/Profile");
+            return;
+        }
+        
+        var env = context.RequestServices.GetRequiredService<IWebHostEnvironment>();
+        var filePath = Path.Combine(env.WebRootPath, "pages/Profile.html");
+    
+        context.Response.ContentType = "text/html";
+        await context.Response.SendFileAsync(filePath);
+    });
 
     endpoints.MapGet("/Questionnaires", async context =>
     {

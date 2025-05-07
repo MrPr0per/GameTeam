@@ -1,16 +1,55 @@
-import { buttonsActivator } from '../js/buttonsActivator.js';
-import { loadHeader } from '../js/header.js';
-
-const debugMode = true;
+import {buttonsActivator} from '../js/buttonsActivator.js';
+import {loadHeader} from '../js/header.js';
+import {showServerError} from './errors.js';
 
 let realProfileInfo = {
 	name: '',
 	email: '',
 	description: '',
-	availabilitiesByDay: Array.from({ length: 7 }, () => []),
+	availabilitiesByDay: Array.from({length: 7}, () => []),
 	games: [],
 };
 let displayedProfileInfo = structuredClone(realProfileInfo);
+
+
+document.addEventListener('DOMContentLoaded', function () {
+	// Загружаем компоненты
+	loadComponents();
+
+	addEventListeners();
+	// Определяем, на себя мы смотрим или не на себя
+	const usernameFromUrl = tryGetUsernameFromUrl();
+	const isIsMyselfProfile = usernameFromUrl === null;
+	if (isIsMyselfProfile) {
+		loadProfileInfo().then(() => {
+			document.getElementById('edit-button').disabled = false;
+			updateDisplayOfProfileInfo(false);
+		});
+	} else {
+		document.getElementById('edit-button').style.display = 'none';
+		loadProfileInfo(usernameFromUrl).then(() => updateDisplayOfProfileInfo(false));
+	}
+});
+
+function tryGetUsernameFromUrl() {
+	const decodedPath = getDecodedPathname();
+	const pathParts = decodedPath.split('/').filter(Boolean);
+
+	// Проверяем структуру URL: ["profile" или "Profile.html", "{username}"]
+	if (pathParts.length === 2 && pathParts[0].toLowerCase().includes('profile')) {
+		return pathParts[1];
+	}
+	return null;
+
+	function getDecodedPathname() {
+		try {
+			return decodeURIComponent(window.location.pathname);
+		} catch (e) {
+			console.error('Error decoding URL:', e);
+			return window.location.pathname; // Возвращаем как есть в случае ошибки
+		}
+	}
+}
 
 async function loadSidebar() {
 	const response = await fetch('../pages/Sidebar.html');
@@ -23,17 +62,6 @@ async function loadComponents() {
 	await loadHeader();
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-	// Загружаем компоненты
-	loadComponents();
-
-	// Инициализация профиля
-	addEventListeners();
-	loadProfileInfo().then(() => {
-		document.getElementById('edit-button').disabled = false;
-		updateDisplayOfProfileInfo(false);
-	});
-});
 
 function addEventListeners() {
 	const tabs = document.querySelectorAll('.tab-link');
@@ -167,32 +195,41 @@ function renderGames(isEditing) {
 	});
 }
 
-async function loadProfileInfo() {
-	await fetch('/data/profile')
-		.then(r => {
-			if (r.ok) {
-				return r.json();
-			} else if (r.status === 401) {
-				window.location.href = '/register';
-			} else {
-				showServerError('Ошибка при загрузке профиля с сервера', r);
-			}
-		})
-		.then(jsonOrNoneIfError => {
-			if (jsonOrNoneIfError !== undefined) {
-				try {
-					realProfileInfo = parseProfileInfo(jsonOrNoneIfError);
-					displayedProfileInfo = structuredClone(realProfileInfo);
-					// После загрузки профиля обновляем имя и уведомления
-					renderPersonalInfo();
-					updateNotificationBell();
-				} catch (e) {
-					showServerError('Ошибка при обработке данных профиля',
-						'(Данные прилетели не в том формате, в котором ожидалось)',
-						jsonOrNoneIfError);
-				}
-			}
-		});
+function show404(username) {
+	const profileContainer = document.getElementById('profileContainer');
+	const safeUsername = document.createTextNode(`Пользователь "${username}" не найден.`);
+	const errorDiv = document.createElement('div');
+	errorDiv.className = 'error-message';
+	errorDiv.appendChild(safeUsername);
+	profileContainer.innerHTML = '';
+	profileContainer.appendChild(errorDiv);
+}
+
+async function loadProfileInfo(username) {
+	const url = username === undefined ? '/data/profile' : `/data/profile/${username}`;
+	const response = await fetch(url);
+	if (response.status === 401) {
+		window.location.href = '/register';
+		return;
+	}
+	if (response.status === 404) {
+		show404(username);
+		return;
+	}
+	if (!response.ok) {
+		showServerError('Ошибка при загрузке профиля с сервера', response);
+		return;
+	}
+	const json = await response.json();
+	try {
+		realProfileInfo = parseProfileInfo(json);
+		displayedProfileInfo = structuredClone(realProfileInfo);
+		// После загрузки профиля обновляем имя и уведомления
+		renderPersonalInfo();
+		// updateNotificationBell();
+	} catch (e) {
+		showServerError('Ошибка при обработке данных профиля', e, json);
+	}
 
 	function parseProfileInfo(jsonFromApi) {
 		return {
@@ -226,7 +263,7 @@ async function saveChanges() {
 		};
 		const r = await fetch('/data/upsert', {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
+			headers: {'Content-Type': 'application/json'},
 			body: JSON.stringify(postJson),
 		});
 
@@ -327,12 +364,4 @@ function formatAvailabilitiesByDayToPostJson(availabilitiesByDay) {
 	});
 
 	return result;
-}
-
-function showServerError(message, ...debugInfo) {
-	if (debugMode) {
-		console.log(message, debugInfo);
-	} else {
-		console.log(message); // todo: сделать плашку об ошибке
-	}
 }

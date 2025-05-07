@@ -50,14 +50,22 @@ namespace GameTeam.Scripts.Controllers
             try
             {
                 var profile = DatabaseController.GetUserProfile(user);
-
-                if (profile is null)
+                if (profile == null)
                 {
-                    Response.StatusCode = 400;
+                    Response.StatusCode = 404;
                     return "";
                 }
 
-                return JsonSerializer.Serialize(profile);
+                var userData = DatabaseController.GetUserData(profile.UserId);
+                if (userData == null)
+                {
+                    Response.StatusCode = 404;
+                    return "";
+                }
+
+                var profileWithUsername = new UserProfileWithData(profile, userData);
+
+                return JsonSerializer.Serialize(profileWithUsername);
             }
             catch
             {
@@ -118,10 +126,11 @@ namespace GameTeam.Scripts.Controllers
             }
 
             var applications = DatabaseController.GetAllApplicationsByUserId(int.Parse(userId))
-                                                 .Select(x => {
-                                                     var members = DatabaseController.GetAllApplicationMembers(x.Id);
-                                                     return new ApplicationWithMembers(x, members);
-                                                 }).ToList();
+                .Select(x =>
+                {
+                    var members = DatabaseController.GetAllApplicationMembers(x.Id);
+                    return new ApplicationWithMembers(x, members);
+                }).ToList();
 
             return JsonSerializer.Serialize(applications);
         }
@@ -137,15 +146,16 @@ namespace GameTeam.Scripts.Controllers
             }
 
             var applications = DatabaseController.GetAllUserMemberApplications(int.Parse(userId))
-                                                 .Select(x => {
-                                                   var members = DatabaseController.GetAllApplicationMembers(x.Id);
-                                                   return new ApplicationWithMembers(x, members);
-                                               }).ToList();
+                .Select(x =>
+                {
+                    var members = DatabaseController.GetAllApplicationMembers(x.Id);
+                    return new ApplicationWithMembers(x, members);
+                }).ToList();
 
             return JsonSerializer.Serialize(applications);
         }
 
-        
+
         [HttpPost("applications/{from}/{to}")]
         public string GetAllApplications(int from, int to, [FromBody] FilterData? filters)
         {
@@ -157,12 +167,13 @@ namespace GameTeam.Scripts.Controllers
                 HttpContext.Session.SetString("Filters", "");
                 HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
                 return JsonSerializer.Serialize(applicationsData.Skip(from)
-                                                                .Take(to - from + 1)
-                                                                .Select(x => {
-                                                                  var members = DatabaseController.GetAllApplicationMembers(x.Id);
-                                                                  return new ApplicationWithMembersWithoutContacts(x, members);
-                                                              }).ToList()
-                                                );
+                    .Take(to - from + 1)
+                    .Select(x =>
+                    {
+                        var members = DatabaseController.GetAllApplicationMembers(x.Id);
+                        return new ApplicationWithMembersWithoutContacts(x, members);
+                    }).ToList()
+                );
             }
 
             if (filters != null && HttpContext.Session.GetString("Filters") != filters.ToString())
@@ -174,12 +185,13 @@ namespace GameTeam.Scripts.Controllers
                     var applicationsData = DatabaseController.GetFiltredApplications(filters.PurposeName, filterGames);
                     HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
                     return JsonSerializer.Serialize(applicationsData.Skip(from)
-                                                                    .Take(to - from + 1)
-                                                                    .Select(x => {
-                                                                        var members = DatabaseController.GetAllApplicationMembers(x.Id);
-                                                                        return new ApplicationWithMembersWithoutContacts(x, members);
-                                                                    }).ToList()
-                                                    );
+                        .Take(to - from + 1)
+                        .Select(x =>
+                        {
+                            var members = DatabaseController.GetAllApplicationMembers(x.Id);
+                            return new ApplicationWithMembersWithoutContacts(x, members);
+                        }).ToList()
+                    );
                 }
                 catch
                 {
@@ -190,12 +202,13 @@ namespace GameTeam.Scripts.Controllers
 
             var applications = JsonSerializer.Deserialize<Application[]>(applicationsJson);
             return JsonSerializer.Serialize(applications.Skip(from)
-                                                        .Take(to - from + 1)
-                                                        .Select(x => {
-                                                            var members = DatabaseController.GetAllApplicationMembers(x.Id);
-                                                            return new ApplicationWithMembersWithoutContacts(x, members);
-                                                        }).ToList()
-                                            );
+                .Take(to - from + 1)
+                .Select(x =>
+                {
+                    var members = DatabaseController.GetAllApplicationMembers(x.Id);
+                    return new ApplicationWithMembersWithoutContacts(x, members);
+                }).ToList()
+            );
         }
 
         [HttpGet("application/{id}")]
@@ -207,6 +220,7 @@ namespace GameTeam.Scripts.Controllers
                 Response.StatusCode = 400;
                 return "Нет анкеты с таким номером";
             }
+
             var members = DatabaseController.GetAllApplicationMembers(id);
 
             return JsonSerializer.Serialize(new ApplicationWithMembersWithoutContacts(application[0], members));
@@ -399,7 +413,7 @@ namespace GameTeam.Scripts.Controllers
         public int OwnerId { get; set; }
 
         public bool IsHidden { get; set; }
-        public List<UserData> Members {  get; set; } 
+        public List<UserData> Members { get; set; }
 
         public ApplicationWithMembers(Application app, List<UserData> members)
         {
@@ -480,7 +494,8 @@ namespace GameTeam.Scripts.Controllers
 
         public bool IsHidden { get; set; }
 
-        public ApplicationWithoutContacts(int id, string title, string description, int purposeId, int ownerId, bool isHidden)
+        public ApplicationWithoutContacts(int id, string title, string description, int purposeId, int ownerId,
+            bool isHidden)
         {
             Id = id;
             Title = title;

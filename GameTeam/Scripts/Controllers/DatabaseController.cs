@@ -459,13 +459,14 @@ namespace GameTeam.Scripts.Controllers
         /// - Пользователь не найден
         /// - Ошибки выполнения запроса
         /// </exception>
-        public static UserProfile GetUserProfile(string username)
+        public static UserProfile? GetUserProfile(string username)
         {
             using var conn = new NpgsqlConnection(ConnectionString);
             var userId = GetIdByUsername(username);
 
             if (userId is null)
-                throw new Exception($"Ошибка GetUserProfile: пользователя с таким username:{username} не существует");
+                return null;
+                // throw new Exception($"Ошибка GetUserProfile: пользователя с таким username:{username} не существует");
 
             try
             {
@@ -500,7 +501,7 @@ namespace GameTeam.Scripts.Controllers
         /// <exception cref="Exception">
         /// - Ошибки выполнения запроса
         /// </exception>
-        public static UserData GetUserData(int userId)
+        public static UserData? GetUserData(int userId)
         {
             using var conn = new NpgsqlConnection(ConnectionString);
 
