@@ -1,22 +1,33 @@
-// todo: сдизайнить, сверстать редактирование времени
-// todo: ошибки:
-// todo: 	придумать, куда впихнуть плашку с ошибкой (при фетче, при парсинге, при отправке данных)
-
-import {buttonsActivator} from './buttonsActivator.js';
+import { buttonsActivator } from '../js/buttonsActivator.js';
+import { loadHeader } from '../js/header.js';
 
 const debugMode = true;
-let isAuthenticated = false;
 
 let realProfileInfo = {
 	name: '',
 	email: '',
 	description: '',
-	availabilitiesByDay: Array.from({length: 7}, () => []),
+	availabilitiesByDay: Array.from({ length: 7 }, () => []),
 	games: [],
 };
 let displayedProfileInfo = structuredClone(realProfileInfo);
 
+async function loadSidebar() {
+	const response = await fetch('../pages/Sidebar.html');
+	const sidebarHtml = await response.text();
+	document.getElementById('sidebar-placeholder').innerHTML = sidebarHtml;
+}
+
+async function loadComponents() {
+	await loadSidebar();
+	await loadHeader();
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+	// Загружаем компоненты
+	loadComponents();
+
+	// Инициализация профиля
 	addEventListeners();
 	loadProfileInfo().then(() => {
 		document.getElementById('edit-button').disabled = false;
@@ -172,6 +183,9 @@ async function loadProfileInfo() {
 				try {
 					realProfileInfo = parseProfileInfo(jsonOrNoneIfError);
 					displayedProfileInfo = structuredClone(realProfileInfo);
+					// После загрузки профиля обновляем имя и уведомления
+					renderPersonalInfo();
+					updateNotificationBell();
 				} catch (e) {
 					showServerError('Ошибка при обработке данных профиля',
 						'(Данные прилетели не в том формате, в котором ожидалось)',
@@ -200,6 +214,7 @@ async function saveChanges() {
 
 	if (deepEqual(realProfileInfo, displayedProfileInfo)) {
 		return true; // если ничего не изменилось, то и отправлять ничего не надо
+		return true;
 	}
 
 	try {
@@ -211,7 +226,7 @@ async function saveChanges() {
 		};
 		const r = await fetch('/data/upsert', {
 			method: 'POST',
-			headers: {'Content-Type': 'application/json'},
+			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(postJson),
 		});
 
