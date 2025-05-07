@@ -5,6 +5,7 @@ using NpgsqlTypes;
 using System.Security.Cryptography;
 using System.Text;
 using GameTeam.Classes.Exceptions;
+using static Microsoft.ApplicationInsights.MetricDimensionNames.TelemetryContext;
 
 namespace GameTeam.Scripts.Controllers
 {
@@ -614,6 +615,41 @@ namespace GameTeam.Scripts.Controllers
             catch (Exception e)
             {
                 throw new Exception($"Ошибка GetAllApplications: {e}");
+            }
+        }
+
+        /// <summary>
+        /// Получение не скрытой анкеты по id
+        /// </summary>
+        /// <returns>Список объектов Application</returns>
+        /// <exception cref="Exception">Ошибки выполнения запроса</exception>
+        public static List<Application> GetApplicationById(int applicationId)
+        {
+            using var conn = new NpgsqlConnection(ConnectionString);
+            try
+            {
+                var applications = new List<Application>();
+
+                conn.Open();
+                using var cmd = new NpgsqlCommand();
+                cmd.Connection = conn;
+                cmd.CommandText = @"
+					select * from applications
+					where is_hidden = false and id = @application_id";
+                cmd.Parameters.AddWithValue("application_id", applicationId);
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    applications.Add(new Application(reader.GetInt32(0), reader.GetString(1),
+                        reader.GetString(2), reader.GetString(3),
+                        reader.GetInt32(4), reader.GetInt32(5), reader.GetBoolean(6)));
+                }
+
+                return applications;
+            }
+            catch (Exception e)
+            {
+                throw new Exception($"Ошибка GetApplicationById: {e}");
             }
         }
 
