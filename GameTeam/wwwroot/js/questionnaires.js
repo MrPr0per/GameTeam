@@ -15,20 +15,14 @@ const state = {
 let dom = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
+    dom = loadDomElements();
     await loadSidebar();
     await Promise.all([
-        loadHeader(),  // Подгружаем header после sidebar
-
-        (async () => {
-            dom = loadDomElements();
-            await Promise.all([
-                loadAndRenderQuestionnaires(),
-                initFilters(),
-            ]);
-            dom.loadMoreButton.addEventListener('click', loadAndRenderQuestionnaires);
-            applyFiltersButton.addEventListener('click', applyFilters);
-        })(),
+        loadHeader().then(() => initFilters()),  // Подгружаем header после sidebar
+        loadAndRenderQuestionnaires(),
     ]);
+    dom.loadMoreButton.addEventListener('click', loadAndRenderQuestionnaires);
+    applyFiltersButton.addEventListener('click', applyFilters);
 });
 
 async function loadSidebar() {
@@ -218,7 +212,7 @@ function showSuccessMessage(message) {
     document.body.appendChild(notification);
     if (content) {
         const contentRect = content.getBoundingClientRect();
-        notification.style.top = `${ contentRect.top + window.scrollY } px`;
+        notification.style.top = `${contentRect.top + window.scrollY} px`;
     }
     setTimeout(() => notification.remove(), 3000);
 }
