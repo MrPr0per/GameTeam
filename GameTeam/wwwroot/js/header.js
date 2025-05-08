@@ -271,7 +271,7 @@ function updateNotificationBell() {
             bellIcon.src = '../img/bell-active.svg';
             bellIcon.classList.add('active');
         }
-    }
+    
 }
 
 function setupNotificationBellListener() {
