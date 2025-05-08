@@ -160,13 +160,29 @@ namespace GameTeam.Scripts.Controllers
         public string GetAllApplications(int from, int to, [FromBody] FilterData? filters)
         {
             var applicationsJson = HttpContext.Session.GetString("applications");
+            var userId = "";
+            try
+            {
+                userId = HttpContext.Session.GetString("UserId");
+            }
+            catch (Exception ex) { }
+
+            var memberOf = new HashSet<int>();
+
+            if (userId != "")
+            {
+                var memberOfTeams = DatabaseController.GetAllUserMemberApplications(int.Parse(userId));
+                memberOf = memberOfTeams.Select(x => x.Id).ToHashSet();
+            }
 
             if (string.IsNullOrEmpty(applicationsJson) || filters == null)
             {
-                var applicationsData = DatabaseController.GetAllApplications();
+                var applicationsData = DatabaseController.GetAllApplications()
+                                                         .Where(x => !memberOf.Contains(x.Id));
                 HttpContext.Session.SetString("Filters", "");
                 HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
-                return JsonSerializer.Serialize(applicationsData.Skip(from)
+                return JsonSerializer.Serialize(applicationsData
+                    .Skip(from)
                     .Take(to - from + 1)
                     .Select(x =>
                     {
@@ -182,7 +198,8 @@ namespace GameTeam.Scripts.Controllers
                 var filterGames = filters.Games.Select(x => DatabaseController.GetOrCreateGame(x)).ToList();
                 try
                 {
-                    var applicationsData = DatabaseController.GetFiltredApplications(filters.PurposeName, filterGames);
+                    var applicationsData = DatabaseController.GetFiltredApplications(filters.PurposeName, filterGames)
+                                                             .Where(x => !memberOf.Contains(x.Id));
                     HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
                     return JsonSerializer.Serialize(applicationsData.Skip(from)
                         .Take(to - from + 1)

@@ -1,9 +1,7 @@
 using GameTeam.Classes;
-using GameTeam.Scripts.Controllers;
 using NodaTime;
 using NodaTime.Serialization.SystemTextJson;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
