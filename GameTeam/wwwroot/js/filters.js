@@ -9,55 +9,51 @@ export function getCurrentFilter() {
 
 export let applyFiltersButton;
 
+// Храним оригинальный массив объектов для доступа к Id
+let gameObjects = [];
+
 export async function initFilters() {
     try {
         // Загрузка шаблона фильтров из Filters.html
         const filterTemplate = await loadFilterTemplate();
+        if (!filterTemplate) {
+            console.error('Не удалось загрузить шаблон фильтров');
+            return;
+        }
 
         const filterContainer = document.querySelector('.filter-container');
         const selectedFiltersContainer = document.querySelector('.selected-filters');
+        if (!filterContainer || !selectedFiltersContainer) {
+            console.error('Не найдены контейнеры для фильтров');
+            return;
+        }
 
-        // TODO: Заменить статические данные на загрузку с API
-        const games = [
-            'КВН',
-            'Шашки',
-            'Сумо',
-            'Супер-корова',
-            'Танчики',
-            'Башенки',
-            'Нарды',
-            'Counter-Strike 2',
-            'Dota 2',
-            'Дурак онлайн',
-            'Counter strike 2',
-            'Rainbow six siege',
-            'asdfasdfasdg',
-            'aaaaaaa',
-            'Русская рулетка',
-            'Valorant',
-            'Триатлон',
-            'agasdg',
-            'Королевская битва',
-            'clash royale',
-            'салочки',
-            'Counter strike',
-            'counter strike',
-            'dota 2',
-            '52$ В ДЕНЬ',
-            '123123 123',
-            'skylab24.net',
-            'h',
-            'efg',
-            'eg',
-            'jn',
-            'Войнушки',
-        ];
+        try {
+            const response = await fetch('/data/games', {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' },
+            });
+            if (response.ok) {
+                gameObjects = await response.json();
+                console.log('Игры загружены с API:', gameObjects);
+            } else {
+                console.error('Ошибка загрузки игр с API:', response.status);
+                return;
+            }
+        } catch (error) {
+            console.error('Ошибка при выполнении запроса /data/games:', error);
+            return;
+        }
+
+        if (!Array.isArray(gameObjects) || !gameObjects.every(game => game.Name && typeof game.Name === 'string')) {
+            console.error('API /data/games вернул некорректный формат данных, ожидался массив объектов с полем Name:', gameObjects);
+            return;
+        }
+
+        const games = gameObjects.map(game => game.Name);
 
         // TODO: Заменить статические данные на загрузку с API
         const purposes = [
-            {id: 2, text: 'Пофаниться'},
-            {id: 3, text: 'Посоревноваться'},
-            {id: 4, text: 'Расслабиться'},
             {id: 5, text: 'Поиграть в сюжетную игру'},
             {id: 6, text: 'Для стриминга'},
             {id: 7, text: 'Тренировка'},
@@ -82,7 +78,7 @@ export async function initFilters() {
 
         const gamesPerPage = 15; // Количество игр на странице
         let currentPage = 1; // Текущая страница
-        let filteredGames = games; // Отфильтрованный список игр
+        let filteredGames = games; // Отфильтрованный список названий игр
 
         // Инициализация фильтров игр и целей
         initGamesFilter();
@@ -93,7 +89,6 @@ export async function initFilters() {
         async function loadFilterTemplate() {
             try {
                 const response = await fetch('../pages/Filters.html');
-
                 const html = await response.text();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
@@ -199,7 +194,6 @@ export async function initFilters() {
             purposeFilter.addEventListener('change', handlePurposeFilterChange);
             clearFiltersButton.addEventListener('click', clearAllFilters);
             applyFiltersButton.addEventListener('click', applyFilters);
-
 
             gameSearch.addEventListener('input', handleGameSearch);
 
@@ -335,17 +329,10 @@ export async function initFilters() {
         // Отправляет событие об изменении фильтров
         function dispatchFilterChangeEvent() {
             const event = new CustomEvent('filterChanged', {
-                detail: {games: currentFilter.games, purpose: currentFilter.purpose},
+                detail: { games: currentFilter.games, purpose: currentFilter.purpose },
             });
             document.dispatchEvent(event);
         }
-
-        // тестим тестим в консоли
-        function logFilters() {
-            console.log('Текущие фильтры:', {games: currentFilter.games, purpose: currentFilter.purpose});
-        }
-
-        // TODO: Добавить отправку выбранных фильтров на сервер
 
 
     } catch (error) {
