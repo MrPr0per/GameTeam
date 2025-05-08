@@ -3,6 +3,7 @@ const stateHeader = {
     isAuthenticated: false,
     pendingUsers: [],
     notifications: [],
+    hasNewNotifications: false, 
 };
 
 async function loadHeader() {
@@ -102,6 +103,7 @@ async function loadNotifications() {
     if (!stateHeader.isAuthenticated) {
         stateHeader.notifications = [];
         stateHeader.pendingUsers = [];
+        stateHeader.hasNewNotifications = false;
         return;
     }
 
@@ -118,7 +120,7 @@ async function loadNotifications() {
             } else if (selfAppsData && Array.isArray(selfAppsData.applications)) {
                 selfApplicationIds = selfAppsData.applications.map(app => String(app.Id || app.id));
             } else {
-                console.warn('Неожиданный формат данных /data/selfapplications');
+                console.warn('Неожиданный формат данных /data/selfapplications:', selfAppsData);
             }
         } else {
             console.error('Ошибка при загрузке selfapplications:', selfAppsResponse.status);
@@ -131,6 +133,8 @@ async function loadNotifications() {
         let pendingNotifications = [];
         if (pendingResponse.ok) {
             const pendingData = await pendingResponse.json();
+            stateHeader.hasNewNotifications = pendingData.HasNew === true;
+
             if (pendingData && Array.isArray(pendingData.Requests)) {
                 pendingNotifications = pendingData.Requests;
             } else if (Array.isArray(pendingData)) {
@@ -140,7 +144,7 @@ async function loadNotifications() {
             } else if (pendingData && Array.isArray(pendingData.pending)) {
                 pendingNotifications = pendingData.pending;
             } else {
-                console.warn('Неожиданный формат данных /team/pending');
+                console.warn('Неожиданный формат данных /team/pending:', pendingData);
             }
         } else {
             console.error('Ошибка при загрузке pending:', pendingResponse.status);
@@ -148,7 +152,7 @@ async function loadNotifications() {
 
         stateHeader.notifications = pendingNotifications
             .filter(notification => {
-                const appId = String(notification.applicationId || notification.ApplicationId);
+                const appId = String(notification.applicationId || notification.ApplicationId || notification.applicationId);
                 const match = selfApplicationIds.includes(appId);
                 return match;
             })
@@ -161,6 +165,7 @@ async function loadNotifications() {
         console.error('Ошибка при загрузке уведомлений:', error);
         stateHeader.notifications = [];
         stateHeader.pendingUsers = [];
+        stateHeader.hasNewNotifications = false;
     }
 
     renderNotifications();
@@ -212,8 +217,10 @@ function renderNotifications() {
                 if (response.ok) {
                     showNotificationMessage('Выбор сделан!');
                     stateHeader.notifications = stateHeader.notifications.filter(
-                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId,
+                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId
                     );
+                    // Повторно загружаем уведомления, чтобы обновить HasNew
+                    await loadNotifications();
                     renderNotifications();
                     updateNotificationBell();
                 } else {
@@ -234,8 +241,9 @@ function renderNotifications() {
                 if (response.ok) {
                     showNotificationMessage('Выбор сделан!');
                     stateHeader.notifications = stateHeader.notifications.filter(
-                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId,
+                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId
                     );
+                    await loadNotifications();
                     renderNotifications();
                     updateNotificationBell();
                 } else {
@@ -262,15 +270,17 @@ function showNotificationMessage(message, isError = false) {
 function updateNotificationBell() {
     const bellIcon = document.querySelector('.header-notification-bell');
     if (bellIcon) {
-        if (!stateHeader.isAuthenticated || stateHeader.notifications.length === 0) {
-            bellIcon.style.display = stateHeader.isAuthenticated ? 'block' : 'none';
+        bellIcon.style.display = stateHeader.isAuthenticated ? 'block' : 'none';
+
+        if (stateHeader.hasNewNotifications) {
+            bellIcon.src = '../img/bell-active.svg';
+            bellIcon.classList.add('active');
+        } else {
             bellIcon.src = '../img/bell.svg';
             bellIcon.classList.remove('active');
-        } else {
-            bellIcon.style.display = 'block';
         }
-        bellIcon.src = '../img/bell-active.svg';
-        bellIcon.classList.add('active');
+    } else {
+        console.warn('Элемент .header-notification-bell не найден');
     }
 }
 
@@ -278,14 +288,34 @@ function setupNotificationBellListener() {
     const bellIcon = document.querySelector('.header-notification-bell');
     const notificationsPanel = document.querySelector('.notifications-panel');
     if (bellIcon && notificationsPanel) {
-        bellIcon.addEventListener('click', () => {
-            notificationsPanel.style.display = notificationsPanel.style.display === 'none' ? 'block' : 'none';
+        bellIcon.addEventListener('click', async () => {
+            const isOpening = notificationsPanel.style.display === 'none' || notificationsPanel.style.display === '';
+            notificationsPanel.style.display = isOpening ? 'block' : 'none';
+
+            if (isOpening) {
+                try {
+                    const response = await fetch('/team/read', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                    });
+                    if (response.ok) {
+                        await loadNotifications(); 
+                        updateNotificationBell();
+                    } else {
+                        console.error('Ошибка при выполнении запроса /team/read:', response.status);
+                    }
+                } catch (error) {
+                    console.error('Ошибка при отправке запроса /team/read:', error);
+                }
+            }
         });
         document.addEventListener('click', (event) => {
             if (!notificationsPanel.contains(event.target) && !bellIcon.contains(event.target)) {
                 notificationsPanel.style.display = 'none';
             }
         });
+    } else {
+        console.warn('Не найдены элементы для настройки колокольчика: bellIcon=', !!bellIcon, 'notificationsPanel=', !!notificationsPanel);
     }
 }
 
