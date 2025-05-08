@@ -168,8 +168,8 @@ namespace GameTeam.Scripts.Controllers
             catch (Exception ex) { }
 
             var memberOf = new HashSet<int>();
-
-            if (userId != "")
+            
+            if (!string.IsNullOrEmpty(userId) && userId != "")
             {
                 var memberOfTeams = DatabaseController.GetAllUserMemberApplications(int.Parse(userId));
                 memberOf = memberOfTeams.Select(x => x.Id).ToHashSet();
