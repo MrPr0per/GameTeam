@@ -46,7 +46,8 @@ async function loadAndRenderUserName() {
     try {
         const response = await fetch('/data/profile');
         stateHeader.isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
-        const userNameElements = document.querySelectorAll('.user-name');
+        if (response.status === 401) stateHeader.isAuthenticated = false;
+        const usernameElement = document.getElementById('user-name-header');
         const profileElements = document.querySelectorAll('.auth-status.user-name');
 
         // Обновляем видимость ссылок "Мои анкеты" и "Мои команды"
@@ -69,12 +70,12 @@ async function loadAndRenderUserName() {
         if (response.ok) {
             const json = await response.json();
             if (stateHeader.isAuthenticated && json && json['Username']) {
-                userNameElements.forEach(el => el.textContent = json['Username']);
+                usernameElement.textContent = json['Username'];
             } else {
-                userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
+                usernameElement.textContent = 'Вход не выполнен';
             }
         } else {
-            userNameElements.forEach(el => el.textContent = 'Вход не выполнен');
+            usernameElement.textContent = 'Вход не выполнен';
             if (myQuestionnairesLink) {
                 myQuestionnairesLink.style.display = 'none';
             }
@@ -85,7 +86,7 @@ async function loadAndRenderUserName() {
         }
     } catch (err) {
         console.error('Ошибка при получении имени пользователя:', err);
-        document.querySelectorAll('.user-name').forEach(el => el.textContent = 'Вход не выполнен');
+        document.getElementById('user-name-header').textContent = 'Вход не выполнен';
         const myQuestionnairesLink = document.querySelector('.my-q');
         const myTeamsLink = document.querySelector('.my-teams');
         if (myQuestionnairesLink) {
@@ -107,7 +108,7 @@ async function loadNotifications() {
     try {
         const selfAppsResponse = await fetch('/data/selfapplications', {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
         });
         let selfApplicationIds = [];
         if (selfAppsResponse.ok) {
@@ -125,7 +126,7 @@ async function loadNotifications() {
 
         const pendingResponse = await fetch('/team/pending', {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
         });
         let pendingNotifications = [];
         if (pendingResponse.ok) {
@@ -206,12 +207,12 @@ function renderNotifications() {
             try {
                 const response = await fetch(`/team/approve/${notification.userId}/${notification.applicationId}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {'Content-Type': 'application/json'},
                 });
                 if (response.ok) {
                     showNotificationMessage('Выбор сделан!');
                     stateHeader.notifications = stateHeader.notifications.filter(
-                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId
+                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId,
                     );
                     renderNotifications();
                     updateNotificationBell();
@@ -228,12 +229,12 @@ function renderNotifications() {
             try {
                 const response = await fetch(`/team/deny/${notification.userId}/${notification.applicationId}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {'Content-Type': 'application/json'},
                 });
                 if (response.ok) {
                     showNotificationMessage('Выбор сделан!');
                     stateHeader.notifications = stateHeader.notifications.filter(
-                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId
+                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId,
                     );
                     renderNotifications();
                     updateNotificationBell();
@@ -267,10 +268,9 @@ function updateNotificationBell() {
             bellIcon.classList.remove('active');
         } else {
             bellIcon.style.display = 'block';
-            }
-            bellIcon.src = '../img/bell-active.svg';
-            bellIcon.classList.add('active');
         }
+        bellIcon.src = '../img/bell-active.svg';
+        bellIcon.classList.add('active');
     }
 }
 
@@ -289,4 +289,4 @@ function setupNotificationBellListener() {
     }
 }
 
-export { loadHeader };
+export {loadHeader};

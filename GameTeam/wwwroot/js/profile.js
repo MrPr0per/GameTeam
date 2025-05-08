@@ -149,7 +149,7 @@ function updateDisplayOfProfileInfo(isEditing) {
 }
 
 function renderPersonalInfo() {
-	document.querySelectorAll('.user-name').forEach((el) => el.textContent = displayedProfileInfo.name);
+	document.getElementById('user-name-main').textContent = displayedProfileInfo.name;
 	document.getElementById('user-email').textContent = displayedProfileInfo.email;
 }
 
