@@ -54,6 +54,9 @@ export async function initFilters() {
 
         // TODO: Заменить статические данные на загрузку с API
         const purposes = [
+            {id: 2, text: 'Пофаниться'},
+            {id: 3, text: 'Посоревноваться'},
+            {id: 4, text: 'Расслабиться'},
             {id: 5, text: 'Поиграть в сюжетную игру'},
             {id: 6, text: 'Для стриминга'},
             {id: 7, text: 'Тренировка'},
