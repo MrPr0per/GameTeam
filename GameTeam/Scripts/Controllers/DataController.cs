@@ -205,7 +205,8 @@ namespace GameTeam.Scripts.Controllers
                     .Select(x =>
                     {
                         var members = DatabaseController.GetAllApplicationMembers(x.Id);
-                        return new ApplicationWithMembersWithoutContacts(x, members);
+                        var ownerUsername = DatabaseController.GetUsernameById(x.OwnerId);
+                        return new ApplicationWithMembersWithoutContacts(x, ownerUsername, members);
                     }).ToList()
                 );
             }
@@ -219,12 +220,14 @@ namespace GameTeam.Scripts.Controllers
                     var applicationsData = DatabaseController.GetFiltredApplications(filters.PurposeName, filterGames)
                                                              .Where(x => !memberOf.Contains(x.Id));
                     HttpContext.Session.SetString("applications", JsonSerializer.Serialize(applicationsData));
-                    return JsonSerializer.Serialize(applicationsData.Skip(from)
+                    return JsonSerializer.Serialize(applicationsData
+                        .Skip(from)
                         .Take(to - from + 1)
                         .Select(x =>
                         {
                             var members = DatabaseController.GetAllApplicationMembers(x.Id);
-                            return new ApplicationWithMembersWithoutContacts(x, members);
+                            var ownerUsername = DatabaseController.GetUsernameById(x.OwnerId);
+                            return new ApplicationWithMembersWithoutContacts(x, ownerUsername, members);
                         }).ToList()
                     );
                 }
@@ -241,7 +244,8 @@ namespace GameTeam.Scripts.Controllers
                 .Select(x =>
                 {
                     var members = DatabaseController.GetAllApplicationMembers(x.Id);
-                    return new ApplicationWithMembersWithoutContacts(x, members);
+                    var ownerUsername = DatabaseController.GetUsernameById(x.OwnerId);
+                    return new ApplicationWithMembersWithoutContacts(x, ownerUsername, members);
                 }).ToList()
             );
         }
@@ -257,8 +261,8 @@ namespace GameTeam.Scripts.Controllers
             }
 
             var members = DatabaseController.GetAllApplicationMembers(id);
-
-            return JsonSerializer.Serialize(new ApplicationWithMembersWithoutContacts(application[0], members));
+            var ownerUsername = DatabaseController.GetUsernameById(id);
+            return JsonSerializer.Serialize(new ApplicationWithMembersWithoutContacts(application[0], ownerUsername, members));
         }
 
         [HttpGet("applicationid")]
@@ -411,11 +415,12 @@ namespace GameTeam.Scripts.Controllers
         public int PurposeId { get; set; }
 
         public int OwnerId { get; set; }
+        public string OwnerUsername { get; set; }
 
         public bool IsHidden { get; set; }
         public List<UserData> Members { get; set; }
 
-        public ApplicationWithMembersWithoutContacts(Application app, List<UserData> members)
+        public ApplicationWithMembersWithoutContacts(Application app, string ownerUsername, List<UserData> members)
         {
             Id = app.Id;
             Title = app.Title;
@@ -424,6 +429,7 @@ namespace GameTeam.Scripts.Controllers
             Games = app.Games;
             PurposeId = app.PurposeId;
             OwnerId = app.OwnerId;
+            OwnerUsername = ownerUsername;
             IsHidden = app.IsHidden;
             Members = members;
         }
