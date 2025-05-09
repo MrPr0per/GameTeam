@@ -1,0 +1,2 @@
+GET https://localhost:443/data/getusernamebyid/166
+Content-Type: application/json

@@ -89,11 +89,12 @@ header {
 .notification-message .clickable-player {
     color: #2563EB;
     cursor: pointer;
-    display: inline;
+    text-decoration: none;
 }
 
 .notification-message .clickable-player:hover {
     text-decoration: underline;
+    color: #1D4ED8; /* Небольшое затемнение при наведении */
 }
 
 .notification-actions {
