@@ -19,14 +19,15 @@ document.addEventListener('DOMContentLoaded', function () {
 	addEventListeners();
 	// Определяем, на себя мы смотрим или не на себя
 	const usernameFromUrl = tryGetUsernameFromUrl();
-	const isIsMyselfProfile = usernameFromUrl === null;
-	if (isIsMyselfProfile) {
+	const isItMyselfProfile = usernameFromUrl === null;
+	if (isItMyselfProfile) {
 		loadProfileInfo().then(() => {
 			document.getElementById('edit-button').disabled = false;
 			updateDisplayOfProfileInfo(false);
 		});
 	} else {
 		document.getElementById('edit-button').style.display = 'none';
+		document.getElementById('logout-button').style.display = 'none';
 		loadProfileInfo(usernameFromUrl).then(() => updateDisplayOfProfileInfo(false));
 	}
 });
@@ -68,6 +69,7 @@ function addEventListeners() {
 	const panes = document.querySelectorAll('.tab-pane');
 	const textarea = document.getElementById('description');
 	const editButton = document.getElementById('edit-button');
+	const logoutButton = document.getElementById('logout-button');
 	const saveCancelButtons = document.getElementById('save-cancel-buttons');
 	const saveButton = document.getElementById('save-button');
 	const cancelButton = document.getElementById('cancel-button');
@@ -100,6 +102,20 @@ function addEventListeners() {
 		textarea.removeAttribute('readonly');
 		updateDisplayOfProfileInfo(true);
 		document.getElementById('add-game-section').style.display = 'flex';
+	});
+
+	// Кнопка "Выйти"
+	logoutButton.addEventListener('click', function () {
+		buttonsActivator.setPending(logoutButton);
+		fetch('/api/auth/logout', {method: 'POST'})
+			.then(r => {
+				if (r.ok) {
+					window.location.href = '/'; // Редиректимся на главную
+				} else {
+					showServerError('Выйти не удалось');
+				}
+			})
+			.finally(() => buttonsActivator.resetPending(logoutButton));
 	});
 
 	// Кнопка "Готово"
