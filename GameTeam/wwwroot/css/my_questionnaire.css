@@ -298,3 +298,24 @@ body {
 }
 
 
+
+.members-section .member-item.editing .delete-member {
+    display: inline;
+    color: red;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 5px;
+    text-decoration: none;
+}
+
+.members-section .delete-member {
+    display: none;
+}
+
+.members-section .member-item.editing {
+    text-decoration: none;
+}
+
+.members-section .member-name {
+    text-decoration: underline;
+}

@@ -319,3 +319,4 @@ function setupNotificationBellListener() {
     }
 }
 
+export { loadHeader, showNotificationMessage };

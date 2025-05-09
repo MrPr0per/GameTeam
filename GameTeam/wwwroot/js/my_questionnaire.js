@@ -5,16 +5,20 @@ let debugMode = true;
 
 const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-let isEditing = false;
-let isPlaced = false;
-let serverQuestionnaire = null;
-let localQuestionnaire = {
-	title: '',
-	description: '',
-	games: [],
-	goal: '',
-	availabilities: [],
-	contacts: '',
+const state = {
+	isEditing: false,
+	isPlaced: false,
+	serverQuestionnaire: null,
+	localQuestionnaire: {
+		title: '',
+		description: '',
+		games: [],
+		goal: '',
+		availabilities: [],
+		contacts: '',
+		members: [], 
+	},
+	usersToRemove: [], 
 };
 
 async function loadSidebar() {
@@ -44,7 +48,6 @@ document.addEventListener('DOMContentLoaded', function () {
 function addEventListeners() {
 	const placeButton = document.getElementById('place-button');
 	const editButton = document.getElementById('edit-button');
-	const clearButton = document.getElementById('clear-button');
 	const cancelButton = document.getElementById('cancel-button');
 	const saveButton = document.getElementById('save-button');
 	const addGameButton = document.getElementById('add-game-button');
@@ -59,9 +62,10 @@ function addEventListeners() {
 
 	// Включение режима редактирования
 	function enableEditMode() {
-		if (isEditing) return;
-		isEditing = true;
-		serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
+		if (state.isEditing) return;
+		state.isEditing = true;
+		state.serverQuestionnaire = JSON.parse(JSON.stringify(state.localQuestionnaire));
+		state.usersToRemove = []; // Сбрасываем список удаляемых пользователей
 		questionnaireContent.querySelectorAll('[contenteditable]').forEach(el => {
 			el.contentEditable = true;
 			el.innerHTML = el.innerText.trim();
@@ -72,26 +76,30 @@ function addEventListeners() {
 
 	// Выключение режима редактирования
 	async function disableEditMode(saveChanges = true) {
-		isEditing = false;
+		state.isEditing = false;
 		if (saveChanges) {
-			localQuestionnaire.title = document.querySelector('.questionnaire-title').innerText.trim();
-			localQuestionnaire.description = document.querySelector('.questionnaire-description').innerText.trim();
-			localQuestionnaire.games = Array.from(gamesList.querySelectorAll('.game-name')).map(span => span.textContent.trim());
-			localQuestionnaire.contacts = document.querySelector('.questionnaire-contacts').innerText.trim();
+			state.localQuestionnaire.title = document.querySelector('.questionnaire-title').innerText.trim();
+			state.localQuestionnaire.description = document.querySelector('.questionnaire-description').innerText.trim();
+			state.localQuestionnaire.games = Array.from(gamesList.querySelectorAll('.game-name')).map(span => span.textContent.trim());
+			state.localQuestionnaire.contacts = document.querySelector('.questionnaire-contacts').innerText.trim();
 
 			if (isFormValid()) {
 				const success = await postMyQuestionnaire();
 				if (success) {
-					serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
+					state.serverQuestionnaire = JSON.parse(JSON.stringify(state.localQuestionnaire));
+					state.usersToRemove = []; 
 				} else {
-					localQuestionnaire = JSON.parse(JSON.stringify(serverQuestionnaire));
+					state.localQuestionnaire = JSON.parse(JSON.stringify(state.serverQuestionnaire));
+					state.usersToRemove = []; 
 				}
 			} else {
 				warningMessage.textContent = 'Заполните все обязательные поля';
-				localQuestionnaire = JSON.parse(JSON.stringify(serverQuestionnaire));
+				state.localQuestionnaire = JSON.parse(JSON.stringify(state.serverQuestionnaire));
+				state.usersToRemove = []; 
 			}
 		} else {
-			localQuestionnaire = JSON.parse(JSON.stringify(serverQuestionnaire));
+			state.localQuestionnaire = JSON.parse(JSON.stringify(state.serverQuestionnaire));
+			state.usersToRemove = []; 
 		}
 		questionnaireContent.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = false);
 		displayQuestionnaire();
@@ -103,11 +111,11 @@ function addEventListeners() {
 
 	// "Разместить анкету" / "Скрыть анкету"
 	placeButton.addEventListener('click', function () {
-		if (isEditing) return;
-		if (isPlaced) {
+		if (state.isEditing) return;
+		if (state.isPlaced) {
 			hideMyQuestionnaire().then(success => {
 				if (!success) return;
-				isPlaced = false;
+				state.isPlaced = false;
 				updateStatusAndButtons();
 			});
 		} else {
@@ -117,36 +125,27 @@ function addEventListeners() {
 			}
 			hideMyQuestionnaire().then(success => {
 				if (!success) return;
-				isPlaced = true;
+				state.isPlaced = true;
 				updateStatusAndButtons();
 			});
 		}
 	});
 
-	// "Очистить"
-	clearButton.addEventListener('click', function () {
-		if (isEditing) {
-			localQuestionnaire = { title: '', description: '', games: [], goal: '', availabilities: [], contacts: '' };
-			displayQuestionnaire();
-			updateStatusAndButtons();
-		}
-	});
-
 	// "Отмена"
 	cancelButton.addEventListener('click', function () {
-		if (isEditing) disableEditMode(false);
+		if (state.isEditing) disableEditMode(false);
 	});
 
 	// "Сохранить изменения"
 	saveButton.addEventListener('click', function () {
-		if (isEditing) disableEditMode(true);
+		if (state.isEditing) disableEditMode(true);
 	});
 
 	// "Добавить игру"
 	addGameButton.addEventListener('click', function () {
 		const newGame = newGameInput.value.trim();
 		if (newGame) {
-			localQuestionnaire.games.push(newGame);
+			state.localQuestionnaire.games.push(newGame);
 			displayQuestionnaire(true);
 			newGameInput.value = '';
 			updateStatusAndButtons();
@@ -156,6 +155,22 @@ function addEventListeners() {
 
 function displayQuestionnaire(updateGamesOnly = false) {
 	const questionnaireContent = document.querySelector('.questionnaire-content');
+
+	let membersSection = questionnaireContent.querySelector('.members-section');
+	if (!membersSection) {
+		membersSection = document.createElement('div');
+		membersSection.className = 'questionnaire-section members-section';
+		membersSection.innerHTML = `
+            <label>Участники:</label>
+            <div class="members-list"></div>
+        `;
+		const contactsSection = questionnaireContent.querySelector('.contacts-section');
+		if (contactsSection) {
+			questionnaireContent.insertBefore(membersSection, contactsSection);
+		} else {
+			questionnaireContent.insertBefore(membersSection, questionnaireContent.querySelector('.bottom-section'));
+		}
+	}
 
 	let contactsSection = questionnaireContent.querySelector('.contacts-section');
 	if (!contactsSection) {
@@ -170,14 +185,43 @@ function displayQuestionnaire(updateGamesOnly = false) {
 
 	if (!updateGamesOnly) {
 		const titleElement = questionnaireContent.querySelector('.questionnaire-title');
-		titleElement.innerHTML = localQuestionnaire.title || '';
+		titleElement.innerHTML = state.localQuestionnaire.title || '';
 		const descriptionElement = questionnaireContent.querySelector('.questionnaire-description');
-		descriptionElement.innerHTML = localQuestionnaire.description || '';
+		descriptionElement.innerHTML = state.localQuestionnaire.description || '';
 		const contactsElement = questionnaireContent.querySelector('.questionnaire-contacts');
-		contactsElement.innerHTML = localQuestionnaire.contacts || '';
+		contactsElement.innerHTML = state.localQuestionnaire.contacts || '';
+
+		const membersList = membersSection.querySelector('.members-list');
+		membersList.innerHTML = '';
+		if (state.localQuestionnaire.members && state.localQuestionnaire.members.length > 0) {
+			state.localQuestionnaire.members.forEach((member, index) => {
+				const memberItem = document.createElement('div');
+				memberItem.className = 'member-item';
+				if (state.isEditing) memberItem.classList.add('editing');
+				const memberName = document.createElement('span');
+				memberName.className = 'member-name';
+				memberName.textContent = member.username;
+				memberName.addEventListener('click', () => {
+					window.location.href = `/profile/${member.username}`;
+				});
+				memberItem.appendChild(memberName);
+				if (state.isEditing) {
+					const deleteButton = document.createElement('span');
+					deleteButton.className = 'delete-member';
+					deleteButton.textContent = '✕';
+					deleteButton.addEventListener('click', () => {
+						showRemoveMemberConfirmation(member.userId, member.username, index);
+					});
+					memberItem.appendChild(deleteButton);
+				}
+				membersList.appendChild(memberItem);
+			});
+		} else {
+			membersList.textContent = 'Участники отсутствуют';
+		}
 
 		const purposeContainer = questionnaireContent.querySelector('.questionnaire-purpose');
-		if (isEditing) {
+		if (state.isEditing) {
 			const select = document.createElement('select');
 			select.id = 'goal-select';
 			const options = [
@@ -194,24 +238,24 @@ function displayQuestionnaire(updateGamesOnly = false) {
 				const opt = document.createElement('option');
 				opt.value = option;
 				opt.textContent = option;
-				if (option === localQuestionnaire.goal) opt.selected = true;
+				if (option === state.localQuestionnaire.goal) opt.selected = true;
 				select.appendChild(opt);
 			});
 			purposeContainer.innerHTML = '';
-			purposeContainer.appendChild(select);
 			select.addEventListener('change', function () {
-				localQuestionnaire.goal = this.value;
+				state.localQuestionnaire.goal = this.value;
 			});
+			purposeContainer.appendChild(select);
 		} else {
-			purposeContainer.innerHTML = `<p>${localQuestionnaire.goal || ''}</p>`;
+			purposeContainer.innerHTML = `<p>${state.localQuestionnaire.goal || ''}</p>`;
 		}
 
 		const availabilityContainer = questionnaireContent.querySelector('.availability');
 		availabilityContainer.innerHTML = '';
-		if (isEditing) {
+		if (state.isEditing) {
 			let timeHtml = '';
 			daysOfWeek.forEach((day, index) => {
-				const availability = localQuestionnaire.availabilities.find(a => a.day === index) || { start: '', end: '' };
+				const availability = state.localQuestionnaire.availabilities.find(a => a.day === index) || { start: '', end: '' };
 				timeHtml += `
                     <div class="time-row">
                         <span>${day}:</span>
@@ -227,41 +271,42 @@ function displayQuestionnaire(updateGamesOnly = false) {
 					const day = parseInt(this.dataset.day);
 					const type = this.dataset.type;
 					const value = this.value.trim();
-					let availability = localQuestionnaire.availabilities.find(a => a.day === day);
+					let availability = state.localQuestionnaire.availabilities.find(a => a.day === day);
 					if (!availability) {
 						availability = { day: day, start: '', end: '' };
-						localQuestionnaire.availabilities.push(availability);
+						state.localQuestionnaire.availabilities.push(availability);
 					}
 					availability[type] = value;
-					localQuestionnaire.availabilities = localQuestionnaire.availabilities.filter(a => a.start || a.end);
+					state.localQuestionnaire.availabilities = state.localQuestionnaire.availabilities.filter(a => a.start || a.end);
 				});
 			});
 		} else {
 			let timeHtml = '';
 			daysOfWeek.forEach((day, index) => {
-				const availability = localQuestionnaire.availabilities.find(a => a.day === index);
+				const availability = state.localQuestionnaire.availabilities.find(a => a.day === index);
 				const timeStr = availability && availability.start && availability.end ? `${availability.start} - ${availability.end}` : '—';
 				timeHtml += `<div class="time-row"><span>${day}:</span> ${timeStr}</div>`;
 			});
 			availabilityContainer.innerHTML = timeHtml;
 		}
 	}
+
 	const gamesList = questionnaireContent.querySelector('.games-list');
 	gamesList.innerHTML = '';
-	localQuestionnaire.games.forEach((game, index) => {
+	state.localQuestionnaire.games.forEach((game, index) => {
 		const li = document.createElement('li');
 		li.className = 'game-item';
-		if (isEditing) li.classList.add('editing');
+		if (state.isEditing) li.classList.add('editing');
 		const gameName = document.createElement('span');
 		gameName.className = 'game-name';
 		gameName.textContent = game;
 		li.appendChild(gameName);
-		if (isEditing) {
+		if (state.isEditing) {
 			const deleteButton = document.createElement('span');
 			deleteButton.className = 'delete-game';
 			deleteButton.textContent = '✕';
 			deleteButton.addEventListener('click', () => {
-				localQuestionnaire.games.splice(index, 1);
+				state.localQuestionnaire.games.splice(index, 1);
 				displayQuestionnaire(true);
 				updateStatusAndButtons();
 			});
@@ -271,11 +316,38 @@ function displayQuestionnaire(updateGamesOnly = false) {
 	});
 }
 
+function showRemoveMemberConfirmation(userId, username, index) {
+	const modal = document.createElement('div');
+	modal.className = 'confirmation-modal';
+	modal.innerHTML = `
+        <div class="confirmation-content">
+            <p>Вы уверены, что хотите удалить ${username} из своей команды?</p>
+            <div class="confirmation-actions">
+                <button class="confirm-yes">Да</button>
+                <button class="confirm-no">Нет</button>
+            </div>
+        </div>
+    `;
+	document.body.appendChild(modal);
+
+	modal.querySelector('.confirm-yes').addEventListener('click', () => {
+		state.usersToRemove.push(userId); // Добавляем userId в список для удаления
+		state.localQuestionnaire.members.splice(index, 1); // Удаляем локально
+		displayQuestionnaire(); // Обновляем отображение
+		updateStatusAndButtons();
+		modal.remove();
+	});
+
+	modal.querySelector('.confirm-no').addEventListener('click', () => {
+		modal.remove();
+	});
+}
+
 function isFormValid() {
-	const title = localQuestionnaire.title.trim();
-	const games = localQuestionnaire.games;
-	const goal = localQuestionnaire.goal.trim();
-	const contacts = localQuestionnaire.contacts.trim();
+	const title = state.localQuestionnaire.title.trim();
+	const games = state.localQuestionnaire.games;
+	const goal = state.localQuestionnaire.goal.trim();
+	const contacts = state.localQuestionnaire.contacts.trim();
 	return title !== '' && games.length > 0 && goal !== '' && contacts !== '';
 }
 
@@ -288,10 +360,10 @@ function updateStatusAndButtons() {
 	const addGameSection = document.getElementById('add-game-section');
 	const warningMessage = document.getElementById('warning-message');
 
-	statusText.textContent = isPlaced ? 'Размещена' : 'Не размещена';
+	statusText.textContent = state.isPlaced ? 'Размещена' : 'Не размещена';
 	const formValid = isFormValid();
 
-	if (isEditing) {
+	if (state.isEditing) {
 		if (statusButtons) statusButtons.style.display = 'none';
 		if (editButtons) editButtons.style.display = 'flex';
 		if (addGameSection) addGameSection.classList.add('active');
@@ -307,7 +379,7 @@ function updateStatusAndButtons() {
 			star.style.display = 'none';
 		});
 
-		if (isPlaced) {
+		if (state.isPlaced) {
 			placeButton.textContent = 'Скрыть анкету';
 			placeButton.classList.remove('filled-button');
 			placeButton.classList.add('outline-button');
@@ -330,7 +402,7 @@ async function loadMyQuestionnaire() {
 	const response = await fetch('/data/selfapplications', { method: 'GET' });
 
 	if (!response.ok) {
-		serverQuestionnaire = {
+		state.serverQuestionnaire = {
 			id: -1,
 			title: '',
 			description: '',
@@ -338,14 +410,15 @@ async function loadMyQuestionnaire() {
 			goal: '',
 			availabilities: [],
 			contacts: '',
+			members: [],
 		};
 	} else {
 		const application = await response.json();
 		if (application[0]) {
-			serverQuestionnaire = transformQuestionnaire(application[0]);
-			isPlaced = !application[0].IsHidden;
+			state.serverQuestionnaire = transformQuestionnaire(application[0]);
+			state.isPlaced = !application[0].IsHidden;
 		} else {
-			serverQuestionnaire = {
+			state.serverQuestionnaire = {
 				id: -1,
 				title: '',
 				description: '',
@@ -353,22 +426,23 @@ async function loadMyQuestionnaire() {
 				goal: '',
 				availabilities: [],
 				contacts: '',
+				members: [],
 			};
 		}
 	}
 
-	localQuestionnaire = JSON.parse(JSON.stringify(serverQuestionnaire));
+	state.localQuestionnaire = JSON.parse(JSON.stringify(state.serverQuestionnaire));
 }
 
 async function getJsonForPostQuestionnaire() {
 	let applicationId = -1;
-	if (serverQuestionnaire.id === -1) {
+	if (state.serverQuestionnaire.id === -1) {
 		const response = await fetch('data/applicationid', { method: 'GET' });
 		applicationId = await response.text();
 	} else {
-		applicationId = serverQuestionnaire.id;
+		applicationId = state.serverQuestionnaire.id;
 	}
-	const availabilities = localQuestionnaire.availabilities
+	const availabilities = state.localQuestionnaire.availabilities
 		.filter(a => a.start && a.end)
 		.map(a => ({
 			dayOfWeek: a.day,
@@ -377,12 +451,12 @@ async function getJsonForPostQuestionnaire() {
 		}));
 	return {
 		id: applicationId,
-		title: localQuestionnaire.title,
-		description: localQuestionnaire.description,
-		contacts: localQuestionnaire.contacts,
-		purposeName: localQuestionnaire.goal,
+		title: state.localQuestionnaire.title,
+		description: state.localQuestionnaire.description,
+		contacts: state.localQuestionnaire.contacts,
+		purposeName: state.localQuestionnaire.goal,
 		availabilities: availabilities,
-		games: localQuestionnaire.games,
+		games: state.localQuestionnaire.games,
 	};
 }
 
@@ -396,13 +470,33 @@ async function postMyQuestionnaire() {
 		},
 		body: JSON.stringify(jsonData),
 	});
-	if (response.ok) {
-		serverQuestionnaire = JSON.parse(JSON.stringify(localQuestionnaire));
-		serverQuestionnaire.id = jsonData.id;
-		return true;
+	let success = response.ok;
+	if (success) {
+		state.serverQuestionnaire = JSON.parse(JSON.stringify(state.localQuestionnaire));
+		state.serverQuestionnaire.id = jsonData.id;
+	} else {
+		showServerError('Ошибка при отправке анкеты', response);
 	}
-	showServerError('Ошибка при отправке анкеты', response);
-	return false;
+
+	if (state.usersToRemove.length > 0 && success) {
+		for (const userId of state.usersToRemove) {
+			const removeResponse = await fetch(`/team/remove/${userId}/${jsonData.id}`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+			});
+			if (!removeResponse.ok) {
+				showServerError(`Ошибка при удалении пользователя ${userId}`, removeResponse);
+				success = false;
+			}
+		}
+	}
+
+	if (success) {
+		state.usersToRemove = []; 
+	}
+	return success;
 }
 
 function transformQuestionnaire(questionnaireData) {
@@ -421,7 +515,7 @@ function transformQuestionnaire(questionnaireData) {
 		6: 'Для стриминга',
 		1: 'Для заработка',
 		7: 'Тренировка',
-		8: 'Турнир',
+        8: 'Турнир',
 	};
 
 	const goal = goalMap[questionnaireData.PurposeId] || '';
@@ -441,6 +535,14 @@ function transformQuestionnaire(questionnaireData) {
 		});
 	}
 
+	let members = [];
+	if (Array.isArray(questionnaireData.Members)) {
+		members = questionnaireData.Members.map(member => ({
+			userId: member.UserId,
+			username: member.Username,
+		}));
+	}
+
 	return {
 		id: questionnaireData.Id,
 		title: questionnaireData.Title || '',
@@ -448,18 +550,19 @@ function transformQuestionnaire(questionnaireData) {
 		games: games,
 		goal: goal,
 		availabilities: availabilities,
-		contacts: questionnaireData.Contacts || ''
+		contacts: questionnaireData.Contacts || '',
+		members: members,
 	};
 }
 
 async function hideMyQuestionnaire() {
-	if (!serverQuestionnaire || serverQuestionnaire.id === -1) {
+	if (!state.serverQuestionnaire || state.serverQuestionnaire.id === -1) {
 		showServerError('Анкета не найдена');
 		return false;
 	}
 
-	const action = isPlaced ? 'hide' : 'show';
-	const url = `/data/${action}/${serverQuestionnaire.id}`;
+	const action = state.isPlaced ? 'hide' : 'show';
+	const url = `/data/${action}/${state.serverQuestionnaire.id}`;
 
 	try {
 		const response = await fetch(url, {
