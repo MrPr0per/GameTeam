@@ -74,6 +74,24 @@ namespace GameTeam.Scripts.Controllers
             }
         }
 
+        [HttpGet("getusernamebyid/{id}")]
+        public IActionResult GetUsernameById(int id)
+        {
+            try
+            {
+                var username = DatabaseController.GetUsernameById(id);
+
+                if (string.IsNullOrEmpty(username))
+                    return NotFound(new { error = "User not found" });
+
+                return Ok(new { username = username });
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, new { Error = "Internal server error" });
+            }
+        }
+
         [HttpPost("upsert")]
         public IActionResult UpsertUserProfile([FromBody] UpsertUserProfileRequest request)
         {

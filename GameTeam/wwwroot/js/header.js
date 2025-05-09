@@ -1,9 +1,11 @@
+import {showServerError} from './errors.js';
+
 // Глобальный объект для хранения состояния
 const stateHeader = {
     isAuthenticated: false,
     pendingUsers: [],
     notifications: [],
-    hasNewNotifications: false, 
+    hasNewNotifications: false,
 };
 
 async function loadHeader() {
@@ -112,6 +114,7 @@ async function loadNotifications() {
             method: 'GET',
             headers: {'Content-Type': 'application/json'},
         });
+
         let selfApplicationIds = [];
         if (selfAppsResponse.ok) {
             const selfAppsData = await selfAppsResponse.json();
@@ -130,6 +133,7 @@ async function loadNotifications() {
             method: 'GET',
             headers: {'Content-Type': 'application/json'},
         });
+
         let pendingNotifications = [];
         if (pendingResponse.ok) {
             const pendingData = await pendingResponse.json();
@@ -150,7 +154,7 @@ async function loadNotifications() {
             console.error('Ошибка при загрузке pending:', pendingResponse.status);
         }
 
-        stateHeader.notifications = pendingNotifications
+        const filteredNotifications = pendingNotifications
             .filter(notification => {
                 const appId = String(notification.applicationId || notification.ApplicationId || notification.applicationId);
                 const match = selfApplicationIds.includes(appId);
@@ -160,7 +164,35 @@ async function loadNotifications() {
                 userId: notification.userId || notification.UserId,
                 applicationId: notification.applicationId || notification.ApplicationId,
             }));
-        stateHeader.pendingUsers = stateHeader.notifications.map(notification => notification.userId);
+
+        // Получение юзернеймов для всех уникальных user IDs
+        const uniqueUserIds = [...new Set(filteredNotifications.map(n => n.userId))];
+        const usernameRequests = uniqueUserIds.map(async userId => {
+            try {
+                const response = await fetch(`/data/getusernamebyid/${userId}`);
+                if (!response.ok) return {userId, username: null};
+                const data = await response.json();
+                return {userId, username: data.username || null};
+            } catch (e) {
+                return {userId, username: null};
+            }
+        });
+
+        // Ожидание всех запросов и создание маппинга
+        const usernameResults = await Promise.all(usernameRequests);
+        const usernameMap = usernameResults.reduce((acc, curr) => {
+            acc[curr.userId] = curr.username;
+            return acc;
+        }, {});
+
+        // Обновление состояния с юзернеймами
+        stateHeader.notifications = filteredNotifications.map(n => ({
+            ...n,
+            username: usernameMap[n.userId] || null,
+        }));
+
+        stateHeader.pendingUsers = filteredNotifications.map(n => n.userId);
+
     } catch (error) {
         console.error('Ошибка при загрузке уведомлений:', error);
         stateHeader.notifications = [];
@@ -188,22 +220,27 @@ function renderNotifications() {
     noNotifications.style.display = 'none';
 
     stateHeader.notifications.forEach(notification => {
+        if (!notification.username) {
+            showServerError(`Ошибка при получении юзернейма пользователя с ID ${notification.userId}`);
+            return;
+        }
+
         const notificationItem = document.createElement('div');
         notificationItem.className = 'notification-item';
         notificationItem.innerHTML = `
             <p class="notification-message">
-                <span class="clickable-player">Игрок</span> готов стать частью твоей команды!
+                <a class="clickable-player">Игрок</a> готов стать частью твоей команды!
             </p>
             <div class="notification-actions">
                 <button class="accept">Принять</button>
                 <button class="deny">Отклонить</button> 
             </div>
         `;
-        const playerSpan = notificationItem.querySelector('.clickable-player');
-        playerSpan.dataset.userId = notification.userId;
-        playerSpan.addEventListener('click', () => {
-            // Здесь будет логика перехода на профиль игрока в будущем
-        });
+
+        // Безопасная вставка данных
+        const playerLink = notificationItem.querySelector('.clickable-player');
+        playerLink.href = `/profile/${encodeURIComponent(notification.username)}`;
+        playerLink.textContent = notification.username;
 
         const acceptButton = notificationItem.querySelector('.accept');
         const denyButton = notificationItem.querySelector('.deny');
@@ -296,10 +333,10 @@ function setupNotificationBellListener() {
                 try {
                     const response = await fetch('/team/read', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {'Content-Type': 'application/json'},
                     });
                     if (response.ok) {
-                        await loadNotifications(); 
+                        await loadNotifications();
                         updateNotificationBell();
                     } else {
                         console.error('Ошибка при выполнении запроса /team/read:', response.status);
@@ -319,4 +356,4 @@ function setupNotificationBellListener() {
     }
 }
 
-export {loadHeader};
+export {loadHeader, showNotificationMessage};
