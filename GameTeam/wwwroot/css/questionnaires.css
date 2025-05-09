@@ -125,3 +125,11 @@ body {
         opacity: 1;
     }
 }
+
+
+.no-teams-message {
+    margin-top: 60px;
+    font-size: 18px;
+    color: #333;
+    text-align: center;
+}
