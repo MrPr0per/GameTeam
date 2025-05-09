@@ -27,6 +27,22 @@ export function createQuestionnaire(data) {
             // Время
             questionnaire.querySelector('.availability').innerHTML = data.availability;
 
+            // Участники
+            const membersList = questionnaire.querySelector('.members-list');
+            if (data.members && data.members.length > 0) {
+                data.members.forEach(username => {
+                    const memberItem = document.createElement('div');
+                    memberItem.className = 'member-item';
+                    memberItem.textContent = username;
+                    memberItem.addEventListener('click', () => {
+                        window.location.href = `/profile/${username}`;
+                    });
+                    membersList.appendChild(memberItem);
+                });
+            } else {
+                membersList.textContent = 'Участники отсутствуют';
+            }
+
             return questionnaire;
         });
 }

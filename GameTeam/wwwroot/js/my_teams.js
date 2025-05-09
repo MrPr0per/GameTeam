@@ -49,6 +49,7 @@ async function loadAndRenderTeams() {
             purpose: getPurposeText(item.PurposeId),
             availability: formatAvailabilities(item.Availabilities),
             contacts: item.Contacts,
+            members: item.Members ? item.Members.map(m => m.Username) : [],
         }));
 
         for (const q of questionnaires) {
