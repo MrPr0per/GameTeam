@@ -172,3 +172,24 @@
 .confirmation-actions .confirm-no:hover {
     background-color: #F0F4FF;
 }
+
+
+
+.members-section .members-list {
+    padding-left: 10px;
+}
+
+.members-section .member-item {
+    font-size: 16px;
+    color: #2563EB;
+    text-decoration: underline;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    margin-bottom: 3px;
+}
+
+.members-section .member-item:hover {
+    color: #1E4FC2;
+}
+
