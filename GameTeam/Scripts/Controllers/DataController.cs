@@ -147,7 +147,8 @@ namespace GameTeam.Scripts.Controllers
                 .Select(x =>
                 {
                     var members = DatabaseController.GetAllApplicationMembers(x.Id);
-                    return new ApplicationWithMembers(x, members);
+                    var ownerUsername = DatabaseController.GetUsernameById(x.OwnerId);
+                    return new ApplicationWithMembers(x, ownerUsername, members);
                 }).ToList();
 
             return JsonSerializer.Serialize(applications);
@@ -167,7 +168,8 @@ namespace GameTeam.Scripts.Controllers
                 .Select(x =>
                 {
                     var members = DatabaseController.GetAllApplicationMembers(x.Id);
-                    return new ApplicationWithMembers(x, members);
+                    var ownerUsername = DatabaseController.GetUsernameById(x.OwnerId);
+                    return new ApplicationWithMembers(x, ownerUsername, members);
                 }).ToList();
 
             return JsonSerializer.Serialize(applications);
@@ -452,11 +454,12 @@ namespace GameTeam.Scripts.Controllers
         public int PurposeId { get; set; }
 
         public int OwnerId { get; set; }
+        public string OwnerUsername { get; set; }
 
         public bool IsHidden { get; set; }
         public List<UserData> Members { get; set; }
 
-        public ApplicationWithMembers(Application app, List<UserData> members)
+        public ApplicationWithMembers(Application app, string ownerUsername, List<UserData> members)
         {
             Id = app.Id;
             Title = app.Title;
@@ -466,6 +469,7 @@ namespace GameTeam.Scripts.Controllers
             Games = app.Games;
             PurposeId = app.PurposeId;
             OwnerId = app.OwnerId;
+            OwnerUsername = ownerUsername;
             IsHidden = app.IsHidden;
             Members = members;
         }
