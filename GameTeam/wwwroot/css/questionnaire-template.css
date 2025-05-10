@@ -104,6 +104,17 @@
     font-size: 14px;
 }
 
+.outline-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 14px;
+    background-color: white;
+    color: #2563EB;
+    border: 1px solid #2563EB;
+}
+
 .filled-button:hover {
     background-color: #1E4FC7;
 }
