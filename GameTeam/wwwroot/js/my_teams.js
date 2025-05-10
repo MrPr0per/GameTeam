@@ -1,5 +1,6 @@
 import { createQuestionnaire } from '../js/questionnaire-template.js';
 import { loadHeader, showNotificationMessage } from '../js/header.js';
+import { loadSidebar, initSidebar } from '../js/sidebar.js'; 
 
 const state = {
     loading: false,
@@ -15,11 +16,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadAndRenderTeams();
 });
 
-async function loadSidebar() {
-    const response = await fetch('../pages/Sidebar.html');
-    const sidebarHtml = await response.text();
-    document.getElementById('sidebar-placeholder').innerHTML = sidebarHtml;
-}
 
 function loadDomElements() {
     return {

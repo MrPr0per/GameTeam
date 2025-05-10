@@ -1,5 +1,6 @@
 import { buttonsActivator } from '../js/buttonsActivator.js';
 import { loadHeader } from '../js/header.js';
+import { loadSidebar, initSidebar } from '../js/sidebar.js'; 
 
 let debugMode = true;
 
@@ -22,11 +23,6 @@ const state = {
 	usersToRemove: [], 
 };
 
-async function loadSidebar() {
-	const response = await fetch('../pages/Sidebar.html');
-	const sidebarHtml = await response.text();
-	document.getElementById('sidebar-placeholder').innerHTML = sidebarHtml;
-}
 
 async function loadComponents() {
 	await loadSidebar();

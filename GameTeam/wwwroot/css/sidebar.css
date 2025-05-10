@@ -49,6 +49,10 @@
     color: #2563EB;
 }
 
+.sidebar-nav a.active {
+    color: #2563EB;
+}
+
 .nav-text {
     white-space: nowrap;
 }

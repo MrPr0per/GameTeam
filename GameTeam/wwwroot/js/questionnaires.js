@@ -1,6 +1,7 @@
-import {initFilters, getCurrentFilter, applyFiltersButton} from '../js/filters.js';
-import {createQuestionnaire} from '../js/questionnaire-template.js';
-import {loadHeader} from '../js/header.js';
+import { initFilters, getCurrentFilter, applyFiltersButton } from '../js/filters.js';
+import { createQuestionnaire } from '../js/questionnaire-template.js';
+import { loadHeader } from '../js/header.js';
+import { loadSidebar, initSidebar } from '../js/sidebar.js'; 
 
 const state = {
     offset: 0,
@@ -11,28 +12,21 @@ const state = {
     endReached: false,
     isAuthenticated: false,
     pendingRequestIds: [],
-    isPendingRequestsLoaded: false, 
+    isPendingRequestsLoaded: false,
 };
 
 let dom = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
     dom = loadDomElements();
-    await loadSidebar();
+    await loadSidebar(); 
     await Promise.all([
-        loadHeader().then(() => initFilters()),  // Подгружаем header после sidebar
+        loadHeader().then(() => initFilters()),
         loadAndRenderQuestionnaires(),
     ]);
     dom.loadMoreButton.addEventListener('click', loadAndRenderQuestionnaires);
     applyFiltersButton.addEventListener('click', applyFilters);
 });
-
-async function loadSidebar() {
-    const response = await fetch('../pages/Sidebar.html');
-    const sidebarHtml = await response.text();
-    const layout = document.querySelector('.layout');
-    layout.insertAdjacentHTML('afterbegin', sidebarHtml);
-}
 
 async function loadPendingRequests() {
     if (!state.isAuthenticated || state.isPendingRequestsLoaded) return;
@@ -46,7 +40,7 @@ async function loadPendingRequests() {
         if (response.ok) {
             const data = await response.json();
             state.pendingRequestIds = Array.isArray(data) ? data : [];
-            state.isPendingRequestsLoaded = true; // Помечаем, что запрос выполнен
+            state.isPendingRequestsLoaded = true;
         } else {
             console.error('Ошибка при загрузке заявок:', response.status);
             state.pendingRequestIds = [];
@@ -105,10 +99,9 @@ async function loadAndRenderQuestionnaires() {
             body: JSON.stringify(payload),
         });
         state.isAuthenticated = response.headers.get('X-Is-Authenticated') === 'true';
-        const data = await response.json();
-
-        // Загружаем pendingRequestIds после получения isAuthenticated, если ещё не загружено
         await loadPendingRequests();
+
+        const data = await response.json();
 
         if (!Array.isArray(data) || data.length === 0) {
             state.endReached = true;
