@@ -53,11 +53,15 @@ async function loadAndRenderUserName() {
         const usernameElement = document.getElementById('user-name-header');
         const profileElements = document.querySelectorAll('.auth-status.user-name');
 
-        // Обновляем видимость ссылок "Мои анкеты" и "Мои команды"
+        // Обновляем видимость ссылок "Моя анкета", "Мои заявки" и "Мои команды"
         const myQuestionnairesLink = document.querySelector('.my-q');
+        const pendingRequestsLink = document.querySelector('.pending-requests');
         const myTeamsLink = document.querySelector('.my-teams');
         if (myQuestionnairesLink) {
             myQuestionnairesLink.style.display = stateHeader.isAuthenticated ? 'flex' : 'none';
+        }
+        if (pendingRequestsLink) {
+            pendingRequestsLink.style.display = stateHeader.isAuthenticated ? 'flex' : 'none';
         }
         if (myTeamsLink) {
             myTeamsLink.style.display = stateHeader.isAuthenticated ? 'flex' : 'none';
@@ -82,6 +86,9 @@ async function loadAndRenderUserName() {
             if (myQuestionnairesLink) {
                 myQuestionnairesLink.style.display = 'none';
             }
+            if (pendingRequestsLink) {
+                pendingRequestsLink.style.display = 'none';
+            }
             if (myTeamsLink) {
                 myTeamsLink.style.display = 'none';
             }
@@ -91,9 +98,13 @@ async function loadAndRenderUserName() {
         console.error('Ошибка при получении имени пользователя:', err);
         document.getElementById('user-name-header').textContent = 'Вход не выполнен';
         const myQuestionnairesLink = document.querySelector('.my-q');
+        const pendingRequestsLink = document.querySelector('.pending-requests');
         const myTeamsLink = document.querySelector('.my-teams');
         if (myQuestionnairesLink) {
             myQuestionnairesLink.style.display = 'none';
+        }
+        if (pendingRequestsLink) {
+            pendingRequestsLink.style.display = 'none';
         }
         if (myTeamsLink) {
             myTeamsLink.style.display = 'none';
