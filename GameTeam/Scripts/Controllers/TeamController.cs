@@ -32,7 +32,7 @@ namespace GameTeam.Scripts.Controllers
             return Ok(new { Message = "Вы успешно подали заявку на вступление" });
         }
 
-        [HttpPost("cancel/{id}")]
+        [HttpPost("cancel/{applicationId}")]
         public IActionResult Cancel(int applicationId)
         {
             var userId = HttpContext.Session.GetString("UserId");
