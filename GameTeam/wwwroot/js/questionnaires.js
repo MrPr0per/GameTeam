@@ -125,7 +125,7 @@ async function loadAndRenderQuestionnaires() {
             games: item.Games.map(g => g.Name),
             purpose: getPurposeText(item.PurposeId),
             availability: formatAvailabilities(item.Availabilities),
-            members: item.Members ? item.Members.map(m => m.Username) : [], 
+            members: item.OwnerUsername ? [item.OwnerUsername, ...(item.Members ? item.Members.map(m => m.Username) : [])] : (item.Members ? item.Members.map(m => m.Username) : []),
         }));
 
         for (const q of questionnaires) {
