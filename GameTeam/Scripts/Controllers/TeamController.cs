@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
+using System;
 using System.Text.Json;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -11,7 +12,7 @@ namespace GameTeam.Scripts.Controllers
     public class TeamController : ControllerBase
     {
         // GET: api/<TeamController>
-        [HttpPost("join/{id}/")]
+        [HttpPost("join/{id}")]
         public IActionResult Join(int id)
         {
             var userId = HttpContext.Session.GetString("UserId");
@@ -29,6 +30,31 @@ namespace GameTeam.Scripts.Controllers
             TeamManager.JoinTeam(ownerId.Value, int.Parse(userId), id);
 
             return Ok(new { Message = "Вы успешно подали заявку на вступление" });
+        }
+
+        [HttpPost("cancel/{id}")]
+        public IActionResult Cancel(int applicationId)
+        {
+            var userId = HttpContext.Session.GetString("UserId");
+
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { Message = "Войдите в аккаунт" });
+
+            var ownerId = DatabaseController.GetUserIdByApplicationId(applicationId);
+
+            if (ownerId is null)
+                return BadRequest(new { Message = "Нет анкеты или владельца" });
+
+            try
+            {
+                TeamManager.DeleteFromPending(ownerId.Value, int.Parse(userId), applicationId);
+            }
+            catch
+            {
+                return BadRequest(new { Message = "Нет такой заявки" });
+            }
+
+            return Ok(new { Message = "Вы успешно отменили заявку на вступление" });
         }
 
         [HttpPost("approve/{userId}/{applicationId}")]
