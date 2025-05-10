@@ -1,3 +1,5 @@
+import { applyFilters } from '../js/questionnaires.js';
+
 const currentFilter = {
     games: [], // Массив выбранных игр
     purpose: null, // ID выбранной цели
@@ -14,17 +16,17 @@ let gameObjects = [];
 
 export async function initFilters() {
     try {
-        // Загрузка шаблона фильтров из Filters.html
-        const filterTemplate = await loadFilterTemplate();
-        if (!filterTemplate) {
-            console.error('Не удалось загрузить шаблон фильтров');
+        // Ждём контейнеры фильтров
+        const filterContainer = await waitForElement('.filter-container', 5000);
+        const selectedFiltersContainer = await waitForElement('.selected-filters', 5000);
+        if (!filterContainer || !selectedFiltersContainer) {
+            console.error('Не найдены контейнеры для фильтров:', { filterContainer, selectedFiltersContainer });
             return;
         }
 
-        const filterContainer = document.querySelector('.filter-container');
-        const selectedFiltersContainer = document.querySelector('.selected-filters');
-        if (!filterContainer || !selectedFiltersContainer) {
-            console.error('Не найдены контейнеры для фильтров');
+        const filterTemplate = await loadFilterTemplate();
+        if (!filterTemplate) {
+            console.error('Не удалось загрузить шаблон фильтров');
             return;
         }
 
@@ -38,11 +40,11 @@ export async function initFilters() {
                 console.log('Игры загружены с API:', gameObjects);
             } else {
                 console.error('Ошибка загрузки игр с API:', response.status);
-                return;
+                gameObjects = [{ Name: 'Fallback Game' }]; // Заглушка
             }
         } catch (error) {
             console.error('Ошибка при выполнении запроса /data/games:', error);
-            return;
+            gameObjects = [{ Name: 'Fallback Game' }]; // Заглушка
         }
 
         if (!Array.isArray(gameObjects) || !gameObjects.every(game => game.Name && typeof game.Name === 'string')) {
@@ -77,11 +79,10 @@ export async function initFilters() {
         const purposeFilter = filterDropdownElement.querySelector('.purpose-filter');
         const clearFiltersButton = filterDropdownElement.querySelector('.clear-filters-button');
         applyFiltersButton = filterDropdownElement.querySelector('.apply-filters-button');
-        const paginationContainer = gamesFilter.querySelector('.pagination');
 
-        const gamesPerPage = 15; // Количество игр на странице
-        let currentPage = 1; // Текущая страница
-        let filteredGames = games; // Отфильтрованный список названий игр
+        const gamesPerPage = 15;
+        let currentPage = 1;
+        let filteredGames = games;
 
         // Инициализация фильтров игр и целей
         initGamesFilter();
@@ -137,6 +138,7 @@ export async function initFilters() {
         // Отрисовывает кнопки пагинации для списка игр
         function renderPagination(gamesToRender) {
             const totalPages = Math.ceil(gamesToRender.length / gamesPerPage);
+            const paginationContainer = gamesFilter.querySelector('.pagination');
             paginationContainer.innerHTML = '';
 
             if (totalPages > 1) {
@@ -196,7 +198,11 @@ export async function initFilters() {
             gamesFilter.addEventListener('change', handleGameFilterChange);
             purposeFilter.addEventListener('change', handlePurposeFilterChange);
             clearFiltersButton.addEventListener('click', clearAllFilters);
-            applyFiltersButton.addEventListener('click', applyFilters);
+            if (applyFiltersButton) {
+                applyFiltersButton.addEventListener('click', applyFilters);
+            } else {
+                console.error('Кнопка apply-filters-button не найдена');
+            }
 
             gameSearch.addEventListener('input', handleGameSearch);
 
@@ -273,13 +279,6 @@ export async function initFilters() {
             dispatchFilterChangeEvent();
         }
 
-        // Применяет фильтры и скрывает меню
-        function applyFilters() {
-            filterDropdownElement.classList.remove('active');
-            filterToggle.classList.remove('active');
-        }
-
-        // Обновляет отображение выбранных фильтров
         function updateSelectedFilters() {
             selectedFiltersContainer.innerHTML = '';
             currentFilter.games.forEach(game => {
@@ -337,8 +336,22 @@ export async function initFilters() {
             document.dispatchEvent(event);
         }
 
-
+        function logFilters() {
+            console.log('Текущие фильтры:', currentFilter);
+        }
     } catch (error) {
         console.error('Ошибка инициализации фильтров:', error);
     }
+}
+
+// Функция ожидания элемента в DOM
+async function waitForElement(selector, timeout = 5000) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+        const element = document.querySelector(selector);
+        if (element) return element;
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    console.warn(`Элемент ${selector} не найден за ${timeout} мс`);
+    return null;
 }

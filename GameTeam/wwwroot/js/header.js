@@ -19,9 +19,28 @@ async function loadHeader() {
         return;
     }
 
+    // Ждём, пока <header> появится в DOM
+    await waitForElement('header', 5000);
+
     // Проверяем, находимся ли на странице анкет (для фильтров)
-    const isQuestionnairesPage = window.location.pathname.includes('/questionnaires');
+    const isQuestionnairesPage = window.location.pathname.toLowerCase().includes('/questionnaires');
+    console.log('isQuestionnairesPage:', isQuestionnairesPage, 'pathname:', window.location.pathname);
     if (isQuestionnairesPage) {
+        const header = document.querySelector('header');
+        if (!header) {
+            console.error('Элемент <header> не найден');
+            return;
+        }
+
+        // Ждём, пока .auth-wrapper появится
+        await waitForElement('.auth-wrapper', 5000, header);
+
+        const authWrapper = header.querySelector('.auth-wrapper');
+        if (!authWrapper) {
+            console.error('Элемент .auth-wrapper не найден в <header>');
+            return;
+        }
+
         const filterContainer = document.createElement('div');
         filterContainer.className = 'filter-container';
         filterContainer.innerHTML = `
@@ -32,10 +51,8 @@ async function loadHeader() {
             </div>
             <div class="selected-filters"></div>
         `;
-        const header = document.querySelector('header');
-        if (header && header.querySelector('.auth-wrapper')) {
-            header.insertBefore(filterContainer, header.querySelector('.auth-wrapper'));
-        }
+        header.insertBefore(filterContainer, authWrapper);
+        console.log('Filter container добавлен:', document.querySelector('.filter-container'));
     }
 
     // Загружаем имя пользователя и статус аутентификации
@@ -43,6 +60,18 @@ async function loadHeader() {
     await loadNotifications();
     updateNotificationBell();
     setupNotificationBellListener();
+}
+
+// Функция ожидания элемента в DOM
+async function waitForElement(selector, timeout = 5000, parent = document) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+        const element = parent.querySelector(selector);
+        if (element) return element;
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    console.warn(`Элемент ${selector} не найден за ${timeout} мс`);
+    return null;
 }
 
 async function loadAndRenderUserName() {

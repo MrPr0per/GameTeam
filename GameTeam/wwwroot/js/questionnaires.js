@@ -1,7 +1,7 @@
-import { initFilters, getCurrentFilter, applyFiltersButton } from '../js/filters.js';
+import { initFilters, getCurrentFilter } from '../js/filters.js';
 import { createQuestionnaire } from '../js/questionnaire-template.js';
 import { loadHeader } from '../js/header.js';
-import { loadSidebar, initSidebar } from '../js/sidebar.js'; 
+import { loadSidebar, initSidebar } from '../js/sidebar.js';
 
 const state = {
     offset: 0,
@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         loadAndRenderQuestionnaires(),
     ]);
     dom.loadMoreButton.addEventListener('click', loadAndRenderQuestionnaires);
-    applyFiltersButton.addEventListener('click', applyFilters);
 });
 
 async function loadPendingRequests() {
@@ -58,7 +57,7 @@ function loadDomElements() {
     };
 }
 
-function applyFilters() {
+export function applyFilters() {
     state.offset = 0;
     state.endReached = false;
     clearQuestionnaires();
