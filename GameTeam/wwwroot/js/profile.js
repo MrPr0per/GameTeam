@@ -79,8 +79,24 @@ function addEventListeners() {
 	// Переключение вкладок
 	tabs.forEach(tab => {
 		tab.addEventListener('click', function () {
-			tabs.forEach(t => t.classList.remove('active'));
+			tabs.forEach(t => {
+				t.classList.remove('active');
+				const img = t.querySelector('img');
+				if (t.getAttribute('data-tab') === 'about') {
+					img.src = '../img/about.svg';
+				} else if (t.getAttribute('data-tab') === 'hobbies') {
+					img.src = '../img/plays.svg';
+				}
+			});
+
 			this.classList.add('active');
+			const img = this.querySelector('img');
+			if (this.getAttribute('data-tab') === 'about') {
+				img.src = '../img/about-active.svg';
+			} else if (this.getAttribute('data-tab') === 'hobbies') {
+				img.src = '../img/plays-active.svg';
+			}
+
 			panes.forEach(pane => pane.classList.remove('active'));
 			const tabId = this.getAttribute('data-tab');
 			document.getElementById(tabId).classList.add('active');

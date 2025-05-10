@@ -30,13 +30,25 @@ export function createQuestionnaire(data) {
             // Участники
             const membersList = questionnaire.querySelector('.members-list');
             if (data.members && data.members.length > 0) {
-                data.members.forEach(username => {
+                data.members.forEach((username, index) => {
                     const memberItem = document.createElement('div');
                     memberItem.className = 'member-item';
-                    memberItem.textContent = username;
-                    memberItem.addEventListener('click', () => {
+                    const memberName = document.createElement('span');
+                    memberName.className = 'member-name';
+                    memberName.textContent = username;
+                    memberName.addEventListener('click', () => {
                         window.location.href = `/profile/${username}`;
                     });
+
+                    if (index === 0) {
+                        const crown = document.createElement('img');
+                        crown.src = '../img/crown.svg';
+                        crown.className = 'owner-crown';
+                        crown.alt = 'Owner Crown';
+                        memberItem.appendChild(crown);
+                    }
+
+                    memberItem.appendChild(memberName);
                     membersList.appendChild(memberItem);
                 });
             } else {

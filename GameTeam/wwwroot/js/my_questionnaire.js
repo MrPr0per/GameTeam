@@ -16,7 +16,8 @@ const state = {
 		goal: '',
 		availabilities: [],
 		contacts: '',
-		members: [], 
+		members: [],
+		ownerUsername: '', 
 	},
 	usersToRemove: [], 
 };
@@ -193,8 +194,11 @@ function displayQuestionnaire(updateGamesOnly = false) {
 
 		const membersList = membersSection.querySelector('.members-list');
 		membersList.innerHTML = '';
-		if (state.localQuestionnaire.members && state.localQuestionnaire.members.length > 0) {
-			state.localQuestionnaire.members.forEach((member, index) => {
+		const allMembers = state.localQuestionnaire.ownerUsername
+			? [{ username: state.localQuestionnaire.ownerUsername, userId: null }, ...state.localQuestionnaire.members]
+			: state.localQuestionnaire.members;
+		if (allMembers && allMembers.length > 0) {
+			allMembers.forEach((member, index) => {
 				const memberItem = document.createElement('div');
 				memberItem.className = 'member-item';
 				if (state.isEditing) memberItem.classList.add('editing');
@@ -204,13 +208,22 @@ function displayQuestionnaire(updateGamesOnly = false) {
 				memberName.addEventListener('click', () => {
 					window.location.href = `/profile/${member.username}`;
 				});
+
+				if (index === 0 && state.localQuestionnaire.ownerUsername) {
+					const crown = document.createElement('img');
+					crown.src = '../img/crown.svg';
+					crown.className = 'owner-crown';
+					crown.alt = 'Owner Crown';
+					memberItem.appendChild(crown);
+				}
+
 				memberItem.appendChild(memberName);
-				if (state.isEditing) {
+				if (state.isEditing && index !== 0 && member.userId) {
 					const deleteButton = document.createElement('span');
 					deleteButton.className = 'delete-member';
 					deleteButton.textContent = '✕';
 					deleteButton.addEventListener('click', () => {
-						showRemoveMemberConfirmation(member.userId, member.username, index);
+						showRemoveMemberConfirmation(member.userId, member.username, index - 1); // index - 1, так как ownerUsername не в members
 					});
 					memberItem.appendChild(deleteButton);
 				}
@@ -411,6 +424,7 @@ async function loadMyQuestionnaire() {
 			availabilities: [],
 			contacts: '',
 			members: [],
+			ownerUsername: '',
 		};
 	} else {
 		const application = await response.json();
@@ -427,6 +441,7 @@ async function loadMyQuestionnaire() {
 				availabilities: [],
 				contacts: '',
 				members: [],
+				ownerUsername: '',
 			};
 		}
 	}
@@ -552,6 +567,7 @@ function transformQuestionnaire(questionnaireData) {
 		availabilities: availabilities,
 		contacts: questionnaireData.Contacts || '',
 		members: members,
+		ownerUsername: questionnaireData.OwnerUsername || '', 
 	};
 }
 
