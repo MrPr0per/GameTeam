@@ -37,7 +37,6 @@ export async function initFilters() {
             });
             if (response.ok) {
                 gameObjects = await response.json();
-                console.log('Игры загружены с API:', gameObjects);
             } else {
                 console.error('Ошибка загрузки игр с API:', response.status);
                 gameObjects = [{ Name: 'Fallback Game' }]; // Заглушка
@@ -199,7 +198,13 @@ export async function initFilters() {
             purposeFilter.addEventListener('change', handlePurposeFilterChange);
             clearFiltersButton.addEventListener('click', clearAllFilters);
             if (applyFiltersButton) {
-                applyFiltersButton.addEventListener('click', applyFilters);
+                applyFiltersButton.addEventListener('click', () => {
+                    // Закрываем окно фильтров
+                    filterDropdownElement.classList.remove('active');
+                    filterToggle.classList.remove('active');
+                    // Вызываем applyFilters для обновления анкет
+                    applyFilters();
+                });
             } else {
                 console.error('Кнопка apply-filters-button не найдена');
             }
