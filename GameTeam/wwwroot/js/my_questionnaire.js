@@ -90,7 +90,7 @@ function addEventListeners() {
 					state.usersToRemove = []; 
 				}
 			} else {
-				warningMessage.textContent = 'Заполните все обязательные поля';
+				warningMessage.textContent = 'Заполните все обязательные поля (название, игра, цель и контакты)';
 				state.localQuestionnaire = JSON.parse(JSON.stringify(state.serverQuestionnaire));
 				state.usersToRemove = []; 
 			}
@@ -117,7 +117,7 @@ function addEventListeners() {
 			});
 		} else {
 			if (!isFormValid()) {
-				warningMessage.textContent = 'Заполните все обязательные поля';
+				warningMessage.textContent = 'Заполните все обязательные поля (название, игра, цель и контакты)';
 				return;
 			}
 			hideMyQuestionnaire().then(success => {
@@ -384,7 +384,7 @@ function updateStatusAndButtons() {
 	const addGameSection = document.getElementById('add-game-section');
 	const warningMessage = document.getElementById('warning-message');
 
-	statusText.textContent = state.isPlaced ? 'Размещена' : 'Не размещена';
+	statusText.textContent = state.isPlaced ? 'ваша анкета размещена во вкладке поиск команды' : 'ваша анкета скрыта';
 	const formValid = isFormValid();
 
 	if (state.isEditing) {
@@ -394,7 +394,7 @@ function updateStatusAndButtons() {
 		document.querySelectorAll('.required').forEach(star => {
 			star.style.display = 'inline';
 		});
-		if (warningMessage) warningMessage.textContent = formValid ? '' : 'Заполните все обязательные поля';
+		if (warningMessage) warningMessage.textContent = formValid ? '' : 'Заполните все обязательные поля (название анкеты, хотя бы одна игры, цель и контакты)';
 	} else {
 		if (statusButtons) statusButtons.style.display = 'flex';
 		if (editButtons) editButtons.style.display = 'none';
@@ -417,7 +417,7 @@ function updateStatusAndButtons() {
 			placeButton.disabled = !formValid;
 			editButton.style.display = 'inline-block';
 			document.getElementById('edit-message').style.display = 'none';
-			if (warningMessage) warningMessage.textContent = formValid ? '' : 'Заполните все обязательные поля';
+			if (warningMessage) warningMessage.textContent = formValid ? '' : 'Заполните все обязательные поля (название, игра, цель и контакты)';
 		}
 	}
 }
