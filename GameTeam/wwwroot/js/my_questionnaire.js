@@ -180,6 +180,21 @@ function displayQuestionnaire(updateGamesOnly = false) {
 		questionnaireContent.insertBefore(contactsSection, questionnaireContent.querySelector('.bottom-section'));
 	}
 
+	let contactsNote = contactsSection.querySelector('.contacts-note');
+	if (state.isEditing) {
+		if (!contactsNote) {
+			contactsNote = document.createElement('p');
+			contactsNote.className = 'contacts-note';
+			contactsNote.style.fontSize = '13px';
+			contactsSection.appendChild(contactsNote);
+		}
+		contactsNote.innerHTML = 'P.S. Не бойтесь вводить контакты — их увидят только те счастливчики, которых вы примете в команду! 😎';
+	} else {
+		if (contactsNote) {
+			contactsNote.remove();
+		}
+	}
+
 	if (!updateGamesOnly) {
 		const titleElement = questionnaireContent.querySelector('.questionnaire-title');
 		titleElement.innerHTML = state.localQuestionnaire.title || '';
