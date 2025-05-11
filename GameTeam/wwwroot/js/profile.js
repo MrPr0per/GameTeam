@@ -188,6 +188,24 @@ function renderPersonalInfo() {
 function renderDescription() {
 	const descriptionField = document.getElementById('description');
 	descriptionField.value = displayedProfileInfo.description;
+
+	let descriptionNote = document.querySelector('.description-note');
+	const isEditing = !descriptionField.hasAttribute('readonly');
+	if (isEditing) {
+		if (!descriptionNote) {
+			descriptionNote = document.createElement('p');
+			descriptionNote.className = 'description-note';
+			descriptionNote.style.fontSize = '12px';
+			descriptionNote.style.color = '#666';
+			descriptionNote.style.marginTop = '4px';
+			descriptionField.parentNode.insertBefore(descriptionNote, descriptionField.nextSibling);
+		}
+		descriptionNote.textContent = 'P.S. подробное описание профиля повышает шансы на одобрение в команду! Между нами, геймеры всегда любопытствуют про наличие микрофона, предпочитаемые платформы, возраст, опыт в играх и чувство юмора)';
+	} else {
+		if (descriptionNote) {
+			descriptionNote.remove();
+		}
+	}
 }
 
 function renderFreeTime() {
