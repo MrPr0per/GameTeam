@@ -80,7 +80,6 @@ public class AuthController : ControllerBase
             while (salt is null || salt.StartsWith('@'))
                 salt = HashOperator.GenerateSalt();
 
-
             HttpContext.Session.SetString("Salt", salt);
             return salt;
         }
@@ -112,6 +111,9 @@ public class AuthController : ControllerBase
 
         var userId = DatabaseController.GetIdByUsername(data.Username);
         DatabaseController.UpsertUserProfile(userId, "");
+
+        var appId = (DatabaseController.GetTotalApplicationsCount() + 1).ToString();
+        DatabaseController.UpsertApplication(int.Parse(appId), "Пофаниться", "", true, userId.Value);
 
         HttpContext.Session.Clear();
 
