@@ -76,7 +76,7 @@ public class AuthController : ControllerBase
         if (string.IsNullOrEmpty(HttpContext.Session.GetString("Salt")))
         {
             var salt = HashOperator.GenerateSalt();
-            while (salt.StartsWith('@'))
+            while (salt is null)
                 salt = HashOperator.GenerateSalt();
             HttpContext.Session.SetString("Salt", salt);
             return salt;
