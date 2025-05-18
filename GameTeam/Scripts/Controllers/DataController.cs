@@ -368,8 +368,6 @@ namespace GameTeam.Scripts.Controllers
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized();
 
-                if (userAppId != int.Parse(userId))
-                    return Unauthorized(new { Message = "Вы не владелец анкеты" });
 
                 DatabaseController.ChangeApplictionVisibilityById(id, false);
 

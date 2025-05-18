@@ -107,6 +107,7 @@ async function loadAndRenderQuestionnaires() {
             if (dom.loadMoreButton) {
                 dom.loadMoreButton.style.display = 'none';
             }
+            dom.questionnairesContainer.innerHTML = '<p class="no-questionnaires-message">По вашим фильтрам не найдено анкет</p>';
             return;
         }
 

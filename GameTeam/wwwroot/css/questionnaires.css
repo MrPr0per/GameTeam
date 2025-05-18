@@ -133,3 +133,10 @@ body {
     color: #333;
     text-align: center;
 }
+
+.no-questionnaires-message {
+    margin-top: 60px;
+    font-size: 18px;
+    color: #333;
+    text-align: center;
+}
