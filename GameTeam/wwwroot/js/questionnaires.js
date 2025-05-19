@@ -102,7 +102,7 @@ async function loadAndRenderQuestionnaires() {
 
         const data = await response.json();
 
-        if (!Array.isArray(data) || data.length === 0) {
+        if (state.offset === 0 && (!Array.isArray(data) || data.length === 0)) {
             state.endReached = true;
             if (dom.loadMoreButton) {
                 dom.loadMoreButton.style.display = 'none';
