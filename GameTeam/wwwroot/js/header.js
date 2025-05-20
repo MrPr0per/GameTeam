@@ -81,6 +81,15 @@ async function loadAndRenderUserName() {
         if (response.status === 401) stateHeader.isAuthenticated = false;
         const usernameElement = document.getElementById('user-name-header');
         const profileElements = document.querySelectorAll('.auth-status.user-name');
+        const profileImage = document.querySelector('.header-profile-image');
+
+        if (profileImage) {
+            profileImage.style.backgroundImage = stateHeader.isAuthenticated
+                ? `url('../img/default-profile.jpg')`
+                : `url('../img/unauthenticated-profile.jpg')`;
+        } else {
+            console.warn('Элемент .header-profile-image не найден');
+        }
 
         // Обновляем видимость ссылок "Моя анкета", "Мои заявки" и "Мои команды"
         const myQuestionnairesLink = document.querySelector('.my-q');
@@ -137,6 +146,10 @@ async function loadAndRenderUserName() {
         }
         if (myTeamsLink) {
             myTeamsLink.style.display = 'none';
+        }
+        const profileImage = document.querySelector('.header-profile-image');
+        if (profileImage) {
+            profileImage.style.backgroundImage = `url('../img/unauthenticated-profile.jpg')`;
         }
     }
 }

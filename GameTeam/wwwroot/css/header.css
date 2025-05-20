@@ -25,7 +25,6 @@ header {
     background-color: #ccc;
     border-radius: 50%;
     margin-right: 10px;
-    background-image: url('../img/default-profile.jpg');
     background-size: cover;
     background-position: center;
 }
