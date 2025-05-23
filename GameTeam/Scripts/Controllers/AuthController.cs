@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 using GameTeam.Classes.Exceptions;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.VisualBasic;
 
 [Route("api/[controller]")]
 [ApiController]
@@ -61,8 +62,10 @@ public class AuthController : ControllerBase
             HttpContext.Session.SetString("Username", username);
             HttpContext.Session.SetString("IsAuthenticated", "true");
 
+            var bytes = System.Text.Encoding.UTF8.GetBytes(username);
+
             HttpContext.Response.Headers.Append("X-Is-Authenticated", "true");
-            HttpContext.Response.Headers.Append("X-Username", username);
+            HttpContext.Response.Headers.Append("X-Username", Convert.ToBase64String(bytes));
 
             return Ok(new { Message = "Login successful" });
         }
@@ -121,8 +124,10 @@ public class AuthController : ControllerBase
         HttpContext.Session.SetString("Username", data.Username);
         HttpContext.Session.SetString("IsAuthenticated", "true");
 
+        var bytes = System.Text.Encoding.UTF8.GetBytes(data.Username);
+
         HttpContext.Response.Headers.Append("X-Is-Authenticated", "true");
-        HttpContext.Response.Headers.Append("X-Username", data.Username);
+        HttpContext.Response.Headers.Append("X-Username", Convert.ToBase64String(bytes));
 
         return Ok(new { Message = "Registration successful" });
     }
