@@ -1,4 +1,6 @@
-﻿document.addEventListener('DOMContentLoaded', function () {
+﻿import {showError} from './errors.js';
+
+document.addEventListener('DOMContentLoaded', function () {
     addPasswordEqualityCheck(); // Проверка того, что пароли равны после каждого введенного символа
     addSwitchingForms(); // Переключение форм логина и регистрации
     addSwitchingPasswordVisibility();
@@ -8,7 +10,7 @@
 
 // Проверка равенства паролей
 function addPasswordEqualityCheck() {
-    const delayBeforeError = 0; // todo: сейчас с задержкой выглядит не очень, с анимацией должно быть лучше
+    const delayBeforeError = 0;
 
     const passwordInputs = document.querySelectorAll('#register-form input.password-input');
     const password1 = passwordInputs[0];
@@ -86,9 +88,6 @@ function addSwitchingPasswordVisibility() {
 // Обработка формы регистрации
 function addRegisterFormSubmissionProcessing() {
     const form = document.getElementById('register-form');
-    const errorBlock = document.getElementById('registration-error-block');
-    const errorText = document.getElementById('registration-error-text');
-
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
@@ -118,21 +117,14 @@ function addRegisterFormSubmissionProcessing() {
                 showError(result.message || 'Ошибка регистрации');
             }
         } catch (error) {
-            showError('Сервер недоступен');
+            showError('Зарегистрироваться не удалось', error);
         }
     });
-
-    function showError(message) {
-        errorBlock.style.display = 'block';
-        errorText.innerText = message;
-    }
 }
 
 // Обработка формы входа
 function addLoginFormSubmissionProcessing() {
     const form = document.getElementById('login-form');
-    const errorBlock = document.getElementById('login-error-block');
-    const errorText = document.getElementById('login-error-text');
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -165,17 +157,12 @@ function addLoginFormSubmissionProcessing() {
                 window.location.href = '/profile'; // Перенаправление после успешного входа
             } else {
                 const result = await responseAuth.json();
-                showError(result.message || 'Ошибка входа');
+                showError('Войти не удалось', result);
             }
-        } catch {
-            showError('Сервер недоступен');
+        } catch (error) {
+            showError('Войти не удалось', error);
         }
     });
-
-    function showError(message) {
-        errorBlock.style.display = 'block';
-        errorText.innerText = message;
-    }
 }
 
 // Функция для подготовки данных для регистрации

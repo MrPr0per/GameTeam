@@ -1,6 +1,6 @@
 import { loadHeader } from '../js/header.js';
 import { loadSidebar } from '../js/sidebar.js';
-import {showError} from './errors';
+import {showError} from './errors.js';
 
 const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
