@@ -103,9 +103,9 @@ function addRegisterFormSubmissionProcessing() {
         }
 
         try {
-            const saltResponse = await fetch('api/auth/salt', { method: 'GET', });
+            const saltResponse = await fetch('api/auth/salt', {method: 'GET'});
 
-            const salt = await saltResponse.text(); 
+            const salt = await saltResponse.text();
 
             data.password = await hashPassword(formValues.password, salt);
 
@@ -149,17 +149,17 @@ function addLoginFormSubmissionProcessing() {
         try {
             const response = await postData('/api/auth/login', data);
 
-            const [salt, challenge] = await response.json(); 
-            const passwordSalt = await hashPassword(formValues.password, salt)
+            const [salt, challenge] = await response.json();
+            const passwordSalt = await hashPassword(formValues.password, salt);
 
             const passwordChallanged = await hashPassword(passwordSalt, challenge);
 
             const responseAuth =
-            await fetch('/api/auth/loginpass/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password: passwordChallanged }),
-            });
+                await fetch('/api/auth/loginpass/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({password: passwordChallanged}),
+                });
 
             if (responseAuth.ok) {
                 window.location.href = '/profile'; // Перенаправление после успешного входа
@@ -197,7 +197,7 @@ function handleRegisterSubmit(formValues) {
 // Функция для подготовки данных для входа
 function handleLoginSubmit(formValues) {
     return {
-        email: formValues.email
+        email: formValues.email,
     };
 }
 
@@ -205,7 +205,7 @@ function handleLoginSubmit(formValues) {
 async function postData(url, data) {
     return await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data),
     });
 }

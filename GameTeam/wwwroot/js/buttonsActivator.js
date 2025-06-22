@@ -6,7 +6,6 @@ export const buttonsActivator = {
      * @param {HTMLButtonElement} button - Кнопка, которую нужно перевести в состояние загрузки
      */
     setPending(button) {
-
         this.originalTexts.set(button, button.innerText);
         button.innerText = 'Загрузка...';
         button.disabled = true;

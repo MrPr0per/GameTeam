@@ -1,6 +1,6 @@
-import { createQuestionnaire } from '../js/questionnaire-template.js';
-import { loadHeader, showNotificationMessage } from '../js/header.js';
-import { loadSidebar, initSidebar } from '../js/sidebar.js'; 
+import {createQuestionnaire} from '../js/questionnaire-template.js';
+import {loadHeader, showNotificationMessage} from '../js/header.js';
+import {loadSidebar} from '../js/sidebar.js';
 
 const state = {
     loading: false,
@@ -38,7 +38,7 @@ async function loadAndRenderTeams() {
         }
 
         const questionnaires = data.map(item => ({
-            id: item.Id, 
+            id: item.Id,
             title: item.Title,
             description: item.Description,
             games: item.Games.map(g => g.Name),
@@ -68,7 +68,7 @@ async function loadAndRenderTeams() {
                     <label>Контакты</label>
                     <div>${q.contacts}</div>
                 `;
-                content.insertBefore(contactsSection, bottomSection); 
+                content.insertBefore(contactsSection, bottomSection);
             }
 
             const leaveButton = document.createElement('button');

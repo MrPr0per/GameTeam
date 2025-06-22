@@ -1,7 +1,7 @@
-import { initFilters, getCurrentFilter } from '../js/filters.js';
-import { createQuestionnaire } from '../js/questionnaire-template.js';
-import { loadHeader } from '../js/header.js';
-import { loadSidebar, initSidebar } from '../js/sidebar.js';
+import {initFilters, getCurrentFilter} from '../js/filters.js';
+import {createQuestionnaire} from '../js/questionnaire-template.js';
+import {loadHeader} from '../js/header.js';
+import {loadSidebar} from '../js/sidebar.js';
 
 const state = {
     offset: 0,
@@ -19,7 +19,7 @@ let dom = null;
 
 document.addEventListener('DOMContentLoaded', async function () {
     dom = loadDomElements();
-    await loadSidebar(); 
+    await loadSidebar();
     await Promise.all([
         loadHeader().then(() => initFilters()),
         loadAndRenderQuestionnaires(),

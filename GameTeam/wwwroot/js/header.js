@@ -307,7 +307,7 @@ function renderNotifications() {
                 if (response.ok) {
                     showNotificationMessage('Выбор сделан!');
                     stateHeader.notifications = stateHeader.notifications.filter(
-                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId
+                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId,
                     );
                     // Повторно загружаем уведомления, чтобы обновить HasNew
                     await loadNotifications();
@@ -331,7 +331,7 @@ function renderNotifications() {
                 if (response.ok) {
                     showNotificationMessage('Выбор сделан!');
                     stateHeader.notifications = stateHeader.notifications.filter(
-                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId
+                        n => n.userId !== notification.userId || n.applicationId !== notification.applicationId,
                     );
                     await loadNotifications();
                     renderNotifications();

@@ -2,7 +2,7 @@ export function createQuestionnaire(data) {
     // Загружаем HTML-шаблон
     return fetch('../pages/Questionnaire-template.html')
         .then(response => response.text())
-        .then(template => { 
+        .then(template => {
             // Создаём DOM-элемент из шаблона
             const parser = new DOMParser();
             const doc = parser.parseFromString(template, 'text/html');

@@ -1,4 +1,4 @@
-import { applyFilters } from '../js/questionnaires.js';
+import {applyFilters} from '../js/questionnaires.js';
 
 const currentFilter = {
     games: [], // Массив выбранных игр
@@ -20,7 +20,7 @@ export async function initFilters() {
         const filterContainer = await waitForElement('.filter-container', 5000);
         const selectedFiltersContainer = await waitForElement('.selected-filters', 5000);
         if (!filterContainer || !selectedFiltersContainer) {
-            console.error('Не найдены контейнеры для фильтров:', { filterContainer, selectedFiltersContainer });
+            console.error('Не найдены контейнеры для фильтров:', {filterContainer, selectedFiltersContainer});
             return;
         }
 
@@ -33,17 +33,17 @@ export async function initFilters() {
         try {
             const response = await fetch('/data/games', {
                 method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {'Content-Type': 'application/json'},
             });
             if (response.ok) {
                 gameObjects = await response.json();
             } else {
                 console.error('Ошибка загрузки игр с API:', response.status);
-                gameObjects = [{ Name: 'Fallback Game' }]; // Заглушка
+                gameObjects = [{Name: 'Fallback Game'}]; // Заглушка
             }
         } catch (error) {
             console.error('Ошибка при выполнении запроса /data/games:', error);
-            gameObjects = [{ Name: 'Fallback Game' }]; // Заглушка
+            gameObjects = [{Name: 'Fallback Game'}]; // Заглушка
         }
 
         if (!Array.isArray(gameObjects) || !gameObjects.every(game => game.Name && typeof game.Name === 'string')) {
@@ -336,7 +336,7 @@ export async function initFilters() {
         // Отправляет событие об изменении фильтров
         function dispatchFilterChangeEvent() {
             const event = new CustomEvent('filterChanged', {
-                detail: { games: currentFilter.games, purpose: currentFilter.purpose },
+                detail: {games: currentFilter.games, purpose: currentFilter.purpose},
             });
             document.dispatchEvent(event);
         }

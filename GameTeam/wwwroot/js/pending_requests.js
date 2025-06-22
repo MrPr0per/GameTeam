@@ -1,6 +1,6 @@
-import { createQuestionnaire } from '../js/questionnaire-template.js';
-import { loadHeader, showNotificationMessage } from '../js/header.js';
-import { loadSidebar, initSidebar } from '../js/sidebar.js'; 
+import {createQuestionnaire} from '../js/questionnaire-template.js';
+import {loadHeader, showNotificationMessage} from '../js/header.js';
+import {loadSidebar} from '../js/sidebar.js';
 
 const state = {
     loading: false,
