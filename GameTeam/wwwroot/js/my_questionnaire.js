@@ -1,8 +1,6 @@
-import { buttonsActivator } from '../js/buttonsActivator.js';
 import { loadHeader } from '../js/header.js';
-import { loadSidebar, initSidebar } from '../js/sidebar.js'; 
-
-let debugMode = true;
+import { loadSidebar } from '../js/sidebar.js';
+import {showError} from './errors';
 
 const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
@@ -18,11 +16,10 @@ const state = {
 		availabilities: [],
 		contacts: '',
 		members: [],
-		ownerUsername: '', 
+		ownerUsername: '',
 	},
-	usersToRemove: [], 
+	usersToRemove: [],
 };
-
 
 async function loadComponents() {
 	await loadSidebar();
@@ -84,19 +81,19 @@ function addEventListeners() {
 				const success = await postMyQuestionnaire();
 				if (success) {
 					state.serverQuestionnaire = JSON.parse(JSON.stringify(state.localQuestionnaire));
-					state.usersToRemove = []; 
+					state.usersToRemove = [];
 				} else {
 					state.localQuestionnaire = JSON.parse(JSON.stringify(state.serverQuestionnaire));
-					state.usersToRemove = []; 
+					state.usersToRemove = [];
 				}
 			} else {
 				warningMessage.textContent = 'Заполните все обязательные поля (название, игра, цель и контакты)';
 				state.localQuestionnaire = JSON.parse(JSON.stringify(state.serverQuestionnaire));
-				state.usersToRemove = []; 
+				state.usersToRemove = [];
 			}
 		} else {
 			state.localQuestionnaire = JSON.parse(JSON.stringify(state.serverQuestionnaire));
-			state.usersToRemove = []; 
+			state.usersToRemove = [];
 		}
 		questionnaireContent.querySelectorAll('[contenteditable]').forEach(el => el.contentEditable = false);
 		displayQuestionnaire();
@@ -501,7 +498,7 @@ async function postMyQuestionnaire() {
 		state.serverQuestionnaire = JSON.parse(JSON.stringify(state.localQuestionnaire));
 		state.serverQuestionnaire.id = jsonData.id;
 	} else {
-		showServerError('Ошибка при отправке анкеты', response);
+        showError('Ошибка при отправке анкеты', response);
 	}
 
 	if (state.usersToRemove.length > 0 && success) {
@@ -513,14 +510,14 @@ async function postMyQuestionnaire() {
 				},
 			});
 			if (!removeResponse.ok) {
-				showServerError(`Ошибка при удалении пользователя ${userId}`, removeResponse);
+                showError(`Ошибка при удалении пользователя ${userId}`, removeResponse);
 				success = false;
 			}
 		}
 	}
 
 	if (success) {
-		state.usersToRemove = []; 
+		state.usersToRemove = [];
 	}
 	return success;
 }
@@ -578,13 +575,13 @@ function transformQuestionnaire(questionnaireData) {
 		availabilities: availabilities,
 		contacts: questionnaireData.Contacts || '',
 		members: members,
-		ownerUsername: questionnaireData.OwnerUsername || '', 
+		ownerUsername: questionnaireData.OwnerUsername || '',
 	};
 }
 
 async function hideMyQuestionnaire() {
 	if (!state.serverQuestionnaire || state.serverQuestionnaire.id === -1) {
-		showServerError('Анкета не найдена');
+        showError('Анкета не найдена');
 		return false;
 	}
 
@@ -602,19 +599,11 @@ async function hideMyQuestionnaire() {
 		if (response.ok) {
 			return true;
 		} else {
-			showServerError(`Ошибка при ${action === 'hide' ? 'скрытии' : 'показе'} анкеты`, response);
+            showError(`Ошибка при ${action === 'hide' ? 'скрытии' : 'показе'} анкеты`, response);
 			return false;
 		}
 	} catch (error) {
-		showServerError(`Ошибка при ${action === 'hide' ? 'скрытии' : 'показе'} анкеты`, error);
+        showError(`Ошибка при ${action === 'hide' ? 'скрытии' : 'показе'} анкеты`, error);
 		return false;
-	}
-}
-
-function showServerError(message, ...debugInfo) {
-	if (debugMode) {
-		console.log(message, debugInfo);
-	} else {
-		console.log(message);
 	}
 }

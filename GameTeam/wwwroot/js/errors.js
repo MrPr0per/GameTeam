@@ -2,7 +2,7 @@ const debugMode = false;
 const toastVisibleDuration = 4000; // [ms]
 
 // отображает плашку с ошибкой в правом нижнем углу
-export function showServerError(message, ...debugInfo) {
+export function showError(message, ...debugInfo) {
     if (debugMode) {
         console.log(message, ...debugInfo);
     }

@@ -1,6 +1,6 @@
 import {buttonsActivator} from '../js/buttonsActivator.js';
 import {loadHeader} from '../js/header.js';
-import {showServerError} from './errors.js';
+import {showError} from './errors.js';
 
 let realProfileInfo = {
     name: '',
@@ -128,7 +128,7 @@ function addEventListeners() {
                 if (r.ok) {
                     window.location.href = '/'; // Редиректимся на главную
                 } else {
-                    showServerError('Выйти не удалось');
+                    showError('Выйти не удалось');
                 }
             })
             .finally(() => buttonsActivator.resetPending(logoutButton));
@@ -147,7 +147,7 @@ function addEventListeners() {
                     textarea.setAttribute('readonly', true);
                     document.getElementById('add-game-section').style.display = 'none';
                     updateDisplayOfProfileInfo(false);
-                } else showServerError('Не удалось сохранить изменения');
+                } else showError('Не удалось сохранить изменения');
             });
     });
 
@@ -267,7 +267,7 @@ async function loadProfileInfo(username) {
         return;
     }
     if (!response.ok) {
-        showServerError('Ошибка при загрузке профиля с сервера', response);
+        showError('Ошибка при загрузке профиля с сервера', response);
         return;
     }
     const json = await response.json();
@@ -278,7 +278,7 @@ async function loadProfileInfo(username) {
         renderPersonalInfo();
         // updateNotificationBell();
     } catch (e) {
-        showServerError('Ошибка при обработке данных профиля', e, json);
+        showError('Ошибка при обработке данных профиля', e, json);
     }
 
     function parseProfileInfo(jsonFromApi) {
@@ -297,17 +297,15 @@ async function saveChanges() {
 
     // вытаскиваем из хтмла в displayedProfileInfo
     displayedProfileInfo.description = document.getElementById('description').value;
-    // todo: вытаскивать данные из времени
 
     if (deepEqual(realProfileInfo, displayedProfileInfo)) {
         return true; // если ничего не изменилось, то и отправлять ничего не надо
-        return true;
     }
 
     try {
         const postJson = {
             aboutDescription: displayedProfileInfo.description,
-            skills: 'FPS, RPG, Strategy', // todo: убрать заглушку
+            skills: 'FPS, RPG, Strategy',
             games: displayedProfileInfo.games,
             availabilities: formatAvailabilitiesByDayToPostJson(displayedProfileInfo.availabilitiesByDay),
         };

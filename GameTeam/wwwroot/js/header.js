@@ -1,4 +1,4 @@
-import {showServerError} from './errors.js';
+import {showError} from './errors.js';
 
 // Глобальный объект для хранения состояния
 const stateHeader = {
@@ -274,7 +274,7 @@ function renderNotifications() {
 
     stateHeader.notifications.forEach(notification => {
         if (!notification.username) {
-            showServerError(`Ошибка при получении юзернейма пользователя с ID ${notification.userId}`);
+            showError(`Ошибка при получении юзернейма пользователя с ID ${notification.userId}`);
             return;
         }
 
