@@ -77,7 +77,7 @@ function updateHeaderTitle() {
 
     if (headerTitle && titleMap[path]) {
         headerTitle.textContent = titleMap[path];
-    }else if (path.toLowerCase().includes('profile')) {
+    } else if (path.toLowerCase().includes('profile')) {
         headerTitle.textContent = 'Профиль';
     }
 }
@@ -112,18 +112,11 @@ async function loadAndRenderUserName() {
         }
 
         // Обновляем видимость ссылок "Моя анкета", "Мои заявки" и "Мои команды"
-        const myQuestionnairesLink = document.querySelector('.my-q');
-        const pendingRequestsLink = document.querySelector('.pending-requests');
-        const myTeamsLink = document.querySelector('.my-teams');
-        if (myQuestionnairesLink) {
-            myQuestionnairesLink.style.display = stateHeader.isAuthenticated ? 'flex' : 'none';
-        }
-        if (pendingRequestsLink) {
-            pendingRequestsLink.style.display = stateHeader.isAuthenticated ? 'flex' : 'none';
-        }
-        if (myTeamsLink) {
-            myTeamsLink.style.display = stateHeader.isAuthenticated ? 'flex' : 'none';
-        }
+        const myQuestionnairesLinks = document.querySelectorAll('.my-q');
+        const pendingRequestsLinks = document.querySelectorAll('.pending-requests');
+        const myTeamsLinks = document.querySelectorAll('.my-teams');
+        const toRemove = [...myQuestionnairesLinks, ...pendingRequestsLinks, ...myTeamsLinks];
+        toRemove.forEach(el => el.style.display = stateHeader.isAuthenticated ? 'flex' : 'none');
 
         // Обновляем ссылку профиля
         if (!stateHeader.isAuthenticated) {

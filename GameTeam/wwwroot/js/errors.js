@@ -1,5 +1,5 @@
 const debugMode = true;
-const toastVisibleDuration = 4000; // [ms]
+const toastVisibleDuration = 3000; // [ms]
 
 // отображает плашку с ошибкой в правом нижнем углу
 export function showError(message, ...debugInfo) {

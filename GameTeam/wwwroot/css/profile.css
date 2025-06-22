@@ -241,3 +241,71 @@ textarea {
     border: 1px solid #ccc;
     border-radius: 5px;
 }
+
+
+@media (max-width: 768px) {
+    .profile-container {
+        width: 100%;
+        min-width: auto;
+        max-width: 100%;
+        margin: 20px auto;
+        padding: 0 15px; /* одинаковые отступы слева и справа */
+        box-sizing: border-box;
+    }
+
+    .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-top: 20px;
+    }
+
+    .profile-image {
+        margin-right: 0;
+        margin-bottom: 15px;
+    }
+
+    .edit-buttons,
+    #save-cancel-buttons {
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+        margin-left: 0;
+    }
+
+    .tabs-section {
+        margin: 20px 0;
+    }
+
+    .tabs {
+        flex-direction: row; /* сохраняем горизонтальное расположение */
+        flex-wrap: wrap;     /* разрешаем перенос при нехватке ширины */
+        justify-content: space-around;
+        gap: 10px;
+    }
+
+    .tab-link {
+        padding: 8px 12px;
+        font-size: 14px;
+        white-space: nowrap;
+        flex-grow: 1;
+        justify-content: center;
+    }
+
+    .tab-content {
+        margin: 20px 0;
+    }
+
+    #add-game-section {
+        flex-direction: column;
+    }
+
+    #add-game-section input,
+    #add-game-button {
+        width: 100%;
+    }
+
+    #games-list li span.game-name {
+        max-width: 100%;
+    }
+}
+

@@ -33,6 +33,7 @@ header {
     margin-right: 10px;
     background-size: cover;
     background-position: center;
+    flex-shrink: 0;
 }
 
 .notification-wrapper {

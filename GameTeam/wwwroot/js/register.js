@@ -1,11 +1,16 @@
 ﻿import {showError} from './errors.js';
+import {loadSidebar} from './sidebar.js';
+import {loadHeader} from './header.js';
 
-document.addEventListener('DOMContentLoaded', function () {
+
+document.addEventListener('DOMContentLoaded', async function () {
     addPasswordEqualityCheck(); // Проверка того, что пароли равны после каждого введенного символа
     addSwitchingForms(); // Переключение форм логина и регистрации
     addSwitchingPasswordVisibility();
     addLoginFormSubmissionProcessing(); // Обработка формы входа
     addRegisterFormSubmissionProcessing(); // Обработка формы регистрации
+    await loadSidebar();
+    await loadHeader();
 });
 
 // Проверка равенства паролей
