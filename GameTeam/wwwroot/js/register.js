@@ -95,6 +95,11 @@ function addRegisterFormSubmissionProcessing() {
         const formValues = Object.fromEntries(formData.entries());
         const data = handleRegisterDataSubmit(formValues); // Используем отдельную функцию для регистрации
 
+        if (formValues.password !== formValues.confirmPassword) {
+            showError('Пароли не совпадают');
+            return;
+        }
+
         // Дополнительная валидация или проверка, которая специфична для регистрации
         if (!data.username || !data.email || !formValues.password) {
             showError('Пожалуйста, заполните все поля');
