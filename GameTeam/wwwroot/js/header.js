@@ -77,6 +77,8 @@ function updateHeaderTitle() {
 
     if (headerTitle && titleMap[path]) {
         headerTitle.textContent = titleMap[path];
+    }else if (path.toLowerCase().includes('profile')) {
+        headerTitle.textContent = 'Профиль';
     }
 }
 

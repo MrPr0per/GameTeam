@@ -145,7 +145,7 @@
     cursor: pointer;
 }
 
-.filter-option input:checked+label {
+.filter-option input:checked + label {
     color: #2563EB;
 }
 
@@ -287,4 +287,18 @@
     font-size: 12px;
     line-height: 1;
     color: #FF0000;
+}
+
+/* Мобильное позиционирование */
+@media (max-width: 768px) {
+    .filter-dropdown {
+        position: fixed;
+        top: 90px;
+        left: 15px;
+        right: 15px;
+        width: auto;
+        max-width: none;
+        transform: none;
+        border-radius: 10px;
+    }
 }
