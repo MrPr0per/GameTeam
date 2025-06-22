@@ -22,6 +22,8 @@ async function loadHeader() {
     // Ждём, пока <header> появится в DOM
     await waitForElement('header', 5000);
 
+    updateHeaderTitle();
+
     // Проверяем, находимся ли на странице анкет (для фильтров)
     const isQuestionnairesPage = window.location.pathname.toLowerCase().includes('/questionnaires');
     console.log('isQuestionnairesPage:', isQuestionnairesPage, 'pathname:', window.location.pathname);
@@ -60,6 +62,22 @@ async function loadHeader() {
     await loadNotifications();
     updateNotificationBell();
     setupNotificationBellListener();
+}
+
+function updateHeaderTitle() {
+    const headerTitle = document.querySelector('.header-title');
+    const path = window.location.pathname.toLowerCase();
+
+    const titleMap = {
+        '/questionnaires': 'Поиск анкет',
+        '/my_questionnaires': 'Моя анкета',
+        '/pending_requests': 'Мои заявки',
+        '/my_teams': 'Мои команды',
+    };
+
+    if (headerTitle && titleMap[path]) {
+        headerTitle.textContent = titleMap[path];
+    }
 }
 
 // Функция ожидания элемента в DOM

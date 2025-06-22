@@ -64,3 +64,38 @@
     flex-shrink: 0;
 }
 
+
+.bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: #EFF4FF;
+    box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+}
+
+.bottom-nav a img {
+    width: 28px;
+    height: 28px;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        display: none !important;
+    }
+
+    .bottom-nav {
+        display: flex;
+    }
+
+    .content {
+        margin-left: 0;
+        margin-bottom: 60px;
+    }
+}
+

@@ -5,12 +5,18 @@ header {
     padding: 30px 40px;
     border-bottom: 1px solid #eee;
     background-color: white;
-    width: calc(100% - 270px);
     height: 90px;
     position: fixed;
     top: 0;
     right: 0;
     z-index: 10;
+}
+
+.header-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #2563EB;
+    flex: 1;
 }
 
 .auth-wrapper {
@@ -157,4 +163,25 @@ header {
 
 .notification.error {
     background-color: #dc3545;
+}
+
+@media (min-width: 769px) {
+    .header-title {
+        display: none;
+    }
+
+    header {
+        width: calc(100% - 270px);
+    }
+}
+
+@media (max-width: 768px) {
+    .header-title {
+        display: block;
+    }
+
+    header {
+        width: 100%;
+        left: 0;
+    }
 }
