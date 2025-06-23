@@ -37,7 +37,7 @@ body {
     padding: 20px;
     margin: 0 auto;
     max-width: 800px;
-    width: 800px;
+    width: 100%;
     padding-top: 0;
 }
 
@@ -97,7 +97,7 @@ body {
     font-size: 16px;
 }
 
-.questionnaire-section> :not(label) {
+.questionnaire-section > :not(label) {
     padding-left: 10px;
     font-size: 16px;
     color: #333;
@@ -298,7 +298,6 @@ body {
 }
 
 
-
 .members-section .member-item.editing .delete-member {
     display: inline;
     color: red;
@@ -318,4 +317,91 @@ body {
 
 .members-section .member-name {
     text-decoration: underline;
+}
+
+
+@media (max-width: 768px) {
+    .layout {
+        flex-direction: column;
+    }
+
+    .questionnaire-container {
+        padding: 10px;
+        width: 100%;
+    }
+
+    .questionnaire-content {
+        padding: 15px;
+    }
+
+    .questionnaire-section label {
+        font-size: 14px;
+    }
+
+    .questionnaire-section > :not(label) {
+        font-size: 14px;
+    }
+
+    .bottom-section {
+        flex-direction: column;
+        align-items: stretch;
+        margin-right: 0;
+        padding: 0 10px;
+    }
+
+    .status-buttons {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .edit-buttons {
+        flex-direction: column;
+        padding-right: 0;
+    }
+
+    .filled-button,
+    .outline-button {
+        width: 100%;
+        text-align: center;
+    }
+
+    #new-game-input {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    #add-game-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .game-name {
+        font-size: 12px;
+    }
+
+    #questionnaire-time .availability {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .time-row {
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: row;
+        gap: 10px;
+        width: 100%;
+    }
+
+    .time-row span {
+        min-width: 30px;
+    }
+
+    .time-input {
+        max-width: 250px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
 }

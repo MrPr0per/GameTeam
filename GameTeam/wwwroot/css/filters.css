@@ -13,7 +13,7 @@
     font-weight: 500;
     cursor: pointer;
     text-decoration: none;
-    padding: 10px 5px;
+    padding: 10px 10px;
     border-radius: 10px;
     transition: background-color 0.3s;
     flex-shrink: 0;
@@ -289,6 +289,10 @@
     color: #FF0000;
 }
 
+.filter-icon {
+    display: none;
+}
+
 /* Мобильное позиционирование */
 @media (max-width: 768px) {
     .filter-dropdown {
@@ -300,5 +304,22 @@
         max-width: none;
         transform: none;
         border-radius: 10px;
+    }
+
+    .filter-text {
+        display: none;
+    }
+
+    .filter-icon {
+        display: inline-block !important;
+        width: 20px;
+        height: 20px;
+        fill: #000; /* или любой цвет */
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+
+    .selected-filters {
+        display: none;
     }
 }

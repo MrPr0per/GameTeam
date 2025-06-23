@@ -1,4 +1,4 @@
-const debugMode = true;
+const debugMode = false;
 const toastVisibleDuration = 3000; // [ms]
 
 // отображает плашку с ошибкой в правом нижнем углу

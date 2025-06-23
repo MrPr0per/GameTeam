@@ -1,6 +1,6 @@
 header {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     padding: 30px 40px;
     border-bottom: 1px solid #eee;
@@ -164,6 +164,12 @@ header {
 
 .notification.error {
     background-color: #dc3545;
+}
+
+.left-side {
+    display: flex;
+    align-items: center; /* или flex-start, если не нужно выравнивание по центру */
+    gap: 16px; /* между заголовком и фильтрами */
 }
 
 @media (min-width: 769px) {

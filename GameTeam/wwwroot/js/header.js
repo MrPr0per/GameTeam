@@ -46,14 +46,25 @@ async function loadHeader() {
         const filterContainer = document.createElement('div');
         filterContainer.className = 'filter-container';
         filterContainer.innerHTML = `
-            <div class="filter-toggle">Фильтры
-                <svg class="chevron" viewBox="0 0 24 24">
-                    <path d="M7 10l5 5 5-5z" />
-                </svg>
-            </div>
-            <div class="selected-filters"></div>
+        <div class="filter-toggle">
+            <span class="filter-text">Фильтры</span>
+    
+            <!-- Иконка фильтра, по умолчанию скрыта -->
+            <svg class="filter-icon" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+                <g transform="matrix(0.95173205,0,0,0.95115787,13.901174,12.168794)">
+                    <path style="fill:#656565;" d="M 447.7 -12.78 A 42 42 0 0 0 405.67 29.26 V 50.3 H 27.43 A 42 42 0 0 0 -14.61 92.34 A 42 42 0 0 0 27.43 134.38 H 405.67 V 155.45 A 42 42 0 0 0 447.7 197.49 A 42 42 0 0 0 489.75 155.45 V 134.38 H 573.78 A 42 42 0 0 0 615.82 92.34 A 42 42 0 0 0 573.78 50.3 H 489.75 V 29.26 A 42 42 0 0 0 447.7 -12.78 Z M 143 197.49 A 42 42 0 0 0 100.96 239.53 V 260.57 H 27.45 A 42 42 0 0 0 -14.59 302.61 A 42 42 0 0 0 27.45 344.65 H 100.96 V 365.72 A 42 42 0 0 0 143 407.76 A 42 42 0 0 0 185.04 365.72 V 344.65 H 573.79 A 42 42 0 0 0 615.84 302.61 A 42 42 0 0 0 573.79 260.57 H 185.04 V 239.53 A 42 42 0 0 0 143 197.49 Z M 279.59 407.76 A 42 42 0 0 0 237.55 449.8 V 470.84 H 27.45 A 42 42 0 0 0 -14.59 512.88 A 42 42 0 0 0 27.45 554.92 H 237.55 V 575.99 A 42 42 0 0 0 279.59 618.03 A 42 42 0 0 0 321.64 575.99 V 554.92 H 573.79 A 42 42 0 0 0 615.84 512.88 A 42 42 0 0 0 573.79 470.84 H 321.64 V 449.8 A 42 42 0 0 0 279.59 407.76 Z"/>
+                </g>
+            </svg>
+    
+            <!-- Стрелка -->
+            <svg class="chevron" viewBox="0 0 24 24">
+                <path d="M7 10l5 5 5-5z" />
+            </svg>
+        </div>
+        <div class="selected-filters"></div>
         `;
-        header.insertBefore(filterContainer, authWrapper);
+        const leftSide = header.querySelector('.left-side');
+        leftSide.appendChild(filterContainer);
         console.log('Filter container добавлен:', document.querySelector('.filter-container'));
     }
 
